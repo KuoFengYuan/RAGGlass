@@ -16,15 +16,19 @@ RAGGlass is a local, open-source workbench for engineers building PDF RAG. Inspe
 - **Reproduce a run:** retain prompts, settings, evidence, answers, and measured timings after restarts.
 - **Use your model service:** real embeddings and live Ollama or compatible HTTP inference.
 
-[Quick start](#quick-start) · [Watch the demo](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.mp4) · [Illustrated usage](docs/USAGE.md) · [Deployment](docs/DEPLOYMENT.md) · [Model choices](#recommended-ollama-models)
+[Quick start](#quick-start) · [Watch the demo](#watch-the-demo) · [Illustrated usage](docs/USAGE.md) · [Deployment](docs/DEPLOYMENT.md) · [Model choices](#recommended-ollama-models)
 
 If RAGGlass is useful for your RAG work, **[⭐ give it a star](https://github.com/KuoFengYuan/RAGGlass)**.
 
-![Actual live-model answer followed to its original PDF table](docs/images/demo.gif)
+## Watch the demo
 
-*Ten seconds from an actual recording at normal speed: a live `gemma4:e4b` answer opens the fictional CC0 sample's table on page 2. The workspace reuses its existing index. [Full demo with English captions](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.mp4) · [Trace the table answer](docs/CASE_STUDY.md) · [Recording receipt](docs/media/demo-recording.json)*
+https://github.com/user-attachments/assets/9f634a2b-c1b7-4fd3-9ac5-ed340e3cd8ab
 
-[v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0) includes downloadable videos/subtitles and a publishable sample. For still images, see the [actual workbench screenshot](docs/images/workbench.png) and the illustrated guide below.
+**Press Play above to watch the complete 54.8-second demo here, with English captions.** Follow a sample upload, a live `gemma4:e4b` answer, its citation to the PDF table on page 2, parsed evidence, run settings, an unsupported-question refusal, and saved history.
+
+*Actual recorded inference at normal speed, using the fictional CC0 sample and its existing index. [Trace the table answer](docs/CASE_STUDY.md) · [Recording receipt](docs/media/demo-recording.json)*
+
+See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0) for release notes and the public sample. For still images, see the [actual workbench screenshot](docs/images/workbench.png) and the illustrated guide below.
 
 **First release:** native-text PDF ingestion with Docling, multilingual dense retrieval with Qdrant, validated source IDs, and persistent local history. The [original sample PDF](examples/ragglass-field-guide.pdf) includes a table and [six test questions](examples/questions.json), including one it cannot answer. Automated diagnosis, hybrid search, reranking, and before/after quality comparisons are planned; they are not implemented in this release.
 

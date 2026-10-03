@@ -8,9 +8,10 @@ Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved ev
 
 | Material | Where to find it | How to use it |
 | --- | --- | --- |
+| Full demo in the README | [Watch here](../README.md#watch-the-demo) | Play, pause, or seek the 54.8-second recording on GitHub without downloading a file. |
 | Live workflow video, English captions | [MP4](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.mp4) | Attach the video to your technical post. It includes a supported question, source navigation, settings, refusal, and history. |
 | Subtitle files | [VTT](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.vtt) / [SRT](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.srt) | Reuse or edit captions in your video platform. The MP4 already contains visible English captions. |
-| Short animated excerpt | [Actual citation interaction](images/demo.gif) | Embed in a README or a post that accepts GIFs; this is a ten-second excerpt at normal speed. |
+| Short animated excerpt | [Actual citation interaction](images/demo.gif) | Embed in a post that accepts GIFs; this is a ten-second excerpt at normal speed. |
 | Share cover | [1280 × 640 PNG](images/social-preview.png) | Use as a post cover or the GitHub Social preview image. |
 | Post drafts | [Announcements](ANNOUNCEMENT.md) | Choose the short post, longer post, or Show HN draft; personalize the author's experience before posting. |
 | Technical article | [Trace a PDF table answer to its source](CASE_STUDY.md) | Share a reproducible example with clear scope and limits. |
@@ -84,5 +85,27 @@ node scripts/render_social_preview.mjs
 `RAGGLASS_BASE_URL` defaults to `http://127.0.0.1:8000`. The video helper makes **two new live queries** and saves them in application history. It checks the 30 MB answer, retrieved citation membership, original page 2, available source boxes, parsed table, settings, insufficient-evidence refusal, history reopening, and browser errors. A recording over 60 seconds fails with an actionable retry message; it never accelerates inference to fit a target length.
 
 MP4s, VTT/SRT, raw browser footage, subtitle source, and the full local recording receipt are written to ignored `.data/launch/`. The English/Traditional Chinese GIFs, poster, bilingual covers, and public recording receipt are repository assets. Re-rendering a cover does not make model calls. Inspect the assets before committing; publish the MP4 and subtitle files as release attachments rather than adding raw footage/build caches to Git.
+
+## Keep the README demo playable
+
+Each README embeds its complete captioned recording with GitHub's native video player. The stable public attachment URLs and file hashes are in [demo-embeds.json](media/demo-embeds.json); the original recording's inference evidence remains in [demo-recording.json](media/demo-recording.json). The English and Chinese MP4 attachments were checked byte-for-byte against the actual recording. GitHub renders the player; a local Markdown viewer may display the URL instead.
+
+To replace a recording, review the new public footage first, then attach both videos to the relevant PR with **GitHub CLI 2.99+** (`--attach`; verified with 2.102.0):
+
+```bash
+gh pr edit YOUR_PR_NUMBER --attach .data/launch/ragglass-demo.mp4 --attach .data/launch/ragglass-demo.zh-TW.mp4
+```
+
+Copy each resulting `https://github.com/user-attachments/assets/...` URL into its language's README as the only content in its paragraph. Update the attachment manifest with the new URLs, filenames, byte sizes, SHA-256 hashes, and source PR. Keep “Watch the demo” linked to the README section. GitHub's [attachment guide](https://docs.github.com/en/github-cli/github-cli/attaching-files-with-github-cli) describes uploading and inline rendering.
+
+After pushing the task branch, verify the actual anonymous GitHub page, playback, seek, dimensions, duration, and absence of MP4 download links:
+
+```bash
+RAGGLASS_GITHUB_REF=YOUR_PUSHED_COMMIT node scripts/check_readme_demo.mjs
+# Recheck published main after merging:
+node scripts/check_readme_demo.mjs
+```
+
+This check uses the project's locked Playwright and Chrome/Chromium setup described above. Results and player screenshots are saved under ignored `.data/launch/`. It reads GitHub and plays recorded media; it does not send model queries or change repository content. `scripts/check.sh` checks the bilingual embed structure offline; the browser check needs network access and the pushed README.
 
 Repository publication and media reproduction do not guarantee a particular visitor or star count. The weekly snapshots document observed outcomes.

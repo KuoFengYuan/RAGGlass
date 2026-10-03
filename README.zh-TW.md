@@ -16,15 +16,19 @@ RAGGlass 是給 PDF RAG 工程師的地端開源工作台。從實際「文件 �
 - **重現執行：**保存 prompt、設定、證據、答案與實測耗時，重啟後仍可查看。
 - **連接自己的模型服務：**使用真實 embedding 與即時 Ollama／相容 HTTP 推論。
 
-[快速啟動](#快速啟動) · [觀看影片](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.zh-TW.mp4) · [圖解操作](docs/USAGE.zh-TW.md) · [部署指南](docs/DEPLOYMENT.zh-TW.md) · [模型建議](#建議的-ollama-模型)
+[快速啟動](#快速啟動) · [觀看操作示範](#觀看操作示範) · [圖解操作](docs/USAGE.zh-TW.md) · [部署指南](docs/DEPLOYMENT.zh-TW.md) · [模型建議](#建議的-ollama-模型)
 
 對你的 RAG 工作有幫助，歡迎 **[⭐ Star 支持](https://github.com/KuoFengYuan/RAGGlass)**。
 
-![真實模型回答沿引用回到原始 PDF 表格，繁體中文字幕](docs/images/demo.zh-TW.gif)
+## 觀看操作示範
 
-*正常速度的十秒實際錄影節錄：真實 `gemma4:e4b` 回答跳到虛構 CC0 範例第 2 頁表格，重用工作區已存在的索引。英文介面、繁體中文字幕。[完整影片](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.zh-TW.mp4) · [追查表格答案](docs/CASE_STUDY.zh-TW.md) · [錄製來源紀錄](docs/media/demo-recording.json)*
+https://github.com/user-attachments/assets/74f9906c-a29b-46a1-a214-8764e5b1c5cb
 
-[v0.1.0 預覽版](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0)提供可下載影片／字幕與公開範例。靜態畫面見[實際工作台截圖](docs/images/workbench.zh-TW.png)及下方圖解指南。
+**直接按上方播放，在本頁觀看完整 54.8 秒操作實錄，附繁體中文字幕。** 從上傳範例、真實 `gemma4:e4b` 回答與引用回到 PDF 第 2 頁表格，接著查看解析證據、執行設定、文件無法回答時的拒答與歷史紀錄。
+
+*正常速度的真實模型錄影，英文介面、繁體中文字幕；使用虛構 CC0 範例，重用工作區已有的索引。[追查表格答案](docs/CASE_STUDY.zh-TW.md) · [錄製來源紀錄](docs/media/demo-recording.json)*
+
+[v0.1.0 預覽版](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0)提供版本說明與公開範例。靜態畫面見[實際工作台截圖](docs/images/workbench.zh-TW.png)及下方圖解指南。
 
 **第一版：**Docling 原生文字 PDF 處理、Qdrant 多語向量檢索、引用 ID 驗證及本機持久紀錄。[原創範例 PDF](examples/ragglass-field-guide.pdf) 含表格與[六個問題](examples/questions.json)，包含文件無法回答的問題。自動診斷、混合檢索、reranking 與修改前後品質比較屬於後續規劃，此版尚未實作。
 

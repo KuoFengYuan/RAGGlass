@@ -4,7 +4,7 @@
 
 A PDF RAG answer can sound plausible while leaving its source unclear. This walkthrough shows how to inspect one answer through retrieved evidence to the original table, then check a question that the same document cannot answer. It uses **the fictional Cedar pilot**, an original three-page CC0 fixture; its limits and costs are not facts about a real service.
 
-[Watch the recorded live-model walkthrough](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.mp4) · [Run it yourself](USAGE.md) · [Capture receipt](media/demo-recording.json)
+[Watch the recorded live-model walkthrough](../README.md#watch-the-demo) · [Run it yourself](USAGE.md) · [Capture receipt](media/demo-recording.json)
 
 ![Real citation interaction at normal playback speed](images/demo.gif)
 
