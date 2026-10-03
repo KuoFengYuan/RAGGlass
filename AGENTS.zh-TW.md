@@ -28,4 +28,3 @@ RAGGlass 是地端文件 RAG 診斷工作台，標語為 **See inside your RAG.*
 - 第一版只處理原生文字 PDF。虛構範例與 mock 測試須清楚標示。正式路徑使用真實 embedding 與模型推論。
 
 請參閱[貢獻流程](CONTRIBUTING.zh-TW.md)與[里程碑紀錄](docs/MILESTONE.zh-TW.md)。
-

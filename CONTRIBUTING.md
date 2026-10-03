@@ -9,4 +9,3 @@ Run `bash scripts/check.sh` before committing. For pipeline/UI changes, start th
 Commit with a concrete English subject, without AI tool attribution. Open a PR to `main` using the bilingual template. Wait for required checks and reviews; do not bypass protections. After a confirmed squash merge, remove only the merged task branch, fast-forward local `main`, and report the PR and merge commit. GitHub publication happens only within the user's authorized delivery scope. A local repository without a remote can still be implemented, tested, and committed.
 
 First-milestone scope: native-text PDFs, dense retrieval, and independent HTTP models. Keep extension work isolated behind adapters. Do not add a second model server when an existing service satisfies the task, silently change embedding spaces, invent coordinates, accept unvalidated citations, or substitute canned responses for live inference.
-

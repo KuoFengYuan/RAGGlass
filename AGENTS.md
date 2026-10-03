@@ -28,4 +28,3 @@ RAGGlass is a local document RAG diagnostic workbench. Its motto is **See inside
 - First release handles native-text PDFs. Clearly label fictional fixtures and mocked tests. The production path must use real embeddings and real model inference.
 
 See [contributing](CONTRIBUTING.md) and the [milestone record](docs/MILESTONE.md).
-

@@ -18,4 +18,3 @@ Explain only material limits, compatibility considerations, and follow-up work.
 ## 繁體中文摘要
 
 說明實際改變、通過的驗證與尚未驗證的項目。
-
