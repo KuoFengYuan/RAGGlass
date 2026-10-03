@@ -1,0 +1,8 @@
+[
+  {"question": "What is the maximum upload size for the Cedar pilot?", "expected_text": "30", "expected_page": 2, "answerable": true},
+  {"question": "How many tokens overlap between adjacent chunks?", "expected_text": "32", "expected_page": 2, "answerable": true},
+  {"question": "Who maintains the Cedar pilot?", "expected_text": "Mira Chen", "expected_page": 1, "answerable": true},
+  {"question": "Does the first release support OCR for scanned PDFs?", "expected_text": "disabled", "expected_page": 1, "answerable": true},
+  {"question": "Where are document metadata and query history stored?", "expected_text": "SQLite", "expected_page": 1, "answerable": true},
+  {"question": "What is the pilot's annual electricity cost in dollars?", "expected_text": "", "expected_page": null, "answerable": false}
+]

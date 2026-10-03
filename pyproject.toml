@@ -1,0 +1,43 @@
+[project]
+name = "ragglass"
+version = "0.1.0"
+description = "See inside your RAG. A local document RAG diagnostic workbench."
+license = "MIT"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi==0.119.0",
+  "uvicorn==0.37.0",
+  "python-multipart==0.0.20",
+  "pydantic-settings==2.11.0",
+  "httpx==0.28.1",
+  "docling==2.60.1",
+  "sentence-transformers==5.1.1",
+  "transformers==4.57.1",
+  "torch==2.8.0+cpu",
+  "torchvision==0.23.0+cpu",
+  "qdrant-client==1.15.1",
+  "pypdf==6.1.1",
+]
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "reportlab==4.4.4", "ruff==0.14.0"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
