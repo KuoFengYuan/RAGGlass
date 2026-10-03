@@ -217,6 +217,8 @@ SSH-client networking was not verified from another machine during this mileston
 
 `docker compose stop qdrant` and `docker compose down` preserve the volume. **`docker compose down -v` deletes it.** Do not delete `.data` if you want to keep uploaded files/history.
 
+For intentional removal, use the document/history catalogs and read the [cleanup guide](CLEANUP.md). Run one API worker per data directory: the deletion coordination is process-local. Clearing history leaves PDFs/indexes; removing PDFs leaves historical evidence until you clear the records too.
+
 For a consistent backup, stop only the RAGGlass API, then stop this project's Qdrant. The following uses the already pinned Qdrant image as a tar helper:
 
 ```bash

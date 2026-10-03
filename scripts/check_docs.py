@@ -19,6 +19,7 @@ for name in [
     "docs/ANNOUNCEMENT",
     "docs/CASE_STUDY",
     "docs/DEMO",
+    "docs/CLEANUP",
     "docs/RELEASE-v0.1.0",
     "examples/README",
 ]:

@@ -81,6 +81,8 @@ Scroll down in the inspector and expand **Run settings & prompt**. It contains p
 
 The execution trace reports actual wall-clock stages. A first model load can increase generation time; a fast run does not establish answer quality. Historical documents and runs remain after restarting the API/Qdrant with storage preserved. Model weights are not archived: also retain the evaluated weights and installed model digest as described in the README.
 
+Use the catalog search/status filter to find records across the entire paginated history. For PDF and history deletion, including single items, selections, and all records, follow the [cleanup guide](CLEANUP.md).
+
 ## 7. Try the six sample questions
 
 | Question | Expected fact | Source |
