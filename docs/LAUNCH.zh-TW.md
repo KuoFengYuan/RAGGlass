@@ -8,9 +8,10 @@
 
 | 素材 | 位置 | 用法 |
 | --- | --- | --- |
+| README 完整示範 | [直接觀看](../README.zh-TW.md#觀看操作示範) | 在 GitHub 頁內播放、暫停或拖曳 54.8 秒實錄，無須下載檔案。 |
 | 真實流程短片，繁體中文字幕 | [MP4](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.zh-TW.mp4) | 附在技術貼文，展示可回答問題、來源跳頁、設定、拒答與歷史；介面為英文，字幕為繁體中文。 |
 | 字幕檔 | [VTT](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.zh-TW.vtt)／[SRT](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.zh-TW.srt) | 在影片平台重用或編輯；MP4 已包含可見的繁體中文字幕。 |
-| 動畫片段 | [實際引用操作](images/demo.zh-TW.gif) | 用於 README 或支援 GIF 的貼文；為繁體中文字幕、正常速度的十秒節錄，介面為英文。 |
+| 動畫片段 | [實際引用操作](images/demo.zh-TW.gif) | 用於支援 GIF 的貼文；為繁體中文字幕、正常速度的十秒節錄，介面為英文。 |
 | 分享封面 | [1280 × 640 PNG](images/social-preview.zh-TW.png) | 可用於貼文封面或 GitHub Social preview。 |
 | 貼文草稿 | [發布文案](ANNOUNCEMENT.zh-TW.md) | 選擇短文、長文或 Show HN 版本；發布前補上作者自己的開發經驗。 |
 | 技術案例 | [追查 PDF 表格答案的原始來源](CASE_STUDY.zh-TW.md) | 分享可重現的例子，說明範圍與限制。 |
@@ -84,5 +85,27 @@ node scripts/render_social_preview.mjs
 `RAGGLASS_BASE_URL` 預設 `http://127.0.0.1:8000`。錄影工具會新增**兩次真實查詢**並保存到應用歷史，檢查 30 MB 答案、本次檢索引用、第 2 頁、來源座標框、解析表格、設定、無證據拒答、歷史重開與瀏覽器錯誤。超過 60 秒會失敗並提示重試，不會加速推論以符合目標片長。
 
 MP4、VTT／SRT、原始瀏覽器影片、字幕來源與完整本機錄製紀錄寫入已忽略的 `.data/launch/`。中英文 GIF、影片海報、雙語封面及公開錄製 metadata 才作為專案素材。重製封面不會呼叫模型。提交前檢查素材；MP4 與字幕以 Release 附件發布，原始影片／建置快取不進 Git。
+
+## 保持 README 影片可直接播放
+
+兩份 README 都使用 GitHub 原生播放器嵌入完整字幕實錄。[demo-embeds.json](media/demo-embeds.json) 保存穩定公開附件網址與檔案雜湊；原始推論證據仍在[demo-recording.json](media/demo-recording.json)。中英 MP4 附件已逐位元組確認與原始錄影相同。播放器由 GitHub 渲染，本機 Markdown 檢視器可能只顯示網址。
+
+更新錄影時先檢查新的公開素材，再使用 **GitHub CLI 2.99+**（`--attach`，本次驗證 2.102.0）將兩支影片附在對應 PR：
+
+```bash
+gh pr edit YOUR_PR_NUMBER --attach .data/launch/ragglass-demo.mp4 --attach .data/launch/ragglass-demo.zh-TW.mp4
+```
+
+把產生的 `https://github.com/user-attachments/assets/...` 網址各自放入同語言 README，整個段落只保留網址。更新附件 metadata 的網址、檔名、位元組大小、SHA-256 與來源 PR。觀看入口保持連到 README 的示範章節。GitHub 的[附件指南](https://docs.github.com/en/github-cli/github-cli/attaching-files-with-github-cli)說明上傳與頁內播放方式。
+
+推送任務分支後，驗證未登入的實際 GitHub 頁面、播放、跳轉、尺寸、片長及沒有 MP4 下載連結：
+
+```bash
+RAGGLASS_GITHUB_REF=YOUR_PUSHED_COMMIT node scripts/check_readme_demo.mjs
+# 合併後再次驗證已發布的 main：
+node scripts/check_readme_demo.mjs
+```
+
+使用專案已鎖定的 Playwright 及前述 Chrome／Chromium 環境。結果與播放器截圖寫入已忽略的 `.data/launch/`。工具讀取 GitHub 與播放實錄，不呼叫模型或修改儲存庫。`scripts/check.sh` 離線檢查雙語嵌入格式；瀏覽器檢查需要網路與已推送的 README。
 
 發布與重現素材不保證特定訪客或 Star 數量；每週快照記錄實際成果。

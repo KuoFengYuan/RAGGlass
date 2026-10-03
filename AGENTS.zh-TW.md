@@ -11,7 +11,7 @@ RAGGlass 是地端文件 RAG 診斷工作台，標語為 **See inside your RAG.*
 3. 完成已授權的實作與兩種語言文件，不停在計畫或程式範例。檢查最終 diff，排除敏感資料、上傳文件、模型權重、快取與建置產物。
 4. 執行 `bash scripts/check.sh`。涉及解析、檢索、模型、引用或 PDF 介面時，再執行 README 所述的相關真實流程與瀏覽器驗證。區分契約測試與真實模型證據，耗時與 GPU 數值只記錄實測。未查證不可宣稱測試、PR、合併或服務重啟已完成。
 5. 提交使用具體英文標題與 `feat:`、`fix:`、`enhance:` 或 `docs:` 前綴。已授權 GitHub 交付且有 remote 時，推送任務分支並向 `main` 開 PR。依 `.github/pull_request_template.md`，先以英文說明最終行為、取捨、驗證及限制，再附繁體中文摘要。不可加入 AI 工具歸屬或 AI `Co-Authored-By` trailer。
-6. 檢查可合併性、必要檢查與審查。修正失敗並重跑相關驗證。必要 gate 全部通過、且合併在授權範圍內後，才合併已驗證的 head，通常使用 squash。不可直接推送 remote `main`、略過保護、停用檢查或使用管理員繞過。遇到外部 gate，明確說明阻礙並保留 PR。
+6. 檢查可合併性、必要檢查與審查。修正失敗並重跑相關驗證。必要 gate 全部通過、且合併在授權範圍內後，才合併已驗證的 head，通常使用 squash。合併提交標題保留 PR 編號，例如 `enhance: show inline demos (#12)`。自訂 merge subject 時必須明確加入此後綴，合併後從 `main` 歷史確認。不可直接推送 remote `main`、略過保護、停用檢查或使用管理員繞過。遇到外部 gate，明確說明阻礙並保留 PR。
 7. 確认合併後，只刪除此任務遠端／本機分支，以 fast-forward 更新 `main` 並清理過期追蹤參照。不可刪除不相關或尚未合併的工作。回報 PR 網址、merge commit、驗證與最終分支狀態。
 8. 使用者較新的指示優先。如果使用者表示稍後才發布，先完成本機驗證、準備 PR 說明，並回報尚無遠端 PR。不可自行建立 GitHub repository 或發布本機／私人產物。
 

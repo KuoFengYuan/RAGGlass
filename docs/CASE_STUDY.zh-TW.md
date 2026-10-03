@@ -4,7 +4,7 @@
 
 PDF RAG 回答可能看似合理，但來源不清楚。本案例從一個答案，沿著檢索證據回到原始表格，再檢查相同文件無法回答的問題。使用**虛構 Cedar 試用方案**的原創三頁 CC0 範例，裡面的限制與成本不是現實服務資料。
 
-[觀看真實模型操作影片，繁體中文字幕](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.zh-TW.mp4) · [自行操作](USAGE.zh-TW.md) · [錄製來源紀錄](media/demo-recording.json)
+[觀看真實模型操作影片，繁體中文字幕](../README.zh-TW.md#觀看操作示範) · [自行操作](USAGE.zh-TW.md) · [錄製來源紀錄](media/demo-recording.json)
 
 ![正常速度的實際引用操作，繁體中文字幕節錄](images/demo.zh-TW.gif)
 

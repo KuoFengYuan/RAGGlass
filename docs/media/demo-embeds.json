@@ -1,0 +1,18 @@
+{
+  "source_recording": "demo-recording.json",
+  "attachment_pr": "https://github.com/KuoFengYuan/RAGGlass/pull/2",
+  "videos": {
+    "en": {
+      "url": "https://github.com/user-attachments/assets/9f634a2b-c1b7-4fd3-9ac5-ed340e3cd8ab",
+      "filename": "ragglass-demo.mp4",
+      "sha256": "6e92e09c17ce1b240455601145d5bc80fbaaf02997e5e3ecb789d08992f6423e",
+      "bytes": 1463974
+    },
+    "zh-TW": {
+      "url": "https://github.com/user-attachments/assets/74f9906c-a29b-46a1-a214-8764e5b1c5cb",
+      "filename": "ragglass-demo.zh-TW.mp4",
+      "sha256": "883d37ba41142392c045dd9d3d76f2d53276ac3bacf5dac0578766514fb973e8",
+      "bytes": 1459219
+    }
+  }
+}
