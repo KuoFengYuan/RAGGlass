@@ -88,6 +88,10 @@ for language, filename, heading, watch_link in [
     assert re.fullmatch(r"https://github\.com/user-attachments/assets/[0-9a-f-]{36}", video["url"])
     assert re.fullmatch(r"[0-9a-f]{64}", video["sha256"])
     assert 0 < video["bytes"] < 10_000_000
+    for field in ["sha256", "bytes", "duration_seconds", "width", "height", "codec_name"]:
+        assert video[field] == render["media"][language][field], (
+            f"Embed does not match the rendered tutorial: {language} {field}"
+        )
     assert f"## {heading}\n\n{video['url']}\n\n" in text, f"Missing inline player: {filename}"
     assert watch_link in text, f"Demo navigation must stay in the README: {filename}"
     assert not re.search(r"https://[^\s)]+/releases/download/[^\s)]+\.mp4", text), (

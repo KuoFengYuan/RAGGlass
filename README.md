@@ -22,9 +22,9 @@ If RAGGlass is useful for your RAG work, **[⭐ give it a star](https://github.c
 
 ## Watch the demo
 
-https://github.com/user-attachments/assets/9f634a2b-c1b7-4fd3-9ac5-ed340e3cd8ab
+https://github.com/user-attachments/assets/423a4a53-f2c7-4657-8411-8dbdd6b5968e
 
-**Press Play above to watch the complete 54.8-second demo here, with English captions.** Follow a sample upload, a live `gemma4:e4b` answer, its citation to the PDF table on page 2, parsed evidence, run settings, an unsupported-question refusal, and saved history.
+**Press Play above for the complete 54.8-second tutorial with English instructions inside the video.** Each step names what to click and what to check; pause or seek to follow along. Learn to upload a PDF, ask a question, follow a citation, inspect parsing/settings, check a refusal, and reopen history. [Follow the seven-step guide](docs/DEMO.md).
 
 *Actual recorded inference at normal speed, using the fictional CC0 sample and its existing index. [Trace the table answer](docs/CASE_STUDY.md) · [Recording receipt](docs/media/demo-recording.json)*
 
@@ -39,6 +39,7 @@ See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0
 | Guide | What it covers |
 | --- | --- |
 | [Illustrated usage](docs/USAGE.md) | Upload, status, questions, citations, parsed content, history, and five actual UI views. |
+| [Video tutorial](docs/DEMO.md) | Seven numbered steps, scene times, and instructional subtitles already visible in the video. |
 | [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
 | [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |
 | [Table/source case study](docs/CASE_STUDY.md) | Follow a real answer to page 2 and inspect a question the document cannot answer. |

@@ -9,7 +9,7 @@
 | 素材 | 位置 | 用法 |
 | --- | --- | --- |
 | README 完整示範 | [直接觀看](../README.zh-TW.md#觀看操作示範) | 在 GitHub 頁內播放、暫停或拖曳 54.8 秒實錄，無須下載檔案。 |
-| 真實流程短片，繁體中文字幕 | [MP4](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.zh-TW.mp4) | 附在技術貼文，展示可回答問題、來源跳頁、設定、拒答與歷史；介面為英文，字幕為繁體中文。 |
+| 真實流程短片，繁體中文字幕 | [MP4](https://github.com/user-attachments/assets/a361e0f0-72f0-41f4-9ebc-93655a0a91b7) | 附在技術貼文，展示可回答問題、來源跳頁、設定、拒答與歷史；介面為英文，字幕為繁體中文。 |
 | 教學字幕檔 | [VTT](media/ragglass-demo.zh-TW.vtt)／[SRT](media/ragglass-demo.zh-TW.srt) | 重用目前的步驟標題、操作與提示，內容已嵌入教學影片。 |
 | 教學文字 | [七步操作說明](DEMO.zh-TW.md) | 依約略時間與按鈕名稱，搭配影片練習。 |
 | 動畫片段 | [實際引用操作](images/demo.zh-TW.gif) | 用於支援 GIF 的貼文；為繁體中文字幕、正常速度的十秒節錄，介面為英文。 |

@@ -9,7 +9,7 @@ Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved ev
 | Material | Where to find it | How to use it |
 | --- | --- | --- |
 | Full demo in the README | [Watch here](../README.md#watch-the-demo) | Play, pause, or seek the 54.8-second recording on GitHub without downloading a file. |
-| Live workflow video, English captions | [MP4](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.mp4) | Attach the video to your technical post. It includes a supported question, source navigation, settings, refusal, and history. |
+| Live workflow video, English captions | [MP4](https://github.com/user-attachments/assets/423a4a53-f2c7-4657-8411-8dbdd6b5968e) | Attach the video to your technical post. It includes a supported question, source navigation, settings, refusal, and history. |
 | Instructional subtitle files | [VTT](media/ragglass-demo.vtt) / [SRT](media/ragglass-demo.srt) | Reuse the current step titles, actions, and notes. They are already burned into the tutorial video. |
 | Tutorial text | [Seven-step walkthrough](DEMO.md) | Follow the approximate scene times and named controls while watching the video. |
 | Short animated excerpt | [Actual citation interaction](images/demo.gif) | Embed in a post that accepts GIFs; this is a ten-second excerpt at normal speed. |
