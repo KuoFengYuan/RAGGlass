@@ -74,6 +74,11 @@ class Store:
             ).fetchall()
         return [json.loads(row[0]) for row in rows]
 
+    def delete_document(self, doc_id):
+        with self.connect() as db:
+            db.execute("DELETE FROM chunks WHERE document_id=?", (doc_id,))
+            db.execute("DELETE FROM documents WHERE id=?", (doc_id,))
+
     def save_run(self, run):
         with self.connect() as db:
             db.execute(
@@ -87,10 +92,11 @@ class Store:
             row = db.execute("SELECT data FROM runs WHERE id=?", (run_id,)).fetchone()
         return json.loads(row[0]) if row else None
 
-    def runs(self, limit=100):
+    def runs(self, limit=100, offset=0):
         with self.connect() as db:
             rows = db.execute(
-                "SELECT data FROM runs ORDER BY created_at DESC LIMIT ?", (limit,)
+                "SELECT data FROM runs ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+                (limit, offset),
             ).fetchall()
         # Prompts/raw completions belong to the detail endpoint, not every list refresh.
         return [
@@ -98,13 +104,52 @@ class Store:
             for row in rows
         ]
 
+    def run_catalog(self, search="", status="", offset=0, limit=50):
+        # instr treats user text literally, including SQL LIKE wildcard characters.
+        where = "WHERE instr(lower(json_extract(data, '$.question')), lower(?)) > 0"
+        args = [search]
+        if status:
+            where += " AND json_extract(data, '$.status')=?"
+            args.append(status)
+        with self.connect() as db:
+            total = db.execute("SELECT count(*) FROM runs").fetchone()[0]
+            matched = db.execute(f"SELECT count(*) FROM runs {where}", args).fetchone()[0]
+            rows = db.execute(
+                f"SELECT data FROM runs {where} ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+                [*args, limit, offset],
+            ).fetchall()
+        items = [
+            {k: v for k, v in json.loads(row[0]).items() if k not in {"prompt", "raw_response"}}
+            for row in rows
+        ]
+        return {
+            "items": items,
+            "total": total,
+            "matched": matched,
+            "offset": offset,
+            "limit": limit,
+        }
+
+    def run_states(self):
+        with self.connect() as db:
+            return dict(
+                db.execute("SELECT id, json_extract(data, '$.status') FROM runs").fetchall()
+            )
+
+    def delete_runs(self, run_ids):
+        with self.connect() as db:
+            db.executemany("DELETE FROM runs WHERE id=?", [(rid,) for rid in run_ids])
+
     def recover_interrupted(self):
         for doc in self.documents():
-            if doc["status"] not in {"ready", "failed"}:
+            if doc["status"] == "deleting":
+                doc.update(status="delete_failed", error="清理被服務重啟中斷，請重試刪除文件。")
+                self.save_document(doc)
+            elif doc["status"] not in {"ready", "failed", "delete_failed"}:
                 doc.update(status="failed", error="處理被服務重啟中斷，請按重新索引。")
                 self.save_document(doc)
-        for run in self.runs():
-            if run["status"] == "running":
-                full = self.run(run["id"])
+        for run_id, status in self.run_states().items():
+            if status == "running":
+                full = self.run(run_id)
                 full.update(status="failed", error="查詢被服務重啟中斷，請重新送出問題。")
                 self.save_run(full)

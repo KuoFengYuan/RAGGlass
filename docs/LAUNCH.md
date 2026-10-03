@@ -8,10 +8,10 @@ Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved ev
 
 | Material | Where to find it | How to use it |
 | --- | --- | --- |
-| Full demo in the README | [Watch here](../README.md#watch-the-demo) | Play, pause, or seek the 54.8-second recording on GitHub without downloading a file. |
-| Live workflow video, English captions | [MP4](https://github.com/user-attachments/assets/423a4a53-f2c7-4657-8411-8dbdd6b5968e) | Attach the video to your technical post. It includes a supported question, source navigation, settings, refusal, and history. |
+| Full demo in the README | [Watch here](../README.md#watch-the-demo) | Play, pause, or seek the current recording with PDF/history cleanup on GitHub without downloading a file. |
+| Live workflow video, English captions | [MP4](https://github.com/user-attachments/assets/5ebfca43-fd95-4244-a178-7e5f174f51a6) | Attach the video to your technical post. It includes a supported question, source navigation, settings, refusal, history, and independent cleanup. |
 | Instructional subtitle files | [VTT](media/ragglass-demo.vtt) / [SRT](media/ragglass-demo.srt) | Reuse the current step titles, actions, and notes. They are already burned into the tutorial video. |
-| Tutorial text | [Seven-step walkthrough](DEMO.md) | Follow the approximate scene times and named controls while watching the video. |
+| Tutorial text | [Nine-step walkthrough](DEMO.md) | Follow the approximate scene times and named controls while watching the video. |
 | Short animated excerpt | [Actual citation interaction](images/demo.gif) | Embed in a post that accepts GIFs; this is a ten-second excerpt at normal speed. |
 | Share cover | [1280 × 640 PNG](images/social-preview.png) | Use as a post cover or the GitHub Social preview image. |
 | Post drafts | [Announcements](ANNOUNCEMENT.md) | Choose the short post, longer post, or Show HN draft; personalize the author's experience before posting. |
@@ -65,7 +65,7 @@ Traffic totals are moving 14-day windows: **do not add overlapping snapshot tota
 
 ## Reproduce the media
 
-Use the [deployment guide](DEPLOYMENT.md) to start the real stack. A public recording workspace must contain only the public fixture, its original filename, and sample questions. The capture helper refuses private documents/questions, a history at the API's 500-record cap, and non-loopback application/model endpoints. It does not delete or hide existing data to make a recording pass. Keep private work in its own workspace; use a separate configured instance for public captures when necessary.
+Use the [deployment guide](DEPLOYMENT.md) to start the real stack. A public recording workspace must contain only the public fixture, its original filename, and sample questions. The capture helper refuses private documents/questions, a history at the API's 500-record cap, and non-loopback application/model endpoints. The guard does not hide or remove data to make a capture pass. The tutorial subsequently demonstrates real deletion of its public fixture and history, so run it only in a disposable workspace. Keep private work in its own workspace; use a separate configured instance for public captures when necessary.
 
 Chrome, FFmpeg with `libx264`/GIF support, and a local CJK font such as Noto Sans CJK TC are needed for rendering both subtitle languages. Chromium can be installed through the existing pinned Playwright package; downloads stay in the project:
 
@@ -79,13 +79,19 @@ export RAGGLASS_BROWSER=chromium
 If Chrome is installed, omit the two Chromium lines. With the fixture-only service ready:
 
 ```bash
-node scripts/capture_demo.mjs
+# First terminal: a disposable workspace, separate from your own documents.
+RAGGLASS_DATA_DIR=.data/demo-workspace .venv/bin/python -m uvicorn ragglass.main:app --app-dir backend --host 127.0.0.1 --port 8800
+# Upload only the public fixture at http://127.0.0.1:8800 and wait for Indexed.
+# Second terminal:
+RAGGLASS_BASE_URL=http://127.0.0.1:8800 node scripts/capture_ui_docs.mjs
 node scripts/render_social_preview.mjs
+RAGGLASS_DEMO_CLEANUP=1 RAGGLASS_BASE_URL=http://127.0.0.1:8800 node scripts/capture_demo.mjs
+node scripts/render_demo.mjs
 ```
 
-`RAGGLASS_BASE_URL` defaults to `http://127.0.0.1:8000`. The video helper makes **two new live queries** and saves them in application history. It checks the 30 MB answer, retrieved citation membership, original page 2, available source boxes, parsed table, settings, insufficient-evidence refusal, history reopening, and browser errors. A recording over 60 seconds fails with an actionable retry message; it never accelerates inference to fit a target length.
+`RAGGLASS_BASE_URL` defaults to `http://127.0.0.1:8000`. The video helper makes **two new live queries**, saves them, then demonstrates PDF deletion and full history cleanup in the disposable workspace. `RAGGLASS_DEMO_CLEANUP=1` explicitly enables these destructive tutorial actions. It checks the 30 MB answer, retrieved citation membership, original page 2, available source boxes, parsed table, settings, insufficient-evidence refusal, history reopening, missing-source labeling, independent cleanup, and browser errors. A recording over 95 seconds fails with an actionable retry message; it never accelerates inference to fit a target length.
 
-MP4s, raw browser footage, ASS rendering files, and the full local recording receipt are written to ignored `.data/launch/`. The English/Traditional Chinese GIFs, poster, bilingual covers, public receipts, and editable VTT/SRT tutorial text are repository assets. Inspect the assets before committing; keep video binaries, raw footage, and build caches out of Git. The v0.1.0 release preserves the original preview recording; the current README uses the instructional revision.
+MP4s, raw browser footage, ASS rendering files, and the full local recording receipt are written to ignored `.data/launch/`. The English/Traditional Chinese GIFs, poster, bilingual covers, public receipts, and editable VTT/SRT tutorial text are repository assets. Inspect the assets before committing; keep video binaries, raw footage, and build caches out of Git. The v0.1.0 release preserves the original preview recording; the current README uses fresh footage from the cleanup-capable interface.
 
 To edit subtitles over existing public footage, change [demo-tutorial.json](media/demo-tutorial.json) and run:
 
@@ -93,11 +99,11 @@ To edit subtitles over existing public footage, change [demo-tutorial.json](medi
 node scripts/render_demo.mjs
 ```
 
-This uses `.data/launch/live-recording.webm` with [demo-recording.json](media/demo-recording.json), exports both captioned videos and subtitle files, updates GIFs, and writes [demo-tutorial-render.json](media/demo-tutorial-render.json). It adds **zero model queries** and preserves the original recording receipt. A fresh clone needs `capture_demo.mjs` first to produce raw footage; run `render_demo.mjs` afterward to refresh the render receipt before publishing. Review all nine scenes in both languages. Each scene has a step title, action, and note in a separate caption area; empty space below the text keeps the native player controls away from the tutorial at desktop README width. The [FFmpeg ASS filter](https://ffmpeg.org/ffmpeg-filters.html#ass) burns in the text, so playback needs no subtitle switch.
+This uses `.data/launch/live-recording.webm` with [demo-recording.json](media/demo-recording.json), exports both captioned videos and subtitle files, updates GIFs, and writes [demo-tutorial-render.json](media/demo-tutorial-render.json). It adds **zero model queries** and preserves the original recording receipt. A fresh clone needs `capture_demo.mjs` first to produce raw footage; run `render_demo.mjs` afterward to refresh the render receipt before publishing. Review all eleven scenes in both languages. Each scene has a step title, action, and note in a separate caption area; empty space below the text keeps the native player controls away from the tutorial at desktop README width. The [FFmpeg ASS filter](https://ffmpeg.org/ffmpeg-filters.html#ass) burns in the text, so playback needs no subtitle switch.
 
 ## Keep the README demo playable
 
-Each README embeds its complete instructional recording with GitHub's native video player. The stable public attachment URLs and file hashes are in [demo-embeds.json](media/demo-embeds.json); the original recording's inference evidence remains in [demo-recording.json](media/demo-recording.json). The English and Chinese MP4 attachments are checked byte-for-byte against the rendered tutorial files. [The render receipt](media/demo-tutorial-render.json) distinguishes this caption revision from a fresh model run. GitHub renders the player; a local Markdown viewer may display the URL instead.
+Each README embeds its complete instructional recording with GitHub's native video player. The stable public attachment URLs and file hashes are in [demo-embeds.json](media/demo-embeds.json); the current recording's inference evidence remains in [demo-recording.json](media/demo-recording.json). The English and Chinese MP4 attachments are checked byte-for-byte against the rendered tutorial files. [The render receipt](media/demo-tutorial-render.json) records rendering separately from the live questions in the capture receipt. GitHub renders the player; a local Markdown viewer may display the URL instead.
 
 To replace a recording, review the new public footage first, then attach both videos to the relevant PR with **GitHub CLI 2.99+** (`--attach`; verified with 2.102.0):
 

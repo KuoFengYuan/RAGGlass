@@ -14,6 +14,7 @@ RAGGlass is a local, open-source workbench for engineers building PDF RAG. Inspe
 - **Trace citations:** click a validated source link to its original PDF page.
 - **Inspect parsing and retrieval:** compare Docling output and scored passages with the document.
 - **Reproduce a run:** retain prompts, settings, evidence, answers, and measured timings after restarts.
+- **Manage your workspace:** search documents/history and remove selected items or clear all with explicit confirmation.
 - **Use your model service:** real embeddings and live Ollama or compatible HTTP inference.
 
 [Quick start](#quick-start) · [Watch the demo](#watch-the-demo) · [Illustrated usage](docs/USAGE.md) · [Deployment](docs/DEPLOYMENT.md) · [Model choices](#recommended-ollama-models)
@@ -22,9 +23,9 @@ If RAGGlass is useful for your RAG work, **[⭐ give it a star](https://github.c
 
 ## Watch the demo
 
-https://github.com/user-attachments/assets/423a4a53-f2c7-4657-8411-8dbdd6b5968e
+https://github.com/user-attachments/assets/5ebfca43-fd95-4244-a178-7e5f174f51a6
 
-**Press Play above for the complete 54.8-second tutorial with English instructions inside the video.** Each step names what to click and what to check; pause or seek to follow along. Learn to upload a PDF, ask a question, follow a citation, inspect parsing/settings, check a refusal, and reopen history. [Follow the seven-step guide](docs/DEMO.md).
+**Press Play above for the complete 84.7-second tutorial with English instructions inside the video.** Each step names what to click and what to check; pause or seek to follow along. Learn to upload a PDF, ask a question, follow a citation, inspect parsing/settings, check a refusal, reopen history, and clean up PDFs/records independently. [Follow the nine-step guide](docs/DEMO.md).
 
 *Actual recorded inference at normal speed, using the fictional CC0 sample and its existing index. [Trace the table answer](docs/CASE_STUDY.md) · [Recording receipt](docs/media/demo-recording.json)*
 
@@ -39,7 +40,8 @@ See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0
 | Guide | What it covers |
 | --- | --- |
 | [Illustrated usage](docs/USAGE.md) | Upload, status, questions, citations, parsed content, history, and five actual UI views. |
-| [Video tutorial](docs/DEMO.md) | Seven numbered steps, scene times, and instructional subtitles already visible in the video. |
+| [Cleanup guide](docs/CLEANUP.md) | Search/filter catalogs, delete PDFs or records, missing-source behavior, and cleanup verification. |
+| [Video tutorial](docs/DEMO.md) | Nine numbered steps, scene times, and instructional subtitles already visible in the video. |
 | [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
 | [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |
 | [Table/source case study](docs/CASE_STUDY.md) | Follow a real answer to page 2 and inspect a question the document cannot answer. |
@@ -176,9 +178,11 @@ Ollama tags can change after a pull. Save the installed metadata/digests with `c
 6. Ask **What is the pilot's annual electricity cost in dollars?** It must state that the document cannot confirm the answer and show no citations.
 7. Restart the API and Qdrant without deleting their storage. Uploaded files, documents, and query history remain available. Open **Run history** in the top navigation and select a saved run to reopen its answer, evidence, and configuration.
 
+8. To remove data, open **Document library** or **Run history**: search/filter, delete a row, select items, or **Clear all**, then review and confirm the scope. PDF deletion removes originals/parses/chunks/vectors; history cleanup removes saved queries/results independently. [Read the cleanup guide](docs/CLEANUP.md).
+
 The workspace places the original PDF on the left and a query/answer/evidence inspector on the right, with measured execution timings along the bottom. **Document library** and **Run history** open list dialogs from the top navigation; the active document can also be changed in the document selector. On narrow screens, the PDF and inspector stack vertically.
 
-The UI defaults to Traditional Chinese; switch to English in the top-right selector. The language preference survives a reload. Backend actionable errors are currently in Traditional Chinese.
+The UI defaults to Traditional Chinese; switch to English in the top-right selector. The language preference survives a reload. Cleanup errors are localized; other backend actionable errors currently use Traditional Chinese.
 
 ## Remote preview through SSH
 

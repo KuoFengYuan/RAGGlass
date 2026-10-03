@@ -105,6 +105,27 @@ On **2026-10-03 UTC**, the final `node scripts/capture_demo.mjs` execution verif
 
 `node scripts/render_social_preview.mjs` generated both 1280 × 640 covers under 1 MB using actual interface captures. `scripts/record_traffic.py` fetched a real read-only GitHub baseline and stored it under ignored `.data/traffic/`. The new bilingual sharing guide, post drafts, table/source case study, release notes, and animated README explain how to try, reproduce, share, and measure this preview. A prepared Social preview file does not set GitHub's image property; its documented web upload is a manual step. Social posts and recurring automation were not sent or scheduled. Videos/subtitles are release attachments; raw footage remains local.
 
+
+## Document and history cleanup
+
+On **2026-10-04, Asia/Taipei**, the document/history catalogs gained literal search, status filters, single deletion, checkbox selection and confirmed clearing. History uses server pagination (50/page) and a complete count; clearing is independent of displayed pages. PDF cleanup removes original/parse files, SQLite chunks/metadata and matching vectors in all RAGGlass collections. History cleanup removes the saved full record independently. Retained runs label missing originals and disable unavailable citations while keeping saved evidence readable.
+
+- Six new synthetic cleanup contracts passed: scoped deletion and SQLite reopen, real Qdrant TCP failure/retry, busy/count guards, 126-record search/pagination/full cleanup, explicit vector-filter contracts across old collections, and invalid path/interrupted cleanup. Together with the original tests, there are **17 Python tests**. Synthetic adapters are clearly labeled.
+- `.venv/bin/python scripts/verify_cleanup.py --browser` passed on an owned disposable API with real Docling/E5/Qdrant/Ollama. It verified page/table evidence, live 30 MB answer and page-2 citation, real unreachable-model error, vector removal in current and test old collections, preservation of another document, retained history with missing sources, re-upload/new ID, and actual API restarts before/after deletion.
+- Actual first/variant/re-upload ingestion totals were **8,382.47 / 2,039.51 / 8,503.26 ms**. The live answer total was **4,490.48 ms**, including **4,469.13 ms** generation; these are individual runs, not benchmarks. The unreachable-model run total was **4,631.51 ms**, including CPU embedding initialization after a fresh API process.
+- The two original Chrome tests passed against the built disposable interface in **17.8 s** total; the new bilingual cleanup/confirmation/missing-source/mobile test passed in **10.9 s**. It made two real model queries, reviewed actual cleanup screens, and checked reload after complete cleanup. The original owner workspace's document IDs, run states and vector counts stayed unchanged.
+
+Coordination requires one API process per data directory. Filesystem/vector operations are not a distributed atomic transaction; failed items remain actionable and batches can partially succeed. SQLite cleanup is logical deletion, without a secure-erasure guarantee. GPU usage was not measured for this update. See the [cleanup guide](CLEANUP.md) for semantics and reproduction.
+
+
+## Current-interface media and additional verification
+
+The six real sample questions passed again against the isolated current API: query totals in fixture order were **907.00, 1,671.30, 1,453.25, 936.09, 1,620.69 and 1,574.48 ms**. The unanswerable electricity-cost question had no citations. `scripts/verify_failure.py` also passed with real retrieval and TCP refusal. The updated existing API was restarted without changing its stored document/history rows; the two development-UI Chrome tests passed in **12.6 s**. The built cleanup checks above ran on a separate disposable API.
+
+Aggregate GPU snapshots in this six-question run were GPU 0 **23,254 MiB / 0% → 23,282 MiB / 100%**, GPU 1 **36,188 MiB / 94% → 36,188 MiB / 0%**. They include concurrent work and do not isolate application allocation, peak utilization or inference cost.
+
+The fourteen English/Traditional Chinese UI images and both covers were refreshed from the current interface. The screenshot helper now shares the complete public-workspace guard and waits for history rows before capturing them. The final captured English/Chinese query totals were **820.54 ms / 812.68 ms**. A fresh nine-step movie from application commit `7e16f9b` includes upload, live questions/citations/parsing/settings/refusal/history and actual PDF/history deletion in the disposable workspace. Its two real query totals were **889.23 / 846.33 ms**. Both normal-speed H.264 videos measure **84.708333 s**, **1440 × 1200**, with editable bilingual captions. Complete decoding and eleven scene frames per language were reviewed. Caption rendering added zero further queries. Current source/render receipts are committed; the v0.1.0 release retains the original preview footage.
+
 ## Limits and next milestone
 
 Only this three-page native-text fixture and the explicit contract inputs were evaluated. Live vLLM/OpenAI service integration, an SSH client on another machine, scanned/image-only PDFs, large corpora, concurrent multi-user traffic, adversarial claim entailment, and production hardening remain unverified or outside scope. Source boxes are Docling item bounds rather than exact phrase spans. Citation membership cannot establish semantic correctness by itself. There is no distributed job queue or resumable parsing; interrupted jobs become actionable failures.

@@ -40,6 +40,7 @@ export interface Evidence {
   provenance: Provenance[]
   coordinates_available: boolean
   coordinate_scope: string
+  source_available?: boolean
 }
 export interface Citation extends Omit<Evidence, 'text' | 'score' | 'rank' | 'token_count'> {}
 export interface Run {
@@ -60,6 +61,19 @@ export interface Run {
   documents?: unknown
   raw_response?: string
   model_metrics?: unknown
+  missing_document_ids?: string[]
+}
+export interface RunCatalog {
+  items: Run[]
+  total: number
+  matched: number
+  offset: number
+  limit: number
+}
+export interface CleanupResult {
+  kind: 'documents' | 'runs'
+  deleted_ids: string[]
+  failures: { id: string; code: string; message: string }[]
 }
 export interface Config {
   llm: { model: string; provider: string }

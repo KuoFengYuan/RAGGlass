@@ -1,6 +1,7 @@
 """Exercise the running real stack. Write only measured results to .data/verification.json."""
 
 import json
+import os
 import subprocess
 import time
 from pathlib import Path
@@ -9,7 +10,7 @@ import httpx
 from pypdf import PdfReader
 
 ROOT = Path(__file__).resolve().parents[1]
-API = "http://127.0.0.1:8000/api"
+API = os.environ.get("RAGGLASS_BASE_URL", "http://127.0.0.1:8000").rstrip("/") + "/api"
 
 
 def gpu():

@@ -87,3 +87,31 @@ class VectorIndex:
                 "qdrant_unavailable",
                 "無法查詢 Qdrant。請確認容器運行、QDRANT_URL，以及文件已完成索引。",
             ) from exc
+
+    def delete_document(self, document_id):
+        """Remove this ID from every RAGGlass embedding space, including old revisions."""
+        try:
+            with self._lock:
+                for collection in self.client.get_collections().collections:
+                    if not collection.name.startswith("ragglass_"):
+                        continue
+                    self.client.delete(
+                        collection.name,
+                        models.FilterSelector(
+                            filter=models.Filter(
+                                must=[
+                                    models.FieldCondition(
+                                        key="document_id",
+                                        match=models.MatchValue(value=document_id),
+                                    )
+                                ]
+                            )
+                        ),
+                        wait=True,
+                    )
+        except Exception as exc:
+            raise PipelineError(
+                "qdrant_cleanup_failed",
+                "無法確認向量已清理。請啟動 Qdrant、檢查 QDRANT_URL 後重試刪除；"
+                "本機資料保留供重試。",
+            ) from exc

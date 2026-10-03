@@ -5,12 +5,13 @@ from io import BytesIO
 
 import httpx
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from pypdf import PdfReader
 
 from .config import ROOT, Settings
+from .errors import PipelineError
 from .pipeline import Pipeline
 from .store import Store, now
 
@@ -20,6 +21,20 @@ class Query(BaseModel):
     document_ids: list[str] = Field(min_length=1, max_length=30)
     top_k: int = Field(default=5, ge=1, le=12)
     score_threshold: float = Field(default=0.70, ge=0, le=1)
+
+
+class CleanupSelection(BaseModel):
+    ids: list[str] = Field(default_factory=list, max_length=500)
+    all: bool = False
+    expected_count: int | None = Field(default=None, ge=0)
+
+    @model_validator(mode="after")
+    def explicit_scope(self):
+        if self.all == bool(self.ids):
+            raise ValueError("Choose non-empty ids or all, exclusively.")
+        if self.all and self.expected_count is None:
+            raise ValueError("all requires the confirmed expected_count.")
+        return self
 
 
 def create_app(settings=None):
@@ -38,11 +53,39 @@ def create_app(settings=None):
     app.state.store = store
     app.state.pipeline = pipeline
 
+    @app.exception_handler(PipelineError)
+    async def pipeline_error(request, exc):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": {"code": exc.code, "message": exc.message}},
+        )
+
     def get_doc(doc_id):
         doc = store.document(doc_id)
         if not doc:
             raise HTTPException(404, "找不到文件，請重新整理文件列表。")
         return doc
+
+    def source_ids():
+        return {
+            d["id"]
+            for d in store.documents()
+            if (store.directory / "documents" / d["id"] / "original.pdf").is_file()
+        }
+
+    def source_status(record, available):
+        # Availability is current metadata, not a rewrite of the historical evidence.
+        return {
+            **record,
+            "missing_document_ids": [did for did in record["document_ids"] if did not in available],
+            **{
+                key: [
+                    {**item, "source_available": item["document_id"] in available}
+                    for item in record[key]
+                ]
+                for key in ("evidence", "citations")
+            },
+        }
 
     @app.get("/api/health")
     def health():
@@ -98,6 +141,16 @@ def create_app(settings=None):
     def documents():
         return store.documents()
 
+    @app.post("/api/documents/cleanup")
+    def cleanup_documents(request: CleanupSelection):
+        return pipeline.workspace.cleanup(
+            "documents", request.ids, request.all, request.expected_count
+        )
+
+    @app.delete("/api/documents/{doc_id}")
+    def delete_document(doc_id: str):
+        return pipeline.workspace.cleanup("documents", [doc_id])
+
     @app.post("/api/documents", status_code=202)
     async def upload(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
         data = await file.read(s.max_upload_mb * 1024 * 1024 + 1)
@@ -118,32 +171,33 @@ def create_app(settings=None):
         except Exception as exc:
             raise HTTPException(422, "PDF 損壞或無法讀取，請重新匯出 PDF。") from exc
         digest = hashlib.sha256(data).hexdigest()
-        existing = store.by_hash(digest)
-        if existing:
-            return {**existing, "duplicate": True}
-        doc_id = str(uuid.uuid4())
-        folder = store.directory / "documents" / doc_id
-        folder.mkdir()
-        (folder / "original.pdf").write_bytes(data)
-        filename = (file.filename or "document.pdf").replace("\\", "/").split("/")[-1][:200]
-        doc = {
-            "id": doc_id,
-            "hash": digest,
-            "filename": filename,
-            "status": "queued",
-            "created_at": now(),
-            "updated_at": now(),
-            "page_count": page_count,
-            "chunk_count": 0,
-            "error": None,
-            "parser": pipeline.parser.snapshot(),
-            "chunking": pipeline.chunk_snapshot(),
-            "embedding": pipeline.embedder.snapshot(),
-            "timings_ms": {},
-        }
-        store.save_document(doc)
-        background_tasks.add_task(pipeline.ingest, doc_id)
-        return doc
+        with pipeline.workspace.mutation():
+            existing = store.by_hash(digest)
+            if existing:
+                return {**existing, "duplicate": True}
+            doc_id = str(uuid.uuid4())
+            folder = store.directory / "documents" / doc_id
+            folder.mkdir()
+            (folder / "original.pdf").write_bytes(data)
+            filename = (file.filename or "document.pdf").replace("\\", "/").split("/")[-1][:200]
+            doc = {
+                "id": doc_id,
+                "hash": digest,
+                "filename": filename,
+                "status": "queued",
+                "created_at": now(),
+                "updated_at": now(),
+                "page_count": page_count,
+                "chunk_count": 0,
+                "error": None,
+                "parser": pipeline.parser.snapshot(),
+                "chunking": pipeline.chunk_snapshot(),
+                "embedding": pipeline.embedder.snapshot(),
+                "timings_ms": {},
+            }
+            store.save_document(doc)
+            background_tasks.add_task(pipeline.ingest, doc_id)
+            return doc
 
     @app.get("/api/documents/{doc_id}")
     def document(doc_id: str):
@@ -152,6 +206,8 @@ def create_app(settings=None):
     @app.get("/api/documents/{doc_id}/pdf")
     def pdf(doc_id: str):
         get_doc(doc_id)
+        if not (store.directory / "documents" / doc_id / "original.pdf").is_file():
+            raise HTTPException(404, "原始 PDF 已不存在，請完成清理後重新上傳。")
         return FileResponse(
             store.directory / "documents" / doc_id / "original.pdf", media_type="application/pdf"
         )
@@ -180,13 +236,14 @@ def create_app(settings=None):
 
     @app.post("/api/documents/{doc_id}/reindex", status_code=202)
     def reindex(doc_id: str, background_tasks: BackgroundTasks):
-        doc = get_doc(doc_id)
-        if doc["status"] not in {"ready", "failed"}:
-            raise HTTPException(409, "文件正在處理，請等待完成。")
-        doc.update(status="queued", error=None, updated_at=now())
-        store.save_document(doc)
-        background_tasks.add_task(pipeline.ingest, doc_id)
-        return doc
+        with pipeline.workspace.mutation():
+            doc = get_doc(doc_id)
+            if doc["status"] not in {"ready", "failed", "delete_failed"}:
+                raise HTTPException(409, "文件正在處理，請等待完成。")
+            doc.update(status="queued", error=None, updated_at=now())
+            store.save_document(doc)
+            background_tasks.add_task(pipeline.ingest, doc_id)
+            return doc
 
     @app.post("/api/query")
     def query(request: Query):
@@ -199,18 +256,40 @@ def create_app(settings=None):
         if any(d.get("collection") != pipeline.index.collection for d in docs):
             raise HTTPException(409, "Embedding 設定已更改，請重新索引文件後查詢。")
         # A failed generation still returns the saved run, including retrieval and actionable error.
-        return pipeline.query(question, docs, request.top_k, request.score_threshold)
+        return source_status(
+            pipeline.query(question, docs, request.top_k, request.score_threshold), source_ids()
+        )
 
     @app.get("/api/runs")
-    def runs(limit: int = 100):
-        return store.runs(min(max(limit, 1), 500))
+    def runs(limit: int = 100, offset: int = 0):
+        available = source_ids()
+        return [
+            source_status(r, available) for r in store.runs(min(max(limit, 1), 500), max(offset, 0))
+        ]
+
+    @app.get("/api/runs/catalog")
+    def run_catalog(search: str = "", status: str = "", offset: int = 0, limit: int = 50):
+        if len(search) > 200 or status not in {"", "completed", "failed", "running"}:
+            raise HTTPException(422, "Invalid history search or status.")
+        result = store.run_catalog(search, status, max(offset, 0), min(max(limit, 1), 100))
+        available = source_ids()
+        result["items"] = [source_status(r, available) for r in result["items"]]
+        return result
+
+    @app.post("/api/runs/cleanup")
+    def cleanup_runs(request: CleanupSelection):
+        return pipeline.workspace.cleanup("runs", request.ids, request.all, request.expected_count)
+
+    @app.delete("/api/runs/{run_id}")
+    def delete_run(run_id: str):
+        return pipeline.workspace.cleanup("runs", [run_id])
 
     @app.get("/api/runs/{run_id}")
     def run(run_id: str):
         result = store.run(run_id)
         if not result:
             raise HTTPException(404, "找不到執行紀錄。")
-        return result
+        return source_status(result, source_ids())
 
     @app.get("/api/sample.pdf")
     def sample():

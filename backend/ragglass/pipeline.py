@@ -10,6 +10,7 @@ from .llm import LLMClient, make_prompt, validate_completion
 from .parser import Parser, make_chunks
 from .retrieval import VectorIndex
 from .store import now
+from .workspace import Workspace
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class Pipeline:
         self.index = VectorIndex(settings, self.embedder)
         self.llm = LLMClient(settings)
         self.ingest_lock = threading.Lock()
+        self.workspace = Workspace(store, self.index)
 
     def chunk_snapshot(self):
         return {
@@ -35,8 +37,14 @@ class Pipeline:
         }
 
     def ingest(self, doc_id):
+        with self.workspace.activity([doc_id]):
+            self._ingest(doc_id)
+
+    def _ingest(self, doc_id):
         with self.ingest_lock:
             doc = self.store.document(doc_id)
+            if not doc:
+                return
             started = time.perf_counter()
             timings = {}
 
@@ -99,6 +107,15 @@ class Pipeline:
                 self.store.save_document(doc)
 
     def query(self, question, documents, top_k, threshold):
+        with self.workspace.activity([d["id"] for d in documents], query=True):
+            current = [self.store.document(d["id"]) for d in documents]
+            if any(d is None for d in current):
+                raise PipelineError("cleanup_missing", "文件已刪除，請重新選取文件。", 404)
+            if any(d["status"] != "ready" for d in current):
+                raise PipelineError("cleanup_busy", "文件尚未完成索引，請等待或重新索引。", 409)
+            return self._query(question, current, top_k, threshold)
+
+    def _query(self, question, documents, top_k, threshold):
         started = time.perf_counter()
         run = {
             "id": str(uuid.uuid4()),

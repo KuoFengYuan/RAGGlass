@@ -1,46 +1,56 @@
 WEBVTT
 
-00:00:00.000 --> 00:00:04.002
+00:00:00.000 --> 00:00:04.001
 RAGGlass · See inside your RAG.
 A practical tour: upload → ask → check the PDF source.
 Real local inference · PDF + retrieved evidence + answer.
 
-00:00:04.002 --> 00:00:09.071
+00:00:04.001 --> 00:00:09.029
 Step 1 / Upload a PDF
 Click Upload PDF, choose the sample, and wait for Indexed.
 This recording reuses the sample's existing index.
 
-00:00:09.071 --> 00:00:18.344
+00:00:09.029 --> 00:00:14.013
 Step 2 / Ask a document question
 Type your question, then click Retrieve & answer.
 Inspect the retrieved passages beside the live model's answer.
 
-00:00:18.344 --> 00:00:25.576
+00:00:14.013 --> 00:00:21.285
 Step 3 / Follow the citation
 Click the source link → page 2. Verify 30 MB in the table.
 The backend maps the retrieved chunk ID to the original PDF page.
 
-00:00:25.576 --> 00:00:30.689
+00:00:21.285 --> 00:00:26.409
 Step 4 / Inspect parsed evidence
 Open Parsed content; compare the table, chunk ID, and page.
 Source boxes are item bounds, not exact text spans.
 
-00:00:30.689 --> 00:00:35.768
+00:00:26.409 --> 00:00:31.489
 Step 5 / Review the run settings
 Expand Run settings & prompt to inspect the saved configuration.
 Check the prompt, model, retrieval settings, and stage timings.
 
-00:00:35.768 --> 00:00:41.756
+00:00:31.489 --> 00:00:37.408
 Step 6 / Test an unsupported question
 Ask about annual electricity cost; check the refusal.
 The document cannot confirm it; this run has no citations.
 
-00:00:41.756 --> 00:00:46.982
+00:00:37.408 --> 00:00:42.658
 Step 7 / Reopen a saved run
 Open Run history, select a past query, and revisit its evidence.
 The question, answer, evidence, and settings remain saved locally.
 
-00:00:46.982 --> 00:00:54.732
+00:00:42.658 --> 00:00:53.055
+Step 8 / Clean up PDFs
+Open Document library → select the PDF → Delete selected.
+Confirm removal; saved history remains with disabled source links.
+
+00:00:53.055 --> 00:01:02.375
+Step 9 / Clear run history
+Open Run history → Clear all → Delete permanently.
+PDF and history cleanup are independent; neither can be undone.
+
+00:01:02.375 --> 00:01:24.693
 Your turn / Reproduce the workflow
 Try the CC0 PDF and six questions with your own model service.
 Share a reproducible issue; star RAGGlass if it helps your work.

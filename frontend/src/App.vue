@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { api } from './api'
+import { api, ApiError } from './api'
 import PdfViewer from './PdfViewer.vue'
-import type { Citation, Config, Document, Evidence, Run } from './types'
+import WorkspaceCatalog from './WorkspaceCatalog.vue'
+import type { Citation, CleanupResult, Config, Document, Evidence, Run, RunCatalog } from './types'
 
 const locale = ref(localStorage.getItem('ragglass-language') || 'zh-TW')
 const labels = {
@@ -81,6 +82,14 @@ const labels = {
     queryContext: 'Question in this record',
     evidenceHint: 'Select a passage to expand it and locate its source.',
     processing: 'Processing document',
+    deleting: 'Deleting',
+    delete_failed: 'Cleanup incomplete',
+    sourceDeleted: 'Original PDF deleted',
+    missingSource:
+      'Some original PDFs in this record have been deleted. Saved answers, evidence, and settings remain; unavailable page links are disabled.',
+    cleanedDocs: 'Documents deleted',
+    cleanedRuns: 'Run records deleted',
+    cleanupIncomplete: 'Some items could not be deleted. Review the catalog error and retry.',
   },
   'zh-TW': {
     workspace: '文件診斷工作台',
@@ -156,12 +165,20 @@ const labels = {
     queryContext: '此紀錄的問題',
     evidenceHint: '點選片段可展開內容，並定位到原文。',
     processing: '正在處理文件',
+    deleting: '刪除中',
+    delete_failed: '清理未完成',
+    sourceDeleted: '原始 PDF 已刪除',
+    missingSource: '此紀錄的部分原始 PDF 已刪除。答案、證據與設定仍保留；不存在的頁面連結已停用。',
+    cleanedDocs: '已刪除文件',
+    cleanedRuns: '已刪除執行紀錄',
+    cleanupIncomplete: '部分項目未能刪除，請查看列表錯誤並重試。',
   },
 }
 type LabelKey = keyof typeof labels.en
 const t = (key: LabelKey) => labels[locale.value === 'en' ? 'en' : 'zh-TW'][key]
 const docs = ref<Document[]>([])
-const runs = ref<Run[]>([])
+const historyTotal = ref(0)
+const revision = ref(0)
 const selectedId = ref('')
 const document = computed(() => docs.value.find((d) => d.id === selectedId.value))
 const run = ref<Run | null>(null)
@@ -173,13 +190,20 @@ const threshold = ref(0.7)
 const config = ref<Config | null>(null)
 const health = ref<Record<string, string>>({})
 const error = ref('')
+const notice = ref('')
 const uploading = ref(false)
 const querying = ref(false)
 const view = ref('pdf')
 const parsedChunks = ref<Evidence[]>([])
 const fileInput = ref<HTMLInputElement>()
-const catalog = ref<HTMLDialogElement>()
-const catalogMode = ref<'documents' | 'history'>('documents')
+const catalog = ref<InstanceType<typeof WorkspaceCatalog>>()
+const missingSources = computed(
+  () =>
+    run.value?.document_ids.some((id) => !docs.value.some((doc) => doc.id === id)) ||
+    run.value?.missing_document_ids?.length,
+)
+const sourceAvailable = (source: Evidence | Citation) =>
+  source.source_available !== false && docs.value.some((doc) => doc.id === source.document_id)
 const servicesReady = computed(
   () => health.value.llm === 'ready' && health.value.qdrant === 'ready',
 )
@@ -196,6 +220,7 @@ const thresholdLabel = computed(() =>
   Number.isFinite(threshold.value) ? threshold.value.toFixed(2) : '—',
 )
 let refreshTimer: ReturnType<typeof setInterval>
+let refreshNumber = 0
 const provenance = computed(() =>
   selectedEvidence.value?.document_id === selectedId.value ? selectedEvidence.value.provenance : [],
 )
@@ -216,21 +241,41 @@ function setLocale() {
 }
 
 function openCatalog(mode: 'documents' | 'history') {
-  catalogMode.value = mode
-  catalog.value?.showModal()
+  catalog.value?.open(mode)
 }
 
 async function refresh() {
+  const current = ++refreshNumber
   try {
     const [documents, history, dependency] = await Promise.all([
       api<Document[]>('/documents'),
-      api<Run[]>('/runs'),
+      api<RunCatalog>('/runs/catalog?limit=1'),
       api<{ dependencies: Record<string, string> }>('/health'),
     ])
+    if (current !== refreshNumber) return
     docs.value = documents
-    runs.value = history
+    historyTotal.value = history.total
     health.value = dependency.dependencies
-    if (!selectedId.value && documents.length) selectedId.value = documents[0].id
+    if (!documents.some((doc) => doc.id === selectedId.value)) {
+      selectedId.value = run.value
+        ? run.value.document_ids.find((id) => documents.some((doc) => doc.id === id)) || ''
+        : documents[0]?.id || ''
+      page.value = 1
+      selectedEvidence.value = null
+      parsedChunks.value = []
+      if (view.value === 'parsed') await loadChunks()
+    }
+    if (run.value) {
+      const runId = run.value.id
+      try {
+        const saved = await api<Run>(`/runs/${runId}`)
+        if (current === refreshNumber && run.value?.id === runId) run.value = saved
+      } catch (e) {
+        if ((e as ApiError).status === 404 && run.value?.id === runId) run.value = null
+        else throw e
+      }
+    }
+    revision.value++
   } catch (e) {
     error.value = `${t('apiError')} ${(e as Error).message}`
   }
@@ -243,6 +288,16 @@ async function selectDocument(id: string) {
   parsedChunks.value = []
   if (view.value === 'parsed') await loadChunks()
   catalog.value?.close()
+}
+
+async function cleaned(result: CleanupResult) {
+  const count = result.deleted_ids.length
+  notice.value = `${result.kind === 'documents' ? t('cleanedDocs') : t('cleanedRuns')}: ${count}${result.failures.length ? ` · ${t('cleanupIncomplete')}` : ''}`
+  if (result.kind === 'runs' && run.value && result.deleted_ids.includes(run.value.id)) {
+    run.value = null
+    selectedEvidence.value = null
+  }
+  await refresh()
 }
 
 async function upload(event: Event) {
@@ -312,13 +367,16 @@ async function openRun(id: string) {
     const retrieval = run.value.settings.retrieval as { top_k: number; score_threshold: number }
     topK.value = retrieval.top_k
     threshold.value = retrieval.score_threshold
-    if (run.value.document_ids[0]) await selectDocument(run.value.document_ids[0])
+    const available = run.value.document_ids.find((id) => docs.value.some((doc) => doc.id === id))
+    await selectDocument(available || '')
   } catch (e) {
     error.value = (e as Error).message
   }
 }
 
 function navigate(source: Evidence | Citation, targetPage = source.page) {
+  selectedEvidence.value = source
+  if (!sourceAvailable(source)) return
   selectedId.value = source.document_id
   page.value = targetPage
   selectedEvidence.value = source
@@ -385,7 +443,7 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
           {{ t('library') }} <span>{{ docs.length }}</span>
         </button>
         <button data-testid="open-history" @click="openCatalog('history')">
-          {{ t('history') }} <span>{{ runs.length }}</span>
+          {{ t('history') }} <span>{{ historyTotal }}</span>
         </button>
       </nav>
       <div class="header-tools">
@@ -438,6 +496,9 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
       <div v-if="error" class="global-error" role="alert">
         {{ error }}<button aria-label="Dismiss error" @click="error = ''">×</button>
       </div>
+      <div v-if="notice" class="global-notice" role="status">
+        {{ notice }}<button :aria-label="t('close')" @click="notice = ''">×</button>
+      </div>
       <div v-if="health.llm === 'model_missing'" class="global-error" role="alert">
         {{ t('modelMissing') }}
       </div>
@@ -469,7 +530,7 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
             <button
               v-if="document"
               class="text-button reindex-button"
-              :disabled="!['ready', 'failed'].includes(document.status)"
+              :disabled="!['ready', 'failed', 'delete_failed'].includes(document.status)"
               @click="reindex"
             >
               ↻ {{ t('retry') }}
@@ -638,6 +699,9 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
               <span>{{ t('queryContext') }}</span>
               <p>{{ run.question }}</p>
             </div>
+            <p v-if="missingSources" class="missing-source" role="status">
+              {{ t('missingSource') }}
+            </p>
             <div v-if="run.error" class="error-box" role="alert">
               <strong>{{ run.error_code }}</strong>
               <p>{{ run.error }}</p>
@@ -657,11 +721,17 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
                     :key="p"
                     class="citation-button"
                     :data-chunk-id="citation.id"
+                    :disabled="!sourceAvailable(citation)"
+                    :title="!sourceAvailable(citation) ? t('sourceDeleted') : undefined"
                     @click="navigate(citation, p)"
                   >
                     <span class="citation-number">{{ index + 1 }}</span
-                    ><span>{{ citation.filename }} · p. {{ p }}</span
-                    ><span>↗</span>
+                    ><span
+                      >{{ citation.filename }} · p. {{ p
+                      }}<template v-if="!sourceAvailable(citation)">
+                        · {{ t('sourceDeleted') }}</template
+                      ></span
+                    ><span v-if="sourceAvailable(citation)">↗</span>
                   </button></template
                 >
               </div>
@@ -690,7 +760,9 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
                   </div>
                   <p>{{ chunk.text }}</p>
                   <div class="evidence-meta">
-                    <span>p. {{ chunk.pages.join(', ') }} ↗</span
+                    <span
+                      >p. {{ chunk.pages.join(', ') }}
+                      {{ sourceAvailable(chunk) ? '↗' : `· ${t('sourceDeleted')}` }}</span
                     ><span>{{ chunk.coordinates_available ? t('coords') : t('noCoords') }}</span>
                   </div>
                   <span class="chunk-id mono">{{ chunk.id }}</span>
@@ -743,72 +815,21 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
       </footer>
     </main>
 
-    <dialog
+    <WorkspaceCatalog
       ref="catalog"
-      class="catalog-dialog"
-      aria-labelledby="catalog-title"
-      @click="$event.target === catalog && catalog?.close()"
-    >
-      <div class="catalog-content">
-        <header class="catalog-header">
-          <div>
-            <span class="catalog-kicker">RAGGlass / {{ t('local') }}</span>
-            <h2 id="catalog-title">
-              {{ catalogMode === 'documents' ? t('library') : t('history') }}
-            </h2>
-          </div>
-          <button class="icon-button" :aria-label="t('close')" @click="catalog?.close()">×</button>
-        </header>
-        <template v-if="catalogMode === 'documents'"
-          ><div class="catalog-actions">
-            <p>{{ t('uploadHint') }} {{ config?.max_upload_mb || 30 }} MB</p>
-            <button class="primary" :disabled="uploading" @click="fileInput?.click()">
-              ＋ {{ t('upload') }}
-            </button>
-          </div>
-          <nav class="document-list" aria-label="Documents">
-            <button
-              v-for="doc in docs"
-              :key="doc.id"
-              class="document-item"
-              :class="{ active: selectedId === doc.id }"
-              @click="selectDocument(doc.id)"
-            >
-              <span class="file-icon">PDF</span
-              ><span class="document-text"
-                ><strong>{{ doc.filename }}</strong
-                ><small
-                  >{{ doc.page_count }} {{ t('pages') }} · {{ doc.chunk_count }} {{ t('chunks') }} ·
-                  {{ date(doc.created_at) }}</small
-                ></span
-              ><span class="badge" :class="doc.status">{{ status(doc.status) }}</span
-              ><span>→</span>
-            </button>
-          </nav>
-          <p v-if="!docs.length" class="catalog-empty">{{ t('noDocsHint') }}</p></template
-        >
-        <template v-else
-          ><p v-if="!runs.length" class="catalog-empty">{{ t('noHistory') }}</p>
-          <div class="history-list">
-            <button
-              v-for="item in runs"
-              :key="item.id"
-              class="history-item"
-              :class="{ active: run?.id === item.id }"
-              @click="openRun(item.id)"
-            >
-              <span class="history-time mono">{{ date(item.created_at) }}</span
-              ><span class="history-question"
-                >{{ item.question
-                }}<small>{{ item.settings.llm.model }} · {{ status(item.status) }}</small></span
-              ><span class="history-duration mono">{{
-                item.timings_ms.total !== undefined ? ms(item.timings_ms.total) : '—'
-              }}</span
-              ><span>↗</span>
-            </button>
-          </div></template
-        >
-      </div>
-    </dialog>
+      :documents="docs"
+      :active-document="selectedId"
+      :active-run="run?.id"
+      :locale="locale"
+      :history-total="historyTotal"
+      :revision="revision"
+      :uploading="uploading"
+      :querying="querying"
+      :max-upload="config?.max_upload_mb || 30"
+      @select="selectDocument"
+      @open-run="openRun"
+      @upload="fileInput?.click()"
+      @cleaned="cleaned"
+    />
   </div>
 </template>

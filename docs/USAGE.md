@@ -10,7 +10,7 @@ For installation, read the [deployment guide](DEPLOYMENT.md). For model choices,
 
 ![Actual English workbench with a live answer and page-2 evidence](images/workbench.png)
 
-This and the following images are actual captures from the built interface on 2026-10-03. They use only the original fictional CC0 sample and live `gemma4:e4b` inference. Displayed durations are measurements of those runs, not performance promises.
+This and the following images are actual captures from the built interface on 2026-10-04 (Asia/Taipei). They use only the original fictional CC0 sample and live `gemma4:e4b` inference. Displayed durations are measurements of those runs, not performance promises.
 
 | Area | What you can do |
 | --- | --- |
@@ -80,6 +80,8 @@ Open **Run history** at the top. Select a row to restore its question, answer, e
 Scroll down in the inspector and expand **Run settings & prompt**. It contains parser/chunk/embedding/retrieval/model settings, document snapshots, the exact prompt, raw model response, and returned model metadata. **Download run JSON** exports the record for analysis. API keys are excluded, but uploaded text and prompts are part of a run: keep private run exports out of the public repository.
 
 The execution trace reports actual wall-clock stages. A first model load can increase generation time; a fast run does not establish answer quality. Historical documents and runs remain after restarting the API/Qdrant with storage preserved. Model weights are not archived: also retain the evaluated weights and installed model digest as described in the README.
+
+Use the catalog search/status filter to find records across the entire paginated history. For PDF and history deletion, including single items, selections, and all records, follow the [cleanup guide](CLEANUP.md).
 
 ## 7. Try the six sample questions
 

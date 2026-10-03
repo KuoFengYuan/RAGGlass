@@ -217,6 +217,8 @@ ssh -N -L 5173:127.0.0.1:5173 -L 8000:127.0.0.1:8000 user@your-host
 
 `docker compose stop qdrant`／`docker compose down` 會保留 volume，**`docker compose down -v` 會刪除它**。需要保留文件／歷史時不要刪 `.data`。
 
+需要主動移除資料時，使用文件庫／執行紀錄列表，詳見[清理指南](CLEANUP.zh-TW.md)。每個資料目錄只運行一個 API worker，清理協調機制位於單一程序。清理歷史仍保留 PDF／索引；刪除 PDF 後，歷史證據須另外清理才會移除。
+
 一致備份先只停止 RAGGlass API，再停止本專案 Qdrant。以下以已固定版本的 Qdrant image 作為 tar 工具：
 
 ```bash
