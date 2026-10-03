@@ -8,8 +8,8 @@ process.env.PLAYWRIGHT_BROWSERS_PATH ??= fileURLToPath(new URL('.cache/playwrigh
 const require = createRequire(new URL('frontend/package.json', root))
 const { chromium, expect } = require('@playwright/test')
 const embeds = JSON.parse(await readFile(new URL('docs/media/demo-embeds.json', root), 'utf8'))
-const recording = JSON.parse(
-  await readFile(new URL('docs/media/demo-recording.json', root), 'utf8'),
+const rendering = JSON.parse(
+  await readFile(new URL('docs/media/demo-tutorial-render.json', root), 'utf8'),
 )
 const ref = process.env.RAGGLASS_GITHUB_REF || 'main'
 const output = fileURLToPath(new URL('.data/launch/', root))
@@ -65,10 +65,10 @@ try {
     )
     expect(metadata.attachment_matches).toBe(true)
     expect(metadata.controls).toBe(true)
-    expect(metadata.width).toBe(recording.media[language].width)
-    expect(metadata.height).toBe(recording.media[language].height)
+    expect(metadata.width).toBe(rendering.media[language].width)
+    expect(metadata.height).toBe(rendering.media[language].height)
     expect(
-      Math.abs(metadata.duration_seconds - recording.media[language].duration_seconds),
+      Math.abs(metadata.duration_seconds - rendering.media[language].duration_seconds),
     ).toBeLessThan(0.1)
     await expect.poll(() => video.evaluate((element) => element.currentTime)).toBeGreaterThan(0.5)
     await video.evaluate((element) => {

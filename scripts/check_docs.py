@@ -1,5 +1,6 @@
 """Check bilingual documentation links and required delivery files without network access."""
 
+import hashlib
 import json
 import re
 import struct
@@ -17,6 +18,7 @@ for name in [
     "docs/LAUNCH",
     "docs/ANNOUNCEMENT",
     "docs/CASE_STUDY",
+    "docs/DEMO",
     "docs/RELEASE-v0.1.0",
     "examples/README",
 ]:
@@ -35,6 +37,8 @@ for file in [
     ".github/pull_request_template.md",
     "docs/media/demo-recording.json",
     "docs/media/demo-embeds.json",
+    "docs/media/demo-tutorial.json",
+    "docs/media/demo-tutorial-render.json",
 ]:
     assert (ROOT / file).is_file(), f"Missing delivery file: {file}"
 for filename in ["workbench", "document-library", "parsed-content", "run-history", "run-settings"]:
@@ -46,6 +50,33 @@ for suffix in ["", ".zh-TW"]:
     assert struct.unpack(">II", cover[16:24]) == (1280, 640), "Invalid social preview dimensions"
     gif = (ROOT / "docs/images" / f"demo{suffix}.gif").read_bytes()
     assert gif[:6] in (b"GIF87a", b"GIF89a") and len(gif) < 3_000_000
+
+render = json.loads((ROOT / "docs/media/demo-tutorial-render.json").read_text())
+tutorial = json.loads((ROOT / "docs/media/demo-tutorial.json").read_text())
+recording_bytes = (ROOT / "docs/media/demo-recording.json").read_bytes()
+recording = json.loads(recording_bytes)
+assert render["source_recording_sha256"] == hashlib.sha256(recording_bytes).hexdigest()
+assert (
+    render["renderer_sha256"]
+    == hashlib.sha256((ROOT / "scripts/demo_media.mjs").read_bytes()).hexdigest()
+)
+assert (
+    render["tutorial_sha256"]
+    == hashlib.sha256((ROOT / "docs/media/demo-tutorial.json").read_bytes()).hexdigest()
+)
+assert render["playback_speed"] == 1 and render["live_queries_added"] == 0
+for language in ["en", "zh-TW"]:
+    suffix = "" if language == "en" else ".zh-TW"
+    for extension in ["srt", "vtt"]:
+        captions = (ROOT / "docs/media" / f"ragglass-demo{suffix}.{extension}").read_text()
+        for scene in recording["scenes"]:
+            for line in tutorial["scenes"][scene["id"]][language].values():
+                assert line in captions, f"Missing {language} tutorial line: {scene['id']}"
+    output = render["media"][language]
+    assert output["codec_name"] == "h264" and output["pix_fmt"] == "yuv420p"
+    assert (output["width"], output["height"]) == (1440, 1200)
+    assert 0 < output["bytes"] < 10_000_000
+    assert abs(output["duration_seconds"] - recording["media"][language]["duration_seconds"]) < 0.1
 
 embeds = json.loads((ROOT / "docs/media/demo-embeds.json").read_text())
 for language, filename, heading, watch_link in [
