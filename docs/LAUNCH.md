@@ -9,8 +9,9 @@ Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved ev
 | Material | Where to find it | How to use it |
 | --- | --- | --- |
 | Full demo in the README | [Watch here](../README.md#watch-the-demo) | Play, pause, or seek the 54.8-second recording on GitHub without downloading a file. |
-| Live workflow video, English captions | [MP4](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.mp4) | Attach the video to your technical post. It includes a supported question, source navigation, settings, refusal, and history. |
-| Subtitle files | [VTT](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.vtt) / [SRT](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.srt) | Reuse or edit captions in your video platform. The MP4 already contains visible English captions. |
+| Live workflow video, English captions | [MP4](https://github.com/user-attachments/assets/423a4a53-f2c7-4657-8411-8dbdd6b5968e) | Attach the video to your technical post. It includes a supported question, source navigation, settings, refusal, and history. |
+| Instructional subtitle files | [VTT](media/ragglass-demo.vtt) / [SRT](media/ragglass-demo.srt) | Reuse the current step titles, actions, and notes. They are already burned into the tutorial video. |
+| Tutorial text | [Seven-step walkthrough](DEMO.md) | Follow the approximate scene times and named controls while watching the video. |
 | Short animated excerpt | [Actual citation interaction](images/demo.gif) | Embed in a post that accepts GIFs; this is a ten-second excerpt at normal speed. |
 | Share cover | [1280 × 640 PNG](images/social-preview.png) | Use as a post cover or the GitHub Social preview image. |
 | Post drafts | [Announcements](ANNOUNCEMENT.md) | Choose the short post, longer post, or Show HN draft; personalize the author's experience before posting. |
@@ -84,11 +85,19 @@ node scripts/render_social_preview.mjs
 
 `RAGGLASS_BASE_URL` defaults to `http://127.0.0.1:8000`. The video helper makes **two new live queries** and saves them in application history. It checks the 30 MB answer, retrieved citation membership, original page 2, available source boxes, parsed table, settings, insufficient-evidence refusal, history reopening, and browser errors. A recording over 60 seconds fails with an actionable retry message; it never accelerates inference to fit a target length.
 
-MP4s, VTT/SRT, raw browser footage, subtitle source, and the full local recording receipt are written to ignored `.data/launch/`. The English/Traditional Chinese GIFs, poster, bilingual covers, and public recording receipt are repository assets. Re-rendering a cover does not make model calls. Inspect the assets before committing; publish the MP4 and subtitle files as release attachments rather than adding raw footage/build caches to Git.
+MP4s, raw browser footage, ASS rendering files, and the full local recording receipt are written to ignored `.data/launch/`. The English/Traditional Chinese GIFs, poster, bilingual covers, public receipts, and editable VTT/SRT tutorial text are repository assets. Inspect the assets before committing; keep video binaries, raw footage, and build caches out of Git. The v0.1.0 release preserves the original preview recording; the current README uses the instructional revision.
+
+To edit subtitles over existing public footage, change [demo-tutorial.json](media/demo-tutorial.json) and run:
+
+```bash
+node scripts/render_demo.mjs
+```
+
+This uses `.data/launch/live-recording.webm` with [demo-recording.json](media/demo-recording.json), exports both captioned videos and subtitle files, updates GIFs, and writes [demo-tutorial-render.json](media/demo-tutorial-render.json). It adds **zero model queries** and preserves the original recording receipt. A fresh clone needs `capture_demo.mjs` first to produce raw footage; run `render_demo.mjs` afterward to refresh the render receipt before publishing. Review all nine scenes in both languages. Each scene has a step title, action, and note in a separate caption area; empty space below the text keeps the native player controls away from the tutorial at desktop README width. The [FFmpeg ASS filter](https://ffmpeg.org/ffmpeg-filters.html#ass) burns in the text, so playback needs no subtitle switch.
 
 ## Keep the README demo playable
 
-Each README embeds its complete captioned recording with GitHub's native video player. The stable public attachment URLs and file hashes are in [demo-embeds.json](media/demo-embeds.json); the original recording's inference evidence remains in [demo-recording.json](media/demo-recording.json). The English and Chinese MP4 attachments were checked byte-for-byte against the actual recording. GitHub renders the player; a local Markdown viewer may display the URL instead.
+Each README embeds its complete instructional recording with GitHub's native video player. The stable public attachment URLs and file hashes are in [demo-embeds.json](media/demo-embeds.json); the original recording's inference evidence remains in [demo-recording.json](media/demo-recording.json). The English and Chinese MP4 attachments are checked byte-for-byte against the rendered tutorial files. [The render receipt](media/demo-tutorial-render.json) distinguishes this caption revision from a fresh model run. GitHub renders the player; a local Markdown viewer may display the URL instead.
 
 To replace a recording, review the new public footage first, then attach both videos to the relevant PR with **GitHub CLI 2.99+** (`--attach`; verified with 2.102.0):
 

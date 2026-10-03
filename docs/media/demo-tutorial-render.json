@@ -1,11 +1,16 @@
 {
+  "rendered_at": "2026-10-03T16:30:40.415Z",
+  "workspace_base_commit": "5fe5b2618fcbfeff2503e5660b5bc526cfb9232d",
+  "renderer_sha256": "55bb4b87835e5d4aa799824858f525bd3e00c2dc01484ec119ddb1e05939da96",
   "source_recording": "demo-recording.json",
+  "source_recording_sha256": "1c24b7aae190d644c9fecc6883ed284f6bb23914a7d82aa9c1ef038131455e96",
+  "raw_recording_sha256": "fed6630c865abba09a16c6433cdd03545303bf9d21671ad6523c209ca5a1845a",
   "tutorial_source": "demo-tutorial.json",
-  "render_receipt": "demo-tutorial-render.json",
-  "attachment_pr": "https://github.com/KuoFengYuan/RAGGlass/pull/4",
-  "videos": {
+  "tutorial_sha256": "18880a8f5363ae7d41c8ccb4427b3916c1620bd18d2e1a7109269ee3d8e381ce",
+  "live_queries_added": 0,
+  "playback_speed": 1,
+  "media": {
     "en": {
-      "url": "https://github.com/user-attachments/assets/423a4a53-f2c7-4657-8411-8dbdd6b5968e",
       "filename": "ragglass-demo.mp4",
       "duration_seconds": 54.75,
       "codec_name": "h264",
@@ -16,7 +21,6 @@
       "sha256": "f419e5340065389a4e76a9748551569a27463ecd74c416befe1db7b1ccbe9250"
     },
     "zh-TW": {
-      "url": "https://github.com/user-attachments/assets/a361e0f0-72f0-41f4-9ebc-93655a0a91b7",
       "filename": "ragglass-demo.zh-TW.mp4",
       "duration_seconds": 54.75,
       "codec_name": "h264",

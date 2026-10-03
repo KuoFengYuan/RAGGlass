@@ -3,6 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { exportDemoMedia } from './demo_media.mjs'
 import {
   publicWorkspace,
   root,
@@ -188,95 +189,6 @@ try {
   }
 }
 const rawStart = (start - recordingClock) / 1000
-const clock = (seconds, separator = '.') => {
-  const milliseconds = Math.round(seconds * 1000)
-  const h = Math.floor(milliseconds / 3600000)
-  const m = Math.floor(milliseconds / 60000) % 60
-  const s = Math.floor(milliseconds / 1000) % 60
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}${separator}${String(milliseconds % 1000).padStart(3, '0')}`
-}
-for (const language of ['en', 'zh-TW']) {
-  const suffix = language === 'en' ? '' : '.zh-TW'
-  const cues = scenes.map((s, index) => {
-    const end = scenes[index + 1]?.start_seconds ?? duration
-    return { start: s.start_seconds, end, text: s[language] }
-  })
-  await writeFile(
-    `${output}/ragglass-demo${suffix}.srt`,
-    cues
-      .map((c, i) => `${i + 1}\n${clock(c.start, ',')} --> ${clock(c.end, ',')}\n${c.text}\n`)
-      .join('\n'),
-  )
-  await writeFile(
-    `${output}/ragglass-demo${suffix}.vtt`,
-    'WEBVTT\n\n' + cues.map((c) => `${clock(c.start)} --> ${clock(c.end)}\n${c.text}\n`).join('\n'),
-  )
-  const assTime = (seconds) => clock(seconds).slice(1, -1)
-  const subtitle =
-    `[Script Info]\nScriptType: v4.00+\nPlayResX: 1440\nPlayResY: 1000\nWrapStyle: 0\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Noto Sans CJK TC,28,&H00F5EEE6,&H00F5EEE6,&H00232823,&H00232823,0,0,0,0,100,100,0,0,1,0,0,2,50,50,25,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n` +
-    cues
-      .map((c) => `Dialogue: 0,${assTime(c.start)},${assTime(c.end)},Default,,0,0,0,,${c.text}`)
-      .join('\n')
-  await writeFile(`${output}/captions${suffix}.ass`, subtitle)
-  execFileSync(
-    'ffmpeg',
-    [
-      '-y',
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-ss',
-      rawStart.toFixed(3),
-      '-i',
-      'live-recording.webm',
-      '-t',
-      duration.toFixed(3),
-      '-vf',
-      `pad=iw:ih+100:0:0:color=0x232823,ass=captions${suffix}.ass`,
-      '-c:v',
-      'libx264',
-      '-preset',
-      'fast',
-      '-crf',
-      '23',
-      '-pix_fmt',
-      'yuv420p',
-      '-r',
-      '24',
-      '-an',
-      '-movflags',
-      '+faststart',
-      '-threads',
-      '4',
-      `ragglass-demo${suffix}.mp4`,
-    ],
-    { cwd: output, stdio: 'inherit' },
-  )
-}
-const clipStart = Math.max(0, scenes.find((s) => s.id === 'citation').start_seconds - 1)
-for (const suffix of ['', '.zh-TW']) {
-  execFileSync(
-    'ffmpeg',
-    [
-      '-y',
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-ss',
-      clipStart.toFixed(3),
-      '-i',
-      `ragglass-demo${suffix}.mp4`,
-      '-t',
-      '10',
-      '-filter_complex',
-      '[0:v]fps=8,scale=864:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=bayer:bayer_scale=3',
-      '-loop',
-      '0',
-      `${images}/demo${suffix}.gif`,
-    ],
-    { cwd: output, stdio: 'inherit' },
-  )
-}
 const report = {
   recorded_at: new Date().toISOString(),
   source_commit: execFileSync('git', ['rev-parse', 'HEAD'], {
@@ -301,38 +213,12 @@ const report = {
     model_metrics: r.model_metrics,
   })),
 }
-report.media = Object.fromEntries(
-  ['en', 'zh-TW'].map((language) => {
-    const suffix = language === 'en' ? '' : '.zh-TW'
-    const info = JSON.parse(
-      execFileSync(
-        'ffprobe',
-        [
-          '-v',
-          'error',
-          '-show_entries',
-          'format=duration:stream=codec_name,width,height,pix_fmt',
-          '-of',
-          'json',
-          `ragglass-demo${suffix}.mp4`,
-        ],
-        { cwd: output, encoding: 'utf8' },
-      ),
-    )
-    return [
-      language,
-      {
-        filename: `ragglass-demo${suffix}.mp4`,
-        duration_seconds: Number(info.format.duration),
-        ...info.streams[0],
-      },
-    ]
-  }),
-)
+report.media = await exportDemoMedia(report, output, images)
+report.tutorial_source = 'demo-tutorial.json'
 await writeFile(`${output}/recording.json`, JSON.stringify(report, null, 2) + '\n')
 const publicMedia = fileURLToPath(new URL('docs/media/', root))
 await mkdir(publicMedia, { recursive: true })
 await writeFile(`${publicMedia}/demo-recording.json`, JSON.stringify(report, null, 2) + '\n')
 console.log(
-  `Exported English and Traditional Chinese captioned videos (${duration.toFixed(2)}s), VTT/SRT, and a 10s real-time GIF.`,
+  `Exported English and Traditional Chinese captioned videos (${duration.toFixed(2)}s), step-by-step VTT/SRT, and a 10s real-time GIF.`,
 )
