@@ -1,6 +1,9 @@
 {
   "version": 1,
-  "languages": ["en", "zh-TW"],
+  "languages": [
+    "en",
+    "zh-TW"
+  ],
   "scenes": {
     "intro": {
       "en": {
@@ -96,6 +99,30 @@
         "title": "步驟 7／重新查看歷史紀錄",
         "action": "開啟「Run history」選擇問題，重新查看答案與證據。",
         "note": "問題、答案、證據與設定保存在本機，重啟後仍可查看。"
+      }
+    },
+    "document_cleanup": {
+      "en": {
+        "title": "Step 8 / Clean up PDFs",
+        "action": "Open Document library → select the PDF → Delete selected.",
+        "note": "Confirm removal; saved history remains with disabled source links."
+      },
+      "zh-TW": {
+        "title": "步驟 8／清理 PDF",
+        "action": "開啟「Document library」勾選文件，點「Delete selected」。",
+        "note": "確認後移除 PDF；歷史保留，已刪除原檔的來源連結停用。"
+      }
+    },
+    "history_cleanup": {
+      "en": {
+        "title": "Step 9 / Clear run history",
+        "action": "Open Run history → Clear all → Delete permanently.",
+        "note": "PDF and history cleanup are independent; neither can be undone."
+      },
+      "zh-TW": {
+        "title": "步驟 9／清空執行紀錄",
+        "action": "開啟「Run history」，點「Clear all」，確認「Delete permanently」。",
+        "note": "PDF 與歷史可獨立清理，永久刪除後無法復原。"
       }
     },
     "closing": {

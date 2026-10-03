@@ -16,6 +16,8 @@ process.env.PLAYWRIGHT_BROWSERS_PATH ??= fileURLToPath(new URL('.cache/playwrigh
 const require = createRequire(new URL('frontend/package.json', root))
 const { chromium, expect } = require('@playwright/test')
 const baseURL = process.env.RAGGLASS_BASE_URL || 'http://127.0.0.1:8000'
+if (process.env.RAGGLASS_DEMO_CLEANUP !== '1')
+  throw new Error('This tutorial deletes its public fixture and history. Use a disposable workspace and set RAGGLASS_DEMO_CLEANUP=1.')
 execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' })
 const preflight = await publicWorkspace(baseURL)
 const output = fileURLToPath(new URL('.data/launch/', root))
@@ -168,17 +170,53 @@ try {
   await page.getByLabel('Question', { exact: true }).scrollIntoViewIfNeeded()
   await hold(2)
 
+  scene('document_cleanup',
+    'Search/select the PDF in Document library; confirm Delete selected.',
+    '在文件庫搜尋並勾選 PDF，確認刪除所選文件。')
+  await page.getByTestId('open-library').click()
+  const library = page.getByRole('dialog', { name: 'Document library', exact: true })
+  await library.getByLabel('Search filenames').fill('ragglass-field-guide')
+  await library.getByLabel('Select ragglass-field-guide.pdf', { exact: true }).check()
+  await hold(3)
+  await library.getByTestId('delete-selected').click()
+  await expect(page.getByRole('dialog', { name: 'Confirm cleanup' })).toContainText('Saved run history remains')
+  await hold(3)
+  await page.getByTestId('confirm-cleanup').click()
+  await expect(library.locator('.document-item')).toHaveCount(0)
+  await library.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(page.locator('canvas')).not.toBeVisible()
+  await expect(page.getByTestId('answer')).toContainText('30 MB')
+  await expect(page.locator('.citation-button').first()).toBeDisabled()
+  await page.getByTestId('answer').scrollIntoViewIfNeeded()
+  await hold(4)
+
+  scene('history_cleanup',
+    'Clear all run history separately; PDFs and indexes are independent.',
+    '獨立清空全部執行紀錄；PDF 與索引是另外的清理範圍。')
+  await page.getByTestId('open-history').click()
+  const history = page.getByRole('dialog', { name: 'Run history', exact: true })
+  await expect(history.locator('.history-item').first()).toContainText('Original PDF deleted')
+  await hold(3)
+  await history.getByTestId('clear-all').click()
+  await expect(page.getByRole('dialog', { name: 'Confirm cleanup' })).toContainText('PDFs and their indexes remain')
+  await hold(3)
+  await page.getByTestId('confirm-cleanup').click()
+  await expect(history.locator('.history-item')).toHaveCount(0)
+  await history.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(page.getByTestId('answer')).not.toBeVisible()
+  await hold(3)
+
   scene(
     'closing',
     'Try RAGGlass on GitHub. Share a reproducible issue; star it if it helps your work.',
     '到 GitHub 試用 RAGGlass，回報可重現的問題；有幫助也歡迎 Star。',
   )
-  await hold(Math.max(4, 55 - (performance.now() - start) / 1000))
+  await hold(Math.max(4, 85 - (performance.now() - start) / 1000))
   duration = (performance.now() - start) / 1000
   if (errors.length) throw new Error(errors.join('\n'))
-  if (duration > 60)
+  if (duration > 95)
     throw new Error(
-      `Recording took ${duration.toFixed(2)}s; rerun with the model warm to stay under 60s.`,
+      `Recording took ${duration.toFixed(2)}s; rerun in a fresh disposable workspace with the model warm to stay under 95s.`,
     )
 } finally {
   await context.close()
