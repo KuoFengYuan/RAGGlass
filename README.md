@@ -4,32 +4,59 @@
 
 **English** | [繁體中文](README.zh-TW.md)
 
-A locally deployable diagnostic workbench for engineers building document RAG. Trace an answer back through retrieved evidence and parsed content to the original PDF. Inspect the exact configuration and measured stage timings, then reopen documents and runs after a restart.
+[![Checks](https://github.com/KuoFengYuan/RAGGlass/actions/workflows/checks.yml/badge.svg)](https://github.com/KuoFengYuan/RAGGlass/actions/workflows/checks.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-a44b30)](LICENSE)
 
-The first milestone implements native-text PDF ingestion with Docling, multilingual dense retrieval with Qdrant, and grounded answers from an independent model HTTP service. The application uses real embeddings and model inference; there are no canned demo answers. The original [sample PDF](examples/ragglass-field-guide.pdf) describes a fictional Cedar pilot and includes a simple table and [six test questions](examples/questions.json), including one the document cannot answer.
+**Debug document RAG by seeing the original PDF, retrieved evidence, and model answer together.**
+
+RAGGlass is a local, open-source workbench for engineers building PDF RAG. Inspect a missing table fact, irrelevant retrieval, or an unsupported answer by tracing the actual document → parse → chunks → evidence → answer path.
+
+- **Trace citations:** click a validated source link to its original PDF page.
+- **Inspect parsing and retrieval:** compare Docling output and scored passages with the document.
+- **Reproduce a run:** retain prompts, settings, evidence, answers, and measured timings after restarts.
+- **Use your model service:** real embeddings and live Ollama or compatible HTTP inference.
+
+[Quick start](#quick-start) · [Illustrated usage](docs/USAGE.md) · [Deployment](docs/DEPLOYMENT.md) · [Model choices](#recommended-ollama-models)
+
+If RAGGlass is useful for your RAG work, **[⭐ give it a star](https://github.com/KuoFengYuan/RAGGlass)**.
 
 ![Document workbench showing the original PDF, answer, and retrieved evidence](docs/images/workbench.png)
 
-*Actual interface with the fictional CC0 fixture and a live `gemma4:e4b` answer; timings shown belong to that execution.*
+*Actual interface, fictional CC0 sample, live `gemma4:e4b` answer. The source button opens page 2; durations belong to that execution.*
+
+**First release:** native-text PDF ingestion with Docling, multilingual dense retrieval with Qdrant, validated source IDs, and persistent local history. The [original sample PDF](examples/ragglass-field-guide.pdf) includes a table and [six test questions](examples/questions.json), including one it cannot answer. Automated diagnosis, hybrid search, reranking, and before/after quality comparisons are planned; they are not implemented in this release.
+
+**Stack:** Vue 3 / TypeScript / PDF.js · FastAPI · Docling · Qdrant · SQLite · independent model HTTP API.
+
+## Documentation
+
+| Guide | What it covers |
+| --- | --- |
+| [Illustrated usage](docs/USAGE.md) | Upload, status, questions, citations, parsed content, history, and five actual UI views. |
+| [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
+| [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |
+| [Contributing](CONTRIBUTING.md) | Forks, task branches, checks, bilingual PRs, and licensing. |
 
 ## Requirements
 
-- Linux/macOS with Python **3.12**, Node.js **20.19+**, npm, and Docker Compose. The verified host uses Ubuntu 24.04, system Python 3.12.3, Node 20.20.2, and Docker 29.3.0.
+- Linux with Python **3.12**, Node.js **20.19+**, npm, and Docker Compose. The verified host uses Ubuntu 24.04, system Python 3.12.3, Node 20.20.2, and Docker 29.3.0.
 - A reachable Ollama or OpenAI-compatible model API. The verified installation reuses an existing local Ollama service and `gemma4:e4b`; the app does not start, upgrade, or manage that service.
 - Internet access for first-time dependency and Docling/E5 model downloads. After downloads, parsing and embedding remain local. Point the model endpoint to a local service for local inference.
 - The default Docling parser and `intfloat/multilingual-e5-small` embedding run on CPU with four threads. GPU use belongs to the separate model service. No system driver changes are required. The measured host has two NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition GPUs; see [measured verification](docs/MILESTONE.md) for evidence, limits, and timings.
 
-## Local setup
+## Quick start
 
-From the repository root:
+For a fresh checkout, with the prerequisites and model service available:
 
 ```bash
+git clone https://github.com/KuoFengYuan/RAGGlass.git
+cd RAGGlass
 # Project-local uv bootstrap; uses the existing Python with pip.
 python3 -m pip install --target .tools uv==0.8.22
 export UV_CACHE_DIR="$PWD/.cache/uv"
 .tools/bin/uv sync --frozen --python 3.12
 npm --prefix frontend ci
-cp .env.example .env
+if [ ! -f .env ]; then cp .env.example .env; fi
 docker compose up -d qdrant
 bash scripts/dev.sh
 ```
@@ -186,3 +213,9 @@ The adapters are `parser.py`, `embedding.py`, `retrieval.py`, and `llm.py`; `pip
 Native-text PDFs only; OCR/VLM, hybrid retrieval, reranking, formal quality metrics, a diagnostic agent, and embedding tuning are not implemented. Citation validation guarantees source membership and document/page mapping; it does not establish semantic entailment of every answer. Model refusal is prompt-based, so broad adversarial reliability still requires evaluation. This is a single-user, loopback workbench, with no authentication, distributed job queue, multi-user isolation, or production hardening. Restarted in-flight work is marked failed and can be retried rather than silently resumed. Remote vLLM, SSH client networking, scanned documents, and large corpora have not been validated on this installation.
 
 The suggested next milestone is a repeatable before/after evaluation workflow: fixed question sets, retrieval/answer metrics, run comparisons, and a replaceable hybrid retriever/reranker. See [milestone details](docs/MILESTONE.md), [contributing](CONTRIBUTING.md), and [agent rules](AGENTS.md). English-first PRs include a Traditional Chinese summary; never commit private uploads or credentials.
+
+## License and contributions
+
+RAGGlass is open source. Unless otherwise noted, the application code and project documentation are released under the [MIT License](LICENSE). The original sample PDF and its generator remain [CC0 1.0](examples/README.md). Third-party dependencies and model weights retain their respective licenses; weights are not distributed in this repository.
+
+Issues and pull requests are welcome. See [Contributing](CONTRIBUTING.md) for setup, branch naming, validation, and the bilingual PR workflow. Use the public fixture or a sanitized reproduction when reporting a problem; keep private documents and credentials out of issues and commits.

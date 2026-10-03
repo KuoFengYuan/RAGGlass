@@ -95,6 +95,10 @@ The real-stack reproduction commands are `.venv/bin/python scripts/verify_e2e.py
 
 Local repository workflow: initial governance commit on `main`, implementation on `Feature/first-rag-milestone`, English commit subject and bilingual PR draft. At initial milestone completion, the owner had deferred publication and no remote PR existed. The owner subsequently authorized the first GitHub delivery together with the layout and model-guide update. Follow [AGENTS.md](../AGENTS.md) for subsequent push/PR/check/review/merge work.
 
+The owner then requested an open-source release. A canonical MIT license was added for application code/documentation, while the original fixture/generator retain CC0. Both READMEs and contribution guides now explain licensing and the fork/PR workflow. GitHub visibility is changed only within this explicitly authorized release.
+
+The release documentation adds full English/Traditional Chinese usage and deployment guides, ten inspected actual UI captures, and a guarded screenshot reproduction script. `node scripts/capture_ui_docs.mjs` completed with live English and Chinese sample answers; query totals were 5,153.27 ms and 885.26 ms respectively. `systemd-analyze --user verify deploy/ragglass.service` passed. The existing API was left running; the optional user service, remote SSH client, and full backup/restore were not activated or claimed as tested. README purpose/features/quick-start links and the GitHub About/topics support discovery without claiming stars or exposure results.
+
 ## Limits and next milestone
 
 Only this three-page native-text fixture and the explicit contract inputs were evaluated. Live vLLM/OpenAI service integration, an SSH client on another machine, scanned/image-only PDFs, large corpora, concurrent multi-user traffic, adversarial claim entailment, and production hardening remain unverified or outside scope. Source boxes are Docling item bounds rather than exact phrase spans. Citation membership cannot establish semantic correctness by itself. There is no distributed job queue or resumable parsing; interrupted jobs become actionable failures.

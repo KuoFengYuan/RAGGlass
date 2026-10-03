@@ -2,6 +2,7 @@
 name = "ragglass"
 version = "0.1.0"
 description = "See inside your RAG. A local document RAG diagnostic workbench."
+license = "MIT"
 requires-python = ">=3.12,<3.13"
 dependencies = [
   "fastapi==0.119.0",

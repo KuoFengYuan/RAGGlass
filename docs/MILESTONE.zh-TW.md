@@ -95,6 +95,10 @@ SQLite 重開契約已通過，隨後 `scripts/verify_restart.py --api-pid 27587
 
 本機 Git 流程：先在 `main` 建立治理初始提交，實作於 `Feature/first-rag-milestone`，使用英文提交及雙語 PR 草稿。初始里程碑完成時，使用者延後 GitHub 發布，因此當時沒有遠端 PR；後續已授權將版面與模型指南更新一起進行首次 GitHub 交付。後續 push／PR／checks／reviews／merge 請依 [AGENTS.md](../AGENTS.zh-TW.md)。
 
+使用者隨後要求開源發布，已加入程式／文件的標準 MIT 授權；原創範例／產生程式維持 CC0。中英文 README 與貢獻說明均加入授權與 fork／PR 流程，GitHub 公開設定屬於本次明確授權的交付。
+
+發布文件新增完整中英文使用／部署指南、十張已逐張檢查的實際介面圖，以及限定公開範例的圖片重現程式。`node scripts/capture_ui_docs.mjs` 完成真實英／中文問答，總耗時分別為 5,153.27 ms 與 885.26 ms。`systemd-analyze --user verify deploy/ragglass.service` 通過；保留既有 API，未啟用選用 user service、遠端 SSH 用戶端或完整備份／還原，也未將它們宣稱為已驗證。README 用途／功能／快速入口與 GitHub About／topics 便於理解及搜尋，不宣稱實際 Star 或曝光成果。
+
 ## 限制與下一里程碑
 
 目前只評估這份三頁原生文字範例與明確的契約輸入。尚未驗證或不在範圍內：真實 vLLM／OpenAI 服務、另一台電腦的 SSH 用戶端、掃描／純圖片 PDF、大規模 corpus、多使用者併發、對抗性語意支持檢查與正式部署強化。來源座標為 Docling 內容區塊範圍，不是精確句子邊界；引用存在不代表答案語意必然正確。沒有分散式工作佇列或解析續跑，中斷工作會標成可重試的失敗。

@@ -4,32 +4,59 @@
 
 [English](README.md) | **繁體中文**
 
-可在地端部署的文件 RAG 診斷工作台，提供給開發文件 RAG 的工程師。從回答、檢索證據、解析內容追查回原始 PDF，檢視完整設定及各階段實測耗時；重啟服務後仍可開啟文件與執行紀錄。
+[![Checks](https://github.com/KuoFengYuan/RAGGlass/actions/workflows/checks.yml/badge.svg)](https://github.com/KuoFengYuan/RAGGlass/actions/workflows/checks.yml)
+[![MIT License](https://img.shields.io/badge/license-MIT-a44b30)](LICENSE)
 
-第一里程碑以 Docling 處理原生文字 PDF、Qdrant 提供多語向量檢索，並透過獨立的模型 HTTP 服務生成有引用的回答。正式流程使用真實 embedding 與模型推論，沒有固定 demo 答案。[原創範例 PDF](examples/ragglass-field-guide.pdf) 描述虛構 Cedar 計畫，含簡單表格與[六個問題](examples/questions.json)，包含文件無法回答的問題。
+**把原始 PDF、檢索證據與模型回答放在一起，追查文件 RAG 的問題。**
 
-![工作台並排顯示原始 PDF、答案與檢索證據](docs/images/workbench.png)
+RAGGlass 是給 PDF RAG 工程師的地端開源工作台。從實際「文件 → 解析 → 切塊 → 證據 → 答案」追查遺失的表格事實、不相關檢索或缺乏支持的回答。
 
-*英文介面的實際截圖，使用虛構 CC0 範例及即時 `gemma4:e4b` 回答；圖中耗時屬於該次執行。*
+- **追查引用：**點擊已驗證來源連結，跳回原始 PDF 頁面。
+- **檢查解析與檢索：**將 Docling 產物、片段分數與原文對照。
+- **重現執行：**保存 prompt、設定、證據、答案與實測耗時，重啟後仍可查看。
+- **連接自己的模型服務：**使用真實 embedding 與即時 Ollama／相容 HTTP 推論。
+
+[快速啟動](#快速啟動) · [圖解操作](docs/USAGE.zh-TW.md) · [部署指南](docs/DEPLOYMENT.zh-TW.md) · [模型建議](#建議的-ollama-模型)
+
+對你的 RAG 工作有幫助，歡迎 **[⭐ Star 支持](https://github.com/KuoFengYuan/RAGGlass)**。
+
+![工作台並排呈現原始 PDF、答案與檢索證據](docs/images/workbench.zh-TW.png)
+
+*實際介面、虛構 CC0 範例、即時 `gemma4:e4b` 回答；來源連結開啟第 2 頁，耗時屬於該次執行。*
+
+**第一版：**Docling 原生文字 PDF 處理、Qdrant 多語向量檢索、引用 ID 驗證及本機持久紀錄。[原創範例 PDF](examples/ragglass-field-guide.pdf) 含表格與[六個問題](examples/questions.json)，包含文件無法回答的問題。自動診斷、混合檢索、reranking 與修改前後品質比較屬於後續規劃，此版尚未實作。
+
+**技術：**Vue 3／TypeScript／PDF.js · FastAPI · Docling · Qdrant · SQLite · 獨立模型 HTTP API。
+
+## 文件導覽
+
+| 指南 | 內容 |
+| --- | --- |
+| [圖解操作](docs/USAGE.zh-TW.md) | 上傳、狀態、問答、引用、解析、歷史及五種實際介面。 |
+| [安裝與部署](docs/DEPLOYMENT.zh-TW.md) | 環境、模型、Qdrant、開發／正式模式、選用 user service、SSH、備份、更新與排錯。 |
+| [實測里程碑](docs/MILESTONE.zh-TW.md) | 真實模型／瀏覽器／重啟結果、硬體、耗時與限制。 |
+| [貢獻流程](CONTRIBUTING.zh-TW.md) | Fork、任務分支、檢查、雙語 PR 與授權。 |
 
 ## 環境需求
 
-- Linux/macOS、Python **3.12**、Node.js **20.19+**、npm 與 Docker Compose。實測主機為 Ubuntu 24.04、系統 Python 3.12.3、Node 20.20.2、Docker 29.3.0。
+- Linux、Python **3.12**、Node.js **20.19+**、npm 與 Docker Compose。實測主機為 Ubuntu 24.04、系統 Python 3.12.3、Node 20.20.2、Docker 29.3.0。
 - 可連線的 Ollama 或 OpenAI 相容模型 API。本次重用既有本機 Ollama 及 `gemma4:e4b`；應用不會啟動、升級或管理該模型服務。
 - 首次安裝依賴與下載 Docling／E5 模型需要網路。下載後解析與 embedding 在本機執行；模型 endpoint 指向本機服務即可本機推論。
 - 預設 Docling 與 `intfloat/multilingual-e5-small` embedding 採 CPU、四個執行緒，GPU 由獨立模型服務使用。無須修改系統驅動。實測主機有兩張 NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition，詳細驗證、限制與耗時見[實測紀錄](docs/MILESTONE.zh-TW.md)。
 
-## 本機設定
+## 快速啟動
 
-在專案根目錄執行：
+全新 checkout，且已備妥必要環境及模型服務時：
 
 ```bash
+git clone https://github.com/KuoFengYuan/RAGGlass.git
+cd RAGGlass
 # 使用既有具 pip 的 Python，將 uv 安裝在專案內。
 python3 -m pip install --target .tools uv==0.8.22
 export UV_CACHE_DIR="$PWD/.cache/uv"
 .tools/bin/uv sync --frozen --python 3.12
 npm --prefix frontend ci
-cp .env.example .env
+if [ ! -f .env ]; then cp .env.example .env; fi
 docker compose up -d qdrant
 bash scripts/dev.sh
 ```
@@ -186,3 +213,9 @@ Adapter 分別是 `parser.py`、`embedding.py`、`retrieval.py`、`llm.py`，由
 目前只支援原生文字 PDF，尚未加入 OCR/VLM、混合檢索、reranker、正式品質指標、診斷 Agent 或 embedding 微調。引用驗證保證來源屬於本次檢索、且映射到文件／頁碼，不保證每句答案都受到語意支持。拒答依賴 prompt，廣泛對抗可靠性仍須評測。這是單人、loopback 工作台，沒有登入、分散式工作佇列、多租戶隔離或正式部署強化。重啟時進行中的作業標為失敗，供重試，不會悄悄續跑。本次未驗證遠端 vLLM、SSH 用戶端網路、掃描文件與大規模 corpus。
 
 建議下一里程碑建立可重現的修改前後評測：固定問題集、檢索／回答指標、run 比較，以及可替換的混合檢索與 reranker。詳見[里程碑紀錄](docs/MILESTONE.zh-TW.md)、[貢獻流程](CONTRIBUTING.zh-TW.md)與 [Agent 規則](AGENTS.zh-TW.md)。PR 以英文優先並附繁體中文摘要，不可提交私人文件或憑證。
+
+## 授權與貢獻
+
+RAGGlass 是開源專案。除另有標示外，應用程式碼與專案文件採 [MIT 授權](LICENSE)；原創範例 PDF 與產生程式維持 [CC0 1.0](examples/README.zh-TW.md)。第三方依賴及模型權重各自遵循原授權，repository 不散布模型權重。
+
+歡迎提出 issue 與 PR。環境設定、分支命名、驗證及雙語 PR 流程請見[貢獻說明](CONTRIBUTING.zh-TW.md)。回報問題請使用公開範例或去除敏感內容的重現資料，不把私人文件與憑證放進 issue 或提交。

@@ -6,6 +6,10 @@ The document inspection interface uses a horizontal masthead, PDF page rail, adj
 
 Includes independent FastAPI parser/embedding/retrieval/model adapters, pinned uv/npm dependencies, loopback Qdrant v1.15.5 Compose, a publishable three-page CC0 fixture, six questions, bilingual AGENTS/contribution rules, CI, and measured milestone evidence. Existing model services and other GPU workloads are preserved.
 
+The owner authorized a public open-source release. Application code/documentation use the MIT License; the original fixture/generator keep CC0. Both READMEs and contributing guides explain the licenses and external contribution workflow.
+
+The illustrated English/Traditional Chinese usage and deployment guides cover the complete workflow, setup, independent model service, startup modes, optional systemd user unit, SSH, persistence/backup, updates, and troubleshooting. Ten actual bilingual screens were captured through live sample inference. A capture helper restricts publication to the fixture-only workspace. The README front page explains the purpose, current capabilities, quick-start/documentation links, and Star entry.
+
 ## Validation
 
 - [x] `bash scripts/check.sh`: Ruff lint/format, **11 passing contract/API tests**, Prettier, TypeScript/Vite, bilingual delivery-file checks.
@@ -13,7 +17,7 @@ Includes independent FastAPI parser/embedding/retrieval/model adapters, pinned u
 - [x] `npm --prefix frontend run test:e2e`: **2 real Chrome tests passed**, 6.4 s.
 - [x] `RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e`: **2 real Chrome tests passed**, 4.9 s. Includes live answer, PDF/page highlight, parsed chunks, history, bilingual persistence, document catalog, Escape/focus restoration, invalid retrieval input, and resized 390-pixel mobile layout.
 - [x] Initial milestone also verified actual API/Qdrant restart persistence, a Chinese question against the English PDF, and real retrieval with an unreachable model endpoint (`verify_restart.py`, `verify_failure.py`; see the bilingual milestone record). These disruptive checks were not repeated for the UI/docs-only update.
-- [x] Both documentation languages updated with official model sources checked on 2026-10-03.
+- [x] Both documentation languages updated with official model sources checked on 2026-10-03. `node scripts/capture_ui_docs.mjs` captured ten actual bilingual views using two live queries; `systemd-analyze --user verify deploy/ragglass.service` passed. The user service was not activated and full backup/restore was not executed.
 - [x] Working changes and local Git history checked for secrets, private uploads, caches, model weights, and build output. Only the original public fixture and its selected UI screenshot are included.
 
 Contract inputs and the OpenAI HTTP fixture are explicitly synthetic. The sample facts are fictional; native Ollama inference, PDF rendering, retrieval, and the recorded UI screenshot are real. GPU snapshots include other workloads; no peak memory or candidate-model benchmark is claimed. Hosted CI runs contracts/build/docs; real model evidence comes from the local stack.
@@ -25,6 +29,8 @@ Native-text PDFs only. Single-user loopback service with serialized ingestion an
 Next milestone: fixed bilingual evaluation sets and before/after run comparisons, then replaceable hybrid retrieval and reranking. Embedding migration requires a separate evaluated adapter, fresh vectors, and calibrated thresholds.
 
 ## 繁體中文摘要
+
+依使用者要求公開為開源專案：程式／文件採 MIT，原創範例／產生程式維持 CC0，兩種語言皆提供授權與外部貢獻方式。
 
 首次交付可執行的 RAGGlass：PDF 上傳／解析／索引、真實模型問答、後端驗證引用跳原頁，以及可持久重開的文件／執行紀錄。版面改為頂部導覽、原始文件閱讀區與答案／證據檢視面板，提供文件庫、歷史對話框與手機垂直配置。
 
