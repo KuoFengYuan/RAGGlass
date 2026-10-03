@@ -23,9 +23,9 @@ If RAGGlass is useful for your RAG work, **[⭐ give it a star](https://github.c
 
 ## Watch the demo
 
-https://github.com/user-attachments/assets/423a4a53-f2c7-4657-8411-8dbdd6b5968e
+https://github.com/user-attachments/assets/5ebfca43-fd95-4244-a178-7e5f174f51a6
 
-**Press Play above for the complete 54.8-second tutorial with English instructions inside the video.** Each step names what to click and what to check; pause or seek to follow along. Learn to upload a PDF, ask a question, follow a citation, inspect parsing/settings, check a refusal, and reopen history. [Follow the seven-step guide](docs/DEMO.md).
+**Press Play above for the complete 84.7-second tutorial with English instructions inside the video.** Each step names what to click and what to check; pause or seek to follow along. Learn to upload a PDF, ask a question, follow a citation, inspect parsing/settings, check a refusal, reopen history, and clean up PDFs/records independently. [Follow the nine-step guide](docs/DEMO.md).
 
 *Actual recorded inference at normal speed, using the fictional CC0 sample and its existing index. [Trace the table answer](docs/CASE_STUDY.md) · [Recording receipt](docs/media/demo-recording.json)*
 
@@ -41,7 +41,7 @@ See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0
 | --- | --- |
 | [Illustrated usage](docs/USAGE.md) | Upload, status, questions, citations, parsed content, history, and five actual UI views. |
 | [Cleanup guide](docs/CLEANUP.md) | Search/filter catalogs, delete PDFs or records, missing-source behavior, and cleanup verification. |
-| [Video tutorial](docs/DEMO.md) | Seven numbered steps, scene times, and instructional subtitles already visible in the video. |
+| [Video tutorial](docs/DEMO.md) | Nine numbered steps, scene times, and instructional subtitles already visible in the video. |
 | [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
 | [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |
 | [Table/source case study](docs/CASE_STUDY.md) | Follow a real answer to page 2 and inspect a question the document cannot answer. |

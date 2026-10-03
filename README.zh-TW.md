@@ -23,9 +23,9 @@ RAGGlass 是給 PDF RAG 工程師的地端開源工作台。從實際「文件 �
 
 ## 觀看操作示範
 
-https://github.com/user-attachments/assets/a361e0f0-72f0-41f4-9ebc-93655a0a91b7
+https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017
 
-**直接按上方播放，觀看完整 54.8 秒教學；繁體中文操作字幕已嵌入影片。** 每個步驟都說明要點哪個按鈕、檢查什麼，可暫停或拖曳進度跟著操作。學習上傳、提問、引用跳頁、解析與設定、無證據拒答及重新查看歷史。[查看七步文字教學](docs/DEMO.zh-TW.md)。
+**直接按上方播放，觀看完整 84.7 秒教學；繁體中文操作字幕已嵌入影片。** 每個步驟都說明要點哪個按鈕、檢查什麼，可暫停或拖曳進度跟著操作。學習上傳、提問、引用跳頁、解析與設定、無證據拒答、重新查看歷史，以及獨立清理 PDF／執行紀錄。[查看九步文字教學](docs/DEMO.zh-TW.md)。
 
 *正常速度的真實模型錄影，英文介面、繁體中文字幕；使用虛構 CC0 範例，重用工作區已有的索引。[追查表格答案](docs/CASE_STUDY.zh-TW.md) · [錄製來源紀錄](docs/media/demo-recording.json)*
 
@@ -41,7 +41,7 @@ https://github.com/user-attachments/assets/a361e0f0-72f0-41f4-9ebc-93655a0a91b7
 | --- | --- |
 | [圖解操作](docs/USAGE.zh-TW.md) | 上傳、狀態、問答、引用、解析、歷史及五種實際介面。 |
 | [清理指南](docs/CLEANUP.zh-TW.md) | 搜尋與篩選、刪除 PDF 或執行紀錄、來源缺失標示與清理驗證。 |
-| [影片教學](docs/DEMO.zh-TW.md) | 七個編號步驟、場景時間與已嵌入影片的操作字幕。 |
+| [影片教學](docs/DEMO.zh-TW.md) | 九個編號步驟、場景時間與已嵌入影片的操作字幕。 |
 | [安裝與部署](docs/DEPLOYMENT.zh-TW.md) | 環境、模型、Qdrant、開發／正式模式、選用 user service、SSH、備份、更新與排錯。 |
 | [實測里程碑](docs/MILESTONE.zh-TW.md) | 真實模型／瀏覽器／重啟結果、硬體、耗時與限制。 |
 | [表格與來源案例](docs/CASE_STUDY.zh-TW.md) | 從真實答案回到第 2 頁，並檢查文件無法回答的問題。 |

@@ -117,6 +117,15 @@ On **2026-10-04, Asia/Taipei**, the document/history catalogs gained literal sea
 
 Coordination requires one API process per data directory. Filesystem/vector operations are not a distributed atomic transaction; failed items remain actionable and batches can partially succeed. SQLite cleanup is logical deletion, without a secure-erasure guarantee. GPU usage was not measured for this update. See the [cleanup guide](CLEANUP.md) for semantics and reproduction.
 
+
+## Current-interface media and additional verification
+
+The six real sample questions passed again against the isolated current API: query totals in fixture order were **907.00, 1,671.30, 1,453.25, 936.09, 1,620.69 and 1,574.48 ms**. The unanswerable electricity-cost question had no citations. `scripts/verify_failure.py` also passed with real retrieval and TCP refusal. The updated existing API was restarted without changing its stored document/history rows; the two development-UI Chrome tests passed in **12.6 s**. The built cleanup checks above ran on a separate disposable API.
+
+Aggregate GPU snapshots in this six-question run were GPU 0 **23,254 MiB / 0% → 23,282 MiB / 100%**, GPU 1 **36,188 MiB / 94% → 36,188 MiB / 0%**. They include concurrent work and do not isolate application allocation, peak utilization or inference cost.
+
+The fourteen English/Traditional Chinese UI images and both covers were refreshed from the current interface. The screenshot helper now shares the complete public-workspace guard and waits for history rows before capturing them. The final captured English/Chinese query totals were **820.54 ms / 812.68 ms**. A fresh nine-step movie from application commit `7e16f9b` includes upload, live questions/citations/parsing/settings/refusal/history and actual PDF/history deletion in the disposable workspace. Its two real query totals were **889.23 / 846.33 ms**. Both normal-speed H.264 videos measure **84.708333 s**, **1440 × 1200**, with editable bilingual captions. Complete decoding and eleven scene frames per language were reviewed. Caption rendering added zero further queries. Current source/render receipts are committed; the v0.1.0 release retains the original preview footage.
+
 ## Limits and next milestone
 
 Only this three-page native-text fixture and the explicit contract inputs were evaluated. Live vLLM/OpenAI service integration, an SSH client on another machine, scanned/image-only PDFs, large corpora, concurrent multi-user traffic, adversarial claim entailment, and production hardening remain unverified or outside scope. Source boxes are Docling item bounds rather than exact phrase spans. Citation membership cannot establish semantic correctness by itself. There is no distributed job queue or resumable parsing; interrupted jobs become actionable failures.

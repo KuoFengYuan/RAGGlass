@@ -8,10 +8,10 @@
 
 | 素材 | 位置 | 用法 |
 | --- | --- | --- |
-| README 完整示範 | [直接觀看](../README.zh-TW.md#觀看操作示範) | 在 GitHub 頁內播放、暫停或拖曳 54.8 秒實錄，無須下載檔案。 |
-| 真實流程短片，繁體中文字幕 | [MP4](https://github.com/user-attachments/assets/a361e0f0-72f0-41f4-9ebc-93655a0a91b7) | 附在技術貼文，展示可回答問題、來源跳頁、設定、拒答與歷史；介面為英文，字幕為繁體中文。 |
+| README 完整示範 | [直接觀看](../README.zh-TW.md#觀看操作示範) | 在 GitHub 頁內播放、暫停或拖曳 含 PDF／歷史清理的最新實錄，無須下載檔案。 |
+| 真實流程短片，繁體中文字幕 | [MP4](https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017) | 附在技術貼文，展示可回答問題、來源跳頁、設定、拒答、歷史與獨立清理；介面為英文，字幕為繁體中文。 |
 | 教學字幕檔 | [VTT](media/ragglass-demo.zh-TW.vtt)／[SRT](media/ragglass-demo.zh-TW.srt) | 重用目前的步驟標題、操作與提示，內容已嵌入教學影片。 |
-| 教學文字 | [七步操作說明](DEMO.zh-TW.md) | 依約略時間與按鈕名稱，搭配影片練習。 |
+| 教學文字 | [九步操作說明](DEMO.zh-TW.md) | 依約略時間與按鈕名稱，搭配影片練習。 |
 | 動畫片段 | [實際引用操作](images/demo.zh-TW.gif) | 用於支援 GIF 的貼文；為繁體中文字幕、正常速度的十秒節錄，介面為英文。 |
 | 分享封面 | [1280 × 640 PNG](images/social-preview.zh-TW.png) | 可用於貼文封面或 GitHub Social preview。 |
 | 貼文草稿 | [發布文案](ANNOUNCEMENT.zh-TW.md) | 選擇短文、長文或 Show HN 版本；發布前補上作者自己的開發經驗。 |
@@ -65,7 +65,7 @@ GitHub CLI 必須登入並有該儲存庫的存取權；流量 API 需要 push �
 
 ## 重現影片與封面
 
-依[部署指南](DEPLOYMENT.zh-TW.md)啟動真實服務。公開錄製工作區只能包含公開範例、原檔名與測試問題。工具會拒絕私人文件／問題、已達 API 500 筆上限的歷史，以及非 loopback 的應用／模型端點。不會刪除或隱藏既有資料以通過錄製檢查；私人工作保留在自己的工作區，需要時另外設定公開錄製服務。
+依[部署指南](DEPLOYMENT.zh-TW.md)啟動真實服務。公開錄製工作區只能包含公開範例、原檔名與測試問題。工具會拒絕私人文件／問題、已達 API 500 筆上限的歷史，以及非 loopback 的應用／模型端點。檢查器不會移除或隱藏資料以通過錄製檢查。影片接著會示範刪除範例和全部歷史，只能在專用暫存工作區執行；私人工作保留在自己的工作區，需要時另外設定公開錄製服務。
 
 兩種字幕輸出需要 Chrome、支援 `libx264`／GIF 的 FFmpeg，以及 Noto Sans CJK TC 等本機中文字型。可用已鎖定的 Playwright 套件安裝 Chromium，下載保存在專案：
 
@@ -79,13 +79,19 @@ export RAGGLASS_BROWSER=chromium
 已安裝 Chrome 時略過 Chromium 的兩行。確認工作區只有公開範例後執行：
 
 ```bash
-node scripts/capture_demo.mjs
+# 第一個終端：暫存工作空間，與自己的文件分開。
+RAGGLASS_DATA_DIR=.data/demo-workspace .venv/bin/python -m uvicorn ragglass.main:app --app-dir backend --host 127.0.0.1 --port 8800
+# 在 http://127.0.0.1:8800 只上傳公開範例並等待已索引。
+# 第二個終端：
+RAGGLASS_BASE_URL=http://127.0.0.1:8800 node scripts/capture_ui_docs.mjs
 node scripts/render_social_preview.mjs
+RAGGLASS_DEMO_CLEANUP=1 RAGGLASS_BASE_URL=http://127.0.0.1:8800 node scripts/capture_demo.mjs
+node scripts/render_demo.mjs
 ```
 
-`RAGGLASS_BASE_URL` 預設 `http://127.0.0.1:8000`。錄影工具會新增**兩次真實查詢**並保存到應用歷史，檢查 30 MB 答案、本次檢索引用、第 2 頁、來源座標框、解析表格、設定、無證據拒答、歷史重開與瀏覽器錯誤。超過 60 秒會失敗並提示重試，不會加速推論以符合目標片長。
+`RAGGLASS_BASE_URL` 預設 `http://127.0.0.1:8000`。錄影工具會新增**兩次真實查詢**並保存，接著在暫存工作空間示範刪除 PDF 及全部歷史。`RAGGLASS_DEMO_CLEANUP=1` 用來明確啟用這些具刪除效果的教學動作。檢查 30 MB 答案、本次檢索引用、第 2 頁、來源座標框、解析表格、設定、無證據拒答、歷史重開、來源缺失標示、獨立清理及瀏覽器錯誤。超過 95 秒會失敗並提示重試，不會加速推論以符合目標片長。
 
-MP4、原始瀏覽器影片、ASS 渲染檔與完整本機錄製紀錄寫入已忽略的 `.data/launch/`。中英文 GIF、影片海報、雙語封面、公開紀錄與可編輯的 VTT／SRT 教學文字作為專案素材。提交前檢查素材；影片二進位檔、原始錄影與建置快取不進 Git。v0.1.0 Release 保留原始預覽錄影，目前 README 使用教學字幕修訂版。
+MP4、原始瀏覽器影片、ASS 渲染檔與完整本機錄製紀錄寫入已忽略的 `.data/launch/`。中英文 GIF、影片海報、雙語封面、公開紀錄與可編輯的 VTT／SRT 教學文字作為專案素材。提交前檢查素材；影片二進位檔、原始錄影與建置快取不進 Git。v0.1.0 Release 保留原始預覽錄影，目前 README 使用具清理功能介面的新錄影。
 
 修改既有公開影片的字幕，先編輯[demo-tutorial.json](media/demo-tutorial.json)，再執行：
 
@@ -93,11 +99,11 @@ MP4、原始瀏覽器影片、ASS 渲染檔與完整本機錄製紀錄寫入已�
 node scripts/render_demo.mjs
 ```
 
-使用 `.data/launch/live-recording.webm` 搭配[demo-recording.json](media/demo-recording.json)，輸出兩支字幕影片與字幕檔、更新 GIF，並寫入[demo-tutorial-render.json](media/demo-tutorial-render.json)。**不新增模型查詢**，原始錄製紀錄保留。全新 clone 須先執行 `capture_demo.mjs` 產生原始影片，再執行 `render_demo.mjs` 更新重製紀錄後發布。檢查兩種語言的九個場景。每個畫面有步驟標題、操作指令與提示，置於獨立字幕區；字幕下方預留空間，避免在桌面 README 寬度下被原生播放器控制列遮住。[FFmpeg ASS filter](https://ffmpeg.org/ffmpeg-filters.html#ass)將文字嵌入影片，播放時不需要開啟字幕選項。
+使用 `.data/launch/live-recording.webm` 搭配[demo-recording.json](media/demo-recording.json)，輸出兩支字幕影片與字幕檔、更新 GIF，並寫入[demo-tutorial-render.json](media/demo-tutorial-render.json)。**不新增模型查詢**，原始錄製紀錄保留。全新 clone 須先執行 `capture_demo.mjs` 產生原始影片，再執行 `render_demo.mjs` 更新重製紀錄後發布。檢查兩種語言的十一個場景。每個畫面有步驟標題、操作指令與提示，置於獨立字幕區；字幕下方預留空間，避免在桌面 README 寬度下被原生播放器控制列遮住。[FFmpeg ASS filter](https://ffmpeg.org/ffmpeg-filters.html#ass)將文字嵌入影片，播放時不需要開啟字幕選項。
 
 ## 保持 README 影片可直接播放
 
-兩份 README 都使用 GitHub 原生播放器嵌入完整操作教學。[demo-embeds.json](media/demo-embeds.json) 保存穩定公開附件網址與檔案雜湊；原始推論證據仍在[demo-recording.json](media/demo-recording.json)。中英 MP4 附件逐位元組確認與重製的教學影片相同。[重製紀錄](media/demo-tutorial-render.json)區分字幕修訂與新的模型執行。播放器由 GitHub 渲染，本機 Markdown 檢視器可能只顯示網址。
+兩份 README 都使用 GitHub 原生播放器嵌入完整操作教學。[demo-embeds.json](media/demo-embeds.json) 保存穩定公開附件網址與檔案雜湊；目前錄影的推論證據仍在[demo-recording.json](media/demo-recording.json)。中英 MP4 附件逐位元組確認與重製的教學影片相同。[重製紀錄](media/demo-tutorial-render.json)將影片渲染與錄製紀錄中的真實查詢分開記錄。播放器由 GitHub 渲染，本機 Markdown 檢視器可能只顯示網址。
 
 更新錄影時先檢查新的公開素材，再使用 **GitHub CLI 2.99+**（`--attach`，本次驗證 2.102.0）將兩支影片附在對應 PR：
 

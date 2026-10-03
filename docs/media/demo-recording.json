@@ -1,123 +1,135 @@
 {
-  "recorded_at": "2026-10-03T15:54:55.217Z",
-  "source_commit": "edcbe8742e7b8d027a1c39dde832d57f8bfee319",
+  "recorded_at": "2026-10-03T17:02:24.057Z",
+  "source_commit": "7e16f9b14d9dd52e741cebe8ecf44ec0770a9616",
   "document_hash": "878bfa94da33d16c947f174d12560e3f7b4efa807cbd0b189f0841af7db58d8a",
   "upload_reused_index": true,
   "mock": false,
   "playback_speed": 1,
-  "trimmed_initial_navigation_seconds": 0.268161378,
-  "duration_seconds": 55.001007831,
+  "trimmed_initial_navigation_seconds": 0.22723645099999992,
+  "duration_seconds": 84.99993108199999,
   "scenes": [
     {
       "id": "intro",
-      "start_seconds": 2.2334999999998217e-05,
+      "start_seconds": 0.000023572000000058324,
       "en": "RAGGlass · See inside your RAG. Inspect PDF evidence beside the answer.",
       "zh-TW": "RAGGlass · See inside your RAG. 將 PDF 證據與答案並排檢視。"
     },
     {
       "id": "upload",
-      "start_seconds": 4.002115349,
+      "start_seconds": 4.000739193999999,
       "en": "Upload the CC0 sample PDF. This workspace reuses its existing index.",
       "zh-TW": "上傳 CC0 範例 PDF；本次工作區重用已建立的索引。"
     },
     {
       "id": "query",
-      "start_seconds": 9.07121133,
+      "start_seconds": 9.029415424000002,
       "en": "Ask a table question. Embeddings, retrieval, and model inference run live.",
       "zh-TW": "詢問表格內容；embedding、檢索與模型推論都即時執行。"
     },
     {
       "id": "citation",
-      "start_seconds": 18.344121343,
+      "start_seconds": 14.013219009,
       "en": "Click the source: 30 MB is in the original table on page 2.",
       "zh-TW": "點擊引用：30 MB 可在原始 PDF 第 2 頁的表格中確認。"
     },
     {
       "id": "parsing",
-      "start_seconds": 25.57616691,
+      "start_seconds": 21.285010942,
       "en": "Compare the parsed table with its original source. Every chunk keeps page IDs.",
       "zh-TW": "對照解析表格與原始文件；每個片段保留來源頁碼與 ID。"
     },
     {
       "id": "settings",
-      "start_seconds": 30.688805627,
+      "start_seconds": 26.40880369,
       "en": "Inspect saved prompts, model and retrieval settings, plus measured stage timings.",
       "zh-TW": "查看保存的 prompt、模型與檢索設定，以及各階段的實測耗時。"
     },
     {
       "id": "refusal",
-      "start_seconds": 35.767902475,
+      "start_seconds": 31.489047233,
       "en": "Ask about electricity cost: the sample has no evidence for that answer.",
       "zh-TW": "詢問年度電費：範例文件沒有可支持此答案的證據。"
     },
     {
       "id": "history",
-      "start_seconds": 41.755674443000004,
+      "start_seconds": 37.407689035000004,
       "en": "Reopen a saved run with its question, answer, evidence, and configuration.",
       "zh-TW": "重新開啟歷史紀錄，查看該次問題、答案、證據與設定。"
     },
     {
+      "id": "document_cleanup",
+      "start_seconds": 42.657929767,
+      "en": "Search/select the PDF in Document library; confirm Delete selected.",
+      "zh-TW": "在文件庫搜尋並勾選 PDF，確認刪除所選文件。"
+    },
+    {
+      "id": "history_cleanup",
+      "start_seconds": 53.055468607,
+      "en": "Clear all run history separately; PDFs and indexes are independent.",
+      "zh-TW": "獨立清空全部執行紀錄；PDF 與索引是另外的清理範圍。"
+    },
+    {
       "id": "closing",
-      "start_seconds": 46.982032668,
+      "start_seconds": 62.375182381,
       "en": "Try RAGGlass on GitHub. Share a reproducible issue; star it if it helps your work.",
       "zh-TW": "到 GitHub 試用 RAGGlass，回報可重現的問題；有幫助也歡迎 Star。"
     }
   ],
   "runs": [
     {
-      "id": "b3540384-92e6-42ef-8a97-6e02f488129b",
+      "id": "a2446352-28fb-4251-9ba3-e4ef8b908f62",
       "question": "What is the maximum upload size for the Cedar pilot?",
       "model": "gemma4:e4b",
-      "answer": "The maximum upload size is 30 MB per PDF document.",
+      "answer": "The maximum upload size for a single PDF document is 30 MB.",
       "answerable": true,
       "citations": [
         {
-          "id": "cc11238c-83ad-52c7-8e55-e2eb3454b43b",
+          "id": "d61eb2f4-fc00-5135-b4a7-7f164bc96fa2",
           "pages": [
             2
           ]
         }
       ],
       "timings_ms": {
-        "embedding": 16.99,
-        "retrieval": 10.02,
-        "generation": 5146.67,
-        "citation_validation": 0.09,
-        "total": 5177.93
+        "embedding": 18.33,
+        "retrieval": 7.48,
+        "generation": 858.67,
+        "citation_validation": 0.12,
+        "total": 889.23
       },
       "model_metrics": {
         "model": "gemma4:e4b",
-        "eval_count": 64,
-        "prompt_eval_count": 1194,
-        "total_duration": 5129220755,
-        "load_duration": 4626747526,
-        "eval_duration": 305581000,
-        "prompt_eval_duration": 182896000,
+        "eval_count": 65,
+        "prompt_eval_count": 1193,
+        "total_duration": 840391582,
+        "load_duration": 354895927,
+        "eval_duration": 331322000,
+        "prompt_eval_duration": 65656000,
         "done_reason": "stop"
       }
     },
     {
-      "id": "4eda52ed-ba0a-48d5-bdab-055fdb81c6d5",
+      "id": "c8d23f18-f70e-45db-82a5-2892a56193ff",
       "question": "What is the pilot's annual electricity cost in dollars?",
       "model": "gemma4:e4b",
       "answer": "The answer cannot be confirmed from the retrieved document evidence.",
       "answerable": false,
       "citations": [],
       "timings_ms": {
-        "embedding": 14.08,
-        "retrieval": 5.35,
-        "generation": 876.19,
-        "citation_validation": 0.05,
-        "total": 898.1
+        "embedding": 12.77,
+        "retrieval": 5.71,
+        "generation": 824.55,
+        "citation_validation": 0.04,
+        "total": 846.33
       },
       "model_metrics": {
         "model": "gemma4:e4b",
-        "eval_count": 64,
-        "prompt_eval_count": 1190,
-        "total_duration": 856992549,
-        "load_duration": 375633921,
-        "eval_duration": 317978000,
-        "prompt_eval_duration": 113280000,
+        "eval_count": 68,
+        "prompt_eval_count": 1193,
+        "total_duration": 802992440,
+        "load_duration": 360891606,
+        "eval_duration": 337139000,
+        "prompt_eval_duration": 48106000,
         "done_reason": "stop"
       }
     }
@@ -125,19 +137,24 @@
   "media": {
     "en": {
       "filename": "ragglass-demo.mp4",
-      "duration_seconds": 54.791667,
+      "duration_seconds": 84.708333,
       "codec_name": "h264",
       "width": 1440,
-      "height": 1000,
-      "pix_fmt": "yuv420p"
+      "height": 1200,
+      "pix_fmt": "yuv420p",
+      "bytes": 2182070,
+      "sha256": "5ec6f28968ff014c2775c042b63687774e008050b3823675676628b13132d9b9"
     },
     "zh-TW": {
       "filename": "ragglass-demo.zh-TW.mp4",
-      "duration_seconds": 54.791667,
+      "duration_seconds": 84.708333,
       "codec_name": "h264",
       "width": 1440,
-      "height": 1000,
-      "pix_fmt": "yuv420p"
+      "height": 1200,
+      "pix_fmt": "yuv420p",
+      "bytes": 2184486,
+      "sha256": "e4b0767f9e65ac28834381e9292bf7616a2e3a75e1fa8b071251a1d28bff505d"
     }
-  }
+  },
+  "tutorial_source": "demo-tutorial.json"
 }

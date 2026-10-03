@@ -10,7 +10,7 @@ For installation, read the [deployment guide](DEPLOYMENT.md). For model choices,
 
 ![Actual English workbench with a live answer and page-2 evidence](images/workbench.png)
 
-This and the following images are actual captures from the built interface on 2026-10-03. They use only the original fictional CC0 sample and live `gemma4:e4b` inference. Displayed durations are measurements of those runs, not performance promises.
+This and the following images are actual captures from the built interface on 2026-10-04 (Asia/Taipei). They use only the original fictional CC0 sample and live `gemma4:e4b` inference. Displayed durations are measurements of those runs, not performance promises.
 
 | Area | What you can do |
 | --- | --- |
