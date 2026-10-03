@@ -1,6 +1,7 @@
 """Check bilingual documentation links and required delivery files without network access."""
 
 import re
+import struct
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -12,6 +13,10 @@ for name in [
     "docs/MILESTONE",
     "docs/USAGE",
     "docs/DEPLOYMENT",
+    "docs/LAUNCH",
+    "docs/ANNOUNCEMENT",
+    "docs/CASE_STUDY",
+    "docs/RELEASE-v0.1.0",
     "examples/README",
 ]:
     en = ROOT / f"{name}.md"
@@ -27,11 +32,18 @@ for file in [
     "compose.yaml",
     "examples/ragglass-field-guide.pdf",
     ".github/pull_request_template.md",
+    "docs/media/demo-recording.json",
 ]:
     assert (ROOT / file).is_file(), f"Missing delivery file: {file}"
 for filename in ["workbench", "document-library", "parsed-content", "run-history", "run-settings"]:
     for suffix in ["", ".zh-TW"]:
         assert (ROOT / "docs" / "images" / f"{filename}{suffix}.png").is_file()
+for suffix in ["", ".zh-TW"]:
+    cover = (ROOT / "docs/images" / f"social-preview{suffix}.png").read_bytes()
+    assert cover[:8] == b"\x89PNG\r\n\x1a\n" and len(cover) < 1_000_000
+    assert struct.unpack(">II", cover[16:24]) == (1280, 640), "Invalid social preview dimensions"
+    gif = (ROOT / "docs/images" / f"demo{suffix}.gif").read_bytes()
+    assert gif[:6] in (b"GIF87a", b"GIF89a") and len(gif) < 3_000_000
 
 markdown = [*ROOT.glob("*.md"), *ROOT.glob("docs/*.md"), *ROOT.glob("examples/*.md")]
 for document in markdown:

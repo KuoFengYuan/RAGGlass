@@ -1,0 +1,143 @@
+{
+  "recorded_at": "2026-10-03T15:54:55.217Z",
+  "source_commit": "edcbe8742e7b8d027a1c39dde832d57f8bfee319",
+  "document_hash": "878bfa94da33d16c947f174d12560e3f7b4efa807cbd0b189f0841af7db58d8a",
+  "upload_reused_index": true,
+  "mock": false,
+  "playback_speed": 1,
+  "trimmed_initial_navigation_seconds": 0.268161378,
+  "duration_seconds": 55.001007831,
+  "scenes": [
+    {
+      "id": "intro",
+      "start_seconds": 2.2334999999998217e-05,
+      "en": "RAGGlass · See inside your RAG. Inspect PDF evidence beside the answer.",
+      "zh-TW": "RAGGlass · See inside your RAG. 將 PDF 證據與答案並排檢視。"
+    },
+    {
+      "id": "upload",
+      "start_seconds": 4.002115349,
+      "en": "Upload the CC0 sample PDF. This workspace reuses its existing index.",
+      "zh-TW": "上傳 CC0 範例 PDF；本次工作區重用已建立的索引。"
+    },
+    {
+      "id": "query",
+      "start_seconds": 9.07121133,
+      "en": "Ask a table question. Embeddings, retrieval, and model inference run live.",
+      "zh-TW": "詢問表格內容；embedding、檢索與模型推論都即時執行。"
+    },
+    {
+      "id": "citation",
+      "start_seconds": 18.344121343,
+      "en": "Click the source: 30 MB is in the original table on page 2.",
+      "zh-TW": "點擊引用：30 MB 可在原始 PDF 第 2 頁的表格中確認。"
+    },
+    {
+      "id": "parsing",
+      "start_seconds": 25.57616691,
+      "en": "Compare the parsed table with its original source. Every chunk keeps page IDs.",
+      "zh-TW": "對照解析表格與原始文件；每個片段保留來源頁碼與 ID。"
+    },
+    {
+      "id": "settings",
+      "start_seconds": 30.688805627,
+      "en": "Inspect saved prompts, model and retrieval settings, plus measured stage timings.",
+      "zh-TW": "查看保存的 prompt、模型與檢索設定，以及各階段的實測耗時。"
+    },
+    {
+      "id": "refusal",
+      "start_seconds": 35.767902475,
+      "en": "Ask about electricity cost: the sample has no evidence for that answer.",
+      "zh-TW": "詢問年度電費：範例文件沒有可支持此答案的證據。"
+    },
+    {
+      "id": "history",
+      "start_seconds": 41.755674443000004,
+      "en": "Reopen a saved run with its question, answer, evidence, and configuration.",
+      "zh-TW": "重新開啟歷史紀錄，查看該次問題、答案、證據與設定。"
+    },
+    {
+      "id": "closing",
+      "start_seconds": 46.982032668,
+      "en": "Try RAGGlass on GitHub. Share a reproducible issue; star it if it helps your work.",
+      "zh-TW": "到 GitHub 試用 RAGGlass，回報可重現的問題；有幫助也歡迎 Star。"
+    }
+  ],
+  "runs": [
+    {
+      "id": "b3540384-92e6-42ef-8a97-6e02f488129b",
+      "question": "What is the maximum upload size for the Cedar pilot?",
+      "model": "gemma4:e4b",
+      "answer": "The maximum upload size is 30 MB per PDF document.",
+      "answerable": true,
+      "citations": [
+        {
+          "id": "cc11238c-83ad-52c7-8e55-e2eb3454b43b",
+          "pages": [
+            2
+          ]
+        }
+      ],
+      "timings_ms": {
+        "embedding": 16.99,
+        "retrieval": 10.02,
+        "generation": 5146.67,
+        "citation_validation": 0.09,
+        "total": 5177.93
+      },
+      "model_metrics": {
+        "model": "gemma4:e4b",
+        "eval_count": 64,
+        "prompt_eval_count": 1194,
+        "total_duration": 5129220755,
+        "load_duration": 4626747526,
+        "eval_duration": 305581000,
+        "prompt_eval_duration": 182896000,
+        "done_reason": "stop"
+      }
+    },
+    {
+      "id": "4eda52ed-ba0a-48d5-bdab-055fdb81c6d5",
+      "question": "What is the pilot's annual electricity cost in dollars?",
+      "model": "gemma4:e4b",
+      "answer": "The answer cannot be confirmed from the retrieved document evidence.",
+      "answerable": false,
+      "citations": [],
+      "timings_ms": {
+        "embedding": 14.08,
+        "retrieval": 5.35,
+        "generation": 876.19,
+        "citation_validation": 0.05,
+        "total": 898.1
+      },
+      "model_metrics": {
+        "model": "gemma4:e4b",
+        "eval_count": 64,
+        "prompt_eval_count": 1190,
+        "total_duration": 856992549,
+        "load_duration": 375633921,
+        "eval_duration": 317978000,
+        "prompt_eval_duration": 113280000,
+        "done_reason": "stop"
+      }
+    }
+  ],
+  "media": {
+    "en": {
+      "filename": "ragglass-demo.mp4",
+      "duration_seconds": 54.791667,
+      "codec_name": "h264",
+      "width": 1440,
+      "height": 1000,
+      "pix_fmt": "yuv420p"
+    },
+    "zh-TW": {
+      "filename": "ragglass-demo.zh-TW.mp4",
+      "duration_seconds": 54.791667,
+      "codec_name": "h264",
+      "width": 1440,
+      "height": 1000,
+      "pix_fmt": "yuv420p"
+    }
+  }
+}

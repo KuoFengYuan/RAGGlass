@@ -16,13 +16,15 @@ RAGGlass is a local, open-source workbench for engineers building PDF RAG. Inspe
 - **Reproduce a run:** retain prompts, settings, evidence, answers, and measured timings after restarts.
 - **Use your model service:** real embeddings and live Ollama or compatible HTTP inference.
 
-[Quick start](#quick-start) · [Illustrated usage](docs/USAGE.md) · [Deployment](docs/DEPLOYMENT.md) · [Model choices](#recommended-ollama-models)
+[Quick start](#quick-start) · [Watch the demo](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.mp4) · [Illustrated usage](docs/USAGE.md) · [Deployment](docs/DEPLOYMENT.md) · [Model choices](#recommended-ollama-models)
 
 If RAGGlass is useful for your RAG work, **[⭐ give it a star](https://github.com/KuoFengYuan/RAGGlass)**.
 
-![Document workbench showing the original PDF, answer, and retrieved evidence](docs/images/workbench.png)
+![Actual live-model answer followed to its original PDF table](docs/images/demo.gif)
 
-*Actual interface, fictional CC0 sample, live `gemma4:e4b` answer. The source button opens page 2; durations belong to that execution.*
+*Ten seconds from an actual recording at normal speed: a live `gemma4:e4b` answer opens the fictional CC0 sample's table on page 2. The workspace reuses its existing index. [Full demo with English captions](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.mp4) · [Trace the table answer](docs/CASE_STUDY.md) · [Recording receipt](docs/media/demo-recording.json)*
+
+[v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0) includes downloadable videos/subtitles and a publishable sample. For still images, see the [actual workbench screenshot](docs/images/workbench.png) and the illustrated guide below.
 
 **First release:** native-text PDF ingestion with Docling, multilingual dense retrieval with Qdrant, validated source IDs, and persistent local history. The [original sample PDF](examples/ragglass-field-guide.pdf) includes a table and [six test questions](examples/questions.json), including one it cannot answer. Automated diagnosis, hybrid search, reranking, and before/after quality comparisons are planned; they are not implemented in this release.
 
@@ -35,6 +37,9 @@ If RAGGlass is useful for your RAG work, **[⭐ give it a star](https://github.c
 | [Illustrated usage](docs/USAGE.md) | Upload, status, questions, citations, parsed content, history, and five actual UI views. |
 | [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
 | [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |
+| [Table/source case study](docs/CASE_STUDY.md) | Follow a real answer to page 2 and inspect a question the document cannot answer. |
+| [Share RAGGlass](docs/LAUNCH.md) | Bilingual video/cover assets, technical post drafts, first-week plan, and local traffic snapshots. |
+| [Release notes](docs/RELEASE-v0.1.0.md) | First-preview capabilities, setup, evidence, and remaining limits. |
 | [Contributing](CONTRIBUTING.md) | Forks, task branches, checks, bilingual PRs, and licensing. |
 
 ## Requirements

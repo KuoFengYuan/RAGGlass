@@ -99,6 +99,12 @@ SQLite 重開契約已通過，隨後 `scripts/verify_restart.py --api-pid 27587
 
 發布文件新增完整中英文使用／部署指南、十張已逐張檢查的實際介面圖，以及限定公開範例的圖片重現程式。`node scripts/capture_ui_docs.mjs` 完成真實英／中文問答，總耗時分別為 5,153.27 ms 與 885.26 ms。`systemd-analyze --user verify deploy/ragglass.service` 通過；保留既有 API，未啟用選用 user service、遠端 SSH 用戶端或完整備份／還原，也未將它們宣稱為已驗證。README 用途／功能／快速入口與 GitHub About／topics 便於理解及搜尋，不宣稱實際 Star 或曝光成果。
 
+## 雙語曝光素材
+
+**2026-10-03 UTC** 最後一次 `node scripts/capture_demo.mjs` 在 Chrome 新增兩題真實 `gemma4:e4b` 查詢，輸出英文／繁體中文字幕 H.264 影片（**54.791667 秒**、1440 × 1000、正常速度）、兩個十秒 GIF 與公開錄製來源紀錄。確認 30 MB 答案引用本次檢索到的第 2 頁、來源框線、解析表格、設定、無引用拒答與歷史重開。總查詢耗時為 **5,177.93 ms**、**898.10 ms**；第一題 Ollama 回報載入耗時 **4,626.75 ms**，不是單純已載入模型的推論測量。錄製重用範例已存在的索引，沒有獨立 GPU 使用測量。
+
+`node scripts/render_social_preview.mjs` 以實際截圖產生中英 1280 × 640 封面，均低於 1 MB。`scripts/record_traffic.py` 實際唯讀取得 GitHub 基準，保存在已忽略的 `.data/traffic/`。新增雙語分享指南、發文草稿、表格來源案例、版本說明與 README 動畫，說明試用、重現、分享及成果觀察。準備 Social preview 圖檔不等於已設定 GitHub 圖片，官方網頁上傳仍為手動步驟。本次沒有發送社群貼文或建立定期排程。影片／字幕為 Release 附件，原始錄影保留本機。
+
 ## 限制與下一里程碑
 
 目前只評估這份三頁原生文字範例與明確的契約輸入。尚未驗證或不在範圍內：真實 vLLM／OpenAI 服務、另一台電腦的 SSH 用戶端、掃描／純圖片 PDF、大規模 corpus、多使用者併發、對抗性語意支持檢查與正式部署強化。來源座標為 Docling 內容區塊範圍，不是精確句子邊界；引用存在不代表答案語意必然正確。沒有分散式工作佇列或解析續跑，中斷工作會標成可重試的失敗。
