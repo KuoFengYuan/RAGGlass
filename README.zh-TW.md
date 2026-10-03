@@ -16,13 +16,15 @@ RAGGlass 是給 PDF RAG 工程師的地端開源工作台。從實際「文件 �
 - **重現執行：**保存 prompt、設定、證據、答案與實測耗時，重啟後仍可查看。
 - **連接自己的模型服務：**使用真實 embedding 與即時 Ollama／相容 HTTP 推論。
 
-[快速啟動](#快速啟動) · [圖解操作](docs/USAGE.zh-TW.md) · [部署指南](docs/DEPLOYMENT.zh-TW.md) · [模型建議](#建議的-ollama-模型)
+[快速啟動](#快速啟動) · [觀看影片](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.zh-TW.mp4) · [圖解操作](docs/USAGE.zh-TW.md) · [部署指南](docs/DEPLOYMENT.zh-TW.md) · [模型建議](#建議的-ollama-模型)
 
 對你的 RAG 工作有幫助，歡迎 **[⭐ Star 支持](https://github.com/KuoFengYuan/RAGGlass)**。
 
-![工作台並排呈現原始 PDF、答案與檢索證據](docs/images/workbench.zh-TW.png)
+![真實模型回答沿引用回到原始 PDF 表格，繁體中文字幕](docs/images/demo.zh-TW.gif)
 
-*實際介面、虛構 CC0 範例、即時 `gemma4:e4b` 回答；來源連結開啟第 2 頁，耗時屬於該次執行。*
+*正常速度的十秒實際錄影節錄：真實 `gemma4:e4b` 回答跳到虛構 CC0 範例第 2 頁表格，重用工作區已存在的索引。英文介面、繁體中文字幕。[完整影片](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.zh-TW.mp4) · [追查表格答案](docs/CASE_STUDY.zh-TW.md) · [錄製來源紀錄](docs/media/demo-recording.json)*
+
+[v0.1.0 預覽版](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0)提供可下載影片／字幕與公開範例。靜態畫面見[實際工作台截圖](docs/images/workbench.zh-TW.png)及下方圖解指南。
 
 **第一版：**Docling 原生文字 PDF 處理、Qdrant 多語向量檢索、引用 ID 驗證及本機持久紀錄。[原創範例 PDF](examples/ragglass-field-guide.pdf) 含表格與[六個問題](examples/questions.json)，包含文件無法回答的問題。自動診斷、混合檢索、reranking 與修改前後品質比較屬於後續規劃，此版尚未實作。
 
@@ -35,6 +37,9 @@ RAGGlass 是給 PDF RAG 工程師的地端開源工作台。從實際「文件 �
 | [圖解操作](docs/USAGE.zh-TW.md) | 上傳、狀態、問答、引用、解析、歷史及五種實際介面。 |
 | [安裝與部署](docs/DEPLOYMENT.zh-TW.md) | 環境、模型、Qdrant、開發／正式模式、選用 user service、SSH、備份、更新與排錯。 |
 | [實測里程碑](docs/MILESTONE.zh-TW.md) | 真實模型／瀏覽器／重啟結果、硬體、耗時與限制。 |
+| [表格與來源案例](docs/CASE_STUDY.zh-TW.md) | 從真實答案回到第 2 頁，並檢查文件無法回答的問題。 |
+| [分享 RAGGlass](docs/LAUNCH.zh-TW.md) | 雙語影片／封面、技術貼文、第一週計畫與本機流量快照。 |
+| [版本說明](docs/RELEASE-v0.1.0.zh-TW.md) | 首次預覽功能、啟動、驗證與限制。 |
 | [貢獻流程](CONTRIBUTING.zh-TW.md) | Fork、任務分支、檢查、雙語 PR 與授權。 |
 
 ## 環境需求
