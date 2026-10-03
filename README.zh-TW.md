@@ -8,6 +8,10 @@
 
 第一里程碑以 Docling 處理原生文字 PDF、Qdrant 提供多語向量檢索，並透過獨立的模型 HTTP 服務生成有引用的回答。正式流程使用真實 embedding 與模型推論，沒有固定 demo 答案。[原創範例 PDF](examples/ragglass-field-guide.pdf) 描述虛構 Cedar 計畫，含簡單表格與[六個問題](examples/questions.json)，包含文件無法回答的問題。
 
+![工作台並排顯示原始 PDF、答案與檢索證據](docs/images/workbench.png)
+
+*英文介面的實際截圖，使用虛構 CC0 範例及即時 `gemma4:e4b` 回答；圖中耗時屬於該次執行。*
+
 ## 環境需求
 
 - Linux/macOS、Python **3.12**、Node.js **20.19+**、npm 與 Docker Compose。實測主機為 Ubuntu 24.04、系統 Python 3.12.3、Node 20.20.2、Docker 29.3.0。
@@ -75,15 +79,67 @@ adapter 呼叫 `/chat/completions` 並要求 JSON；只有 API 拒絕此選項�
 
 Embedding 使用 `.env.example` 的固定 E5 revision、正規化向量、`query: `／`passage: ` 前綴與模型 tokenizer。修改 embedding 設定後會使用不同 Qdrant collection，須重新索引既有文件才能查詢。Docling 自動下載 layout／table 模型；`DOCLING_CACHE_DIR` 是下載快取，選填的 `DOCLING_ARTIFACTS_PATH` 必須包含預先完整下載的模型。
 
+### 建議的 Ollama 模型
+
+於 **2026-10-03** 對照官方模型卡與 Ollama registry。以下是適合此工作台的候選方案，不宣稱某模型在所有情境都是最佳。通用程式／推理榜單無法證明文件回答品質、引用準確度或拒答可靠性。
+
+| 回答模型 | 建議用途 | 本機驗證狀態 |
+| --- | --- | --- |
+| [`gemma4:e4b`](https://ollama.com/library/gemma4) | **預設與已驗證基準。** 適合先完成小型地端安裝及本 README 的範例流程。 | 已安裝，真實 PDF／模型／瀏覽器驗證通過；比較修改時保留此基準。 |
+| [`qwen3.8:27b`](https://ollama.com/library/qwen3.8) | GPU 工作站的中英文文件問答**優先比較候選**。官方支援可設定的 thinking；先使用本應用關閉 thinking、要求 JSON 的設定。 | 本機確切名稱為 **`Qwen3.8:27b`**，正供其他工作使用；尚未量測它在 RAGGlass 的回答品質與延遲。 |
+| [`gemma4:31b`](https://ollama.com/library/gemma4) | 記憶體與延遲預算允許時，作為 Gemma 家族較大型 dense 模型的比較對象。 | 已安裝，尚未在本應用評測。 |
+| [`gemma4:12b`](https://ollama.com/library/gemma4:12b) | 27B／31B 不適用的機器可考慮此中型候選。 | 已查證官方 registry；本機未安裝、未測試，須確認 Ollama 版本相容性。 |
+
+**實際建議：** 第一版保留 E4B 預設，下一步先比較 Qwen3.8-27B；若評測值得再比較 Gemma4-31B。實測主機有兩張各回報 97,887 MiB 的 GPU，但與其他工作共用。模型檔案大小不等於顯存需求；實際記憶體與延遲受量化、context、併發與推論引擎影響，不把未測候選的資源估計寫成實測值。
+
+目前 `intfloat/multilingual-e5-small` 透過 Sentence Transformers 在本機 CPU 執行，Docling 的 layout／table 模型也採 CPU 且關閉 OCR；只有回答生成使用模型 HTTP API。以下 Ollama **embedding** 選項是後續 adapter 與評測的建議，不能用作回答模型：
+
+| Embedding 模型 | 建議用途 | 整合狀態 |
+| --- | --- | --- |
+| [`qwen3-embedding:0.6b`](https://ollama.com/library/qwen3-embedding) | 優先評測的多語檢索候選，家族支援中英文與任務指令。 | 尚未整合或測試，須新增 Ollama `/api/embed` adapter。 |
+| [`qwen3-embedding:4b`](https://ollama.com/library/qwen3-embedding) | 先測 0.6B，再評估較大型模型的召回提升是否值得資源成本。 | 尚未整合或測試。 |
+| [`embeddinggemma:300m`](https://ollama.com/library/embeddinggemma) | 後續資源有限部署可評估的小型多語替代方案。 | 尚未整合或測試；registry 指定 Ollama 0.11.10 以上。 |
+
+更換 embedding 必須處理模型專用指令／pooling、tokenizer、向量維度與正規化、新 collection、完整重新索引及檢索門檻校準。**不要把這些名稱填入 `LLM_MODEL`，也不能只換掉目前 E5 的環境設定。** 現有 adapter 使用 E5 專用前綴。Reranking 與多模態 PDF 檢索仍是未來功能；選擇支援視覺的回答模型不會啟用解析器的 OCR／VLM。
+
+### 切換與驗證回答模型
+
+```bash
+# 先檢查既有服務，再決定是否需要下載。
+curl -fsS http://127.0.0.1:11434/api/tags
+# 只有選定模型尚未安裝時，下載一個候選：
+ollama pull qwen3.8:27b
+# 其他選擇：ollama pull gemma4:e4b / gemma4:31b / gemma4:12b
+```
+
+將**已安裝的確切名稱**填入 `.env`；此主機為 `Qwen3.8:27b`，新拉取官方模型通常為 `qwen3.8:27b`。已安裝不代表已通過應用相容性驗證。
+
+```dotenv
+LLM_PROVIDER=ollama
+LLM_BASE_URL=http://127.0.0.1:11434
+LLM_MODEL=qwen3.8:27b
+LLM_THINK=false
+LLM_CONTEXT_TOKENS=8192
+LLM_MAX_TOKENS=768
+LLM_TIMEOUT_SECONDS=180
+LLM_TEMPERATURE=0
+```
+
+**只重啟 RAGGlass API** 載入修改，以 `curl -fsS http://127.0.0.1:8000/api/config` 確認，再執行 `.venv/bin/python scripts/verify_e2e.py` 與下方瀏覽器檢查。更換回答模型不必重新索引文件。比較時固定 PDF、問題、prompt、檢索／切塊及生成選項，包含中英文表格題與無法回答的問題。檢查保存的答案及引用，不只看程式通過與否；六個範例問題屬於 smoke test，不是品質排名。
+
+Ollama tag 可能在重新 pull 後改變。評測前使用 `curl -fsS http://127.0.0.1:11434/api/tags > .data/model-tags.json` 保存本機 metadata／digest；`.data` 不進 Git。每次查詢保存模型名稱／選項與回傳指標，但不封存權重，重現時須保留已測權重。第一版 E4B digest 及實測耗時見[里程碑紀錄](docs/MILESTONE.zh-TW.md)。本次更新建議未下載模型、替換預設模型或重啟共用 Ollama。
+
 ## 完整操作流程
 
-1. 從側欄下載範例，或選擇 `examples/ragglass-field-guide.pdf` 上傳。狀態依序顯示等待、解析、切塊、向量化、索引、完成。首次處理含模型下載時間，處理中也能查看原始 PDF。
+1. 從文件工具列下載範例，或選擇 `examples/ragglass-field-guide.pdf` 上傳。狀態依序顯示等待、解析、切塊、向量化、索引、完成。首次處理含模型下載時間，處理中也能查看原始 PDF。
 2. 詢問 **What is the maximum upload size for the Cedar pilot?**，預期事實為 **30 MB**，來自**第 2 頁**表格。答案由模型即時產生。
-3. 點擊回答下的引用按鈕，PDF.js 會跳到對應頁面並標示可用來源內容區塊座標。證據卡片顯示完整 chunk ID、cosine 分數、頁碼及座標可用性。
+3. 點擊回答下的引用按鈕，PDF.js 會跳到對應頁面並標示可用來源內容區塊座標。點選檢索片段可展開全文、完整 chunk ID、cosine 分數、頁碼與座標可用性；也可直接點選頁碼列瀏覽原始頁面。
 4. 開啟**解析內容**查看 chunks，或下載原始 Markdown／Docling JSON。文件詳情包含 SHA-256、解析／切塊／embedding 設定與處理耗時。
 5. 查看執行耗時、展開設定與 prompt，或下載 run JSON。每次保存確切證據、prompt、模型 endpoint／名稱／選項、tokenizer revision、切塊與檢索設定，不保存 API key。
 6. 詢問 **What is the pilot's annual electricity cost in dollars?**，應明確表示無法從文件確認，且不顯示引用。
-7. 不刪除儲存資料的情況下重啟 API 與 Qdrant，既有文件與紀錄仍存在。點選歷史紀錄可恢復答案、證據與當時設定。
+7. 不刪除儲存資料的情況下重啟 API 與 Qdrant，既有文件與紀錄仍存在。在頂部導覽開啟**執行紀錄**，點選保存的查詢即可恢復答案、證據與當時設定。
+
+工作台左側為原始 PDF，右側為問題／答案／證據檢視面板，底部顯示實測執行耗時。頂部導覽的**文件庫**與**執行紀錄**開啟清單對話框，也可透過文件選單切換目前文件；窄螢幕將 PDF 與檢視面板改為垂直排列。
 
 介面預設繁體中文，可在右上角切換英文，偏好在重新整理後保留。目前後端的可處理錯誤訊息使用繁體中文。
 
@@ -110,7 +166,7 @@ RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e
 
 契約測試包含有效／無效引用、錯誤模型格式、實際 TCP 拒絕連線、SQLite 持久化、中斷作業復原及敏感資訊排除。這些採小型、明確標示的合成輸入，不冒充真實推論。
 
-`verify_e2e.py` 上傳範例、檢查 Docling 頁碼與座標、確認已知證據，並向真實模型詢問全部六題，實測紀錄寫入 Git 忽略的 `.data/verification.json`。瀏覽器測試涵蓋上傳、即時問答、來源跳頁、重新整理後紀錄與語言切換。預設使用本機 Google Chrome；也可用 `PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/playwright" frontend/node_modules/.bin/playwright install chromium` 安裝，再以 `RAGGLASS_BROWSER=chromium` 執行測試。沒有 NVIDIA GPU 的電腦仍可使用 CPU 啟動 API；量測程式會標示 GPU 遙測不可用，不虛構數據。
+`verify_e2e.py` 上傳範例、檢查 Docling 頁碼與座標、確認已知證據，並向真實模型詢問全部六題，實測紀錄寫入 Git 忽略的 `.data/verification.json`。瀏覽器測試涵蓋上傳、即時問答、來源跳頁、重新整理後紀錄、語言切換、文件／頁碼導覽、鍵盤關閉對話框、檢索輸入驗證及 390 像素手機版面。預設使用本機 Google Chrome；也可用 `PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/playwright" frontend/node_modules/.bin/playwright install chromium` 安裝，再以 `RAGGLASS_BROWSER=chromium` 執行測試。沒有 NVIDIA GPU 的電腦仍可使用 CPU 啟動 API；量測程式會標示 GPU 遙測不可用，不虛構數據。
 
 ## 資料與架構
 

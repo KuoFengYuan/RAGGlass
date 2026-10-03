@@ -73,13 +73,27 @@ These are aggregate instantaneous snapshots, including concurrent unrelated work
 - After the final formatting changes and actual service restart, the Chrome test passed again on the development UI in **3.8 s**. The built FastAPI UI is separately tested with `RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e`.
 - TypeScript validation and Vite production build passed. Ruff lint/format and Prettier passed. `bash scripts/check.sh` passed in full, and `git diff --cached --check` passed. Local records and the browser screenshot are in ignored `.data/`.
 
+## Document inspection layout and model recommendations
+
+The subsequent update replaces the persistent document/history sidebar with a horizontal masthead and document/history dialogs. The original PDF occupies the main reading area, with a page rail and parsed-content tab. The adjacent inspector contains the query, answer, validated source links, and expandable retrieved passages; real stage timings appear at the bottom. The warm paper/charcoal/rust styling and prism mark are implemented in local CSS/SVG, with no external fonts or image service. The UI keeps its Traditional Chinese default and persistent English switch. Blank or out-of-range retrieval inputs disable submission, including the keyboard shortcut.
+
+Verification on **2026-10-03** after this change:
+
+- `bash scripts/check.sh` passed: **11 contract/API tests**, Ruff, Prettier, TypeScript, Vite, and bilingual files.
+- **2 Chrome tests passed on each interface**: development (`npm --prefix frontend run test:e2e`, **6.4 s**) and built FastAPI UI (`RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e`, **4.9 s**). Checks include live inference, citation/page highlighting, saved history, parsed content, language persistence, document catalog, Escape/focus restoration, invalid retrieval input, and a 390 × 844 viewport with a resized PDF and no document-wide horizontal overflow.
+- `.venv/bin/python scripts/verify_e2e.py` again passed all **6 real-model questions**. In fixture order, total query times were **772.06, 1,166.68, 815.05, 924.18, 818.73, and 838.34 ms**. This upload reused the already indexed sample; it did not remeasure ingestion. The electricity-cost answer was refused without citations.
+- Before/after snapshots for that run were both GPU 0 **11,284 MiB / 0%** and GPU 1 **36,906 MiB / 95%**. These aggregate snapshots include other GPU work and do not measure the application's peak usage.
+- The README screenshot is an actual built-interface run using only the publishable fictional fixture. Local screenshots/reports remain under `.data`; only the selected documentation image is committed.
+
+Both READMEs now describe answer-model recommendations, exact local versus registry names, switching/reproduction steps, and future Ollama embedding candidates with official sources checked on the same date. `gemma4:e4b` remains the measured default. Installed `Qwen3.8:27b` and `gemma4:31b` are comparison candidates; `gemma4:12b` and Ollama embeddings are untested. No recommended alternative was downloaded, substituted, benchmarked, or presented as proven better. Shared model services and unrelated workloads were preserved.
+
 ## Persistence and delivery
 
 The SQLite reopen contract passed. `scripts/verify_restart.py --api-pid 2758755` then actually stopped only this project's verified API, restarted the project's Qdrant container, and started a new API process. **The uploaded document and all seven existing runs were preserved exactly; Qdrant retained all six points.** A new real-model query returned **30 MB** with a page-2 citation after restart. The built UI at port 8000 returned HTTP 200. The new API PID was 2769439. Process IDs identify this execution only; do not reuse them to restart a later session.
 
 The real-stack reproduction commands are `.venv/bin/python scripts/verify_e2e.py`, `.venv/bin/python scripts/verify_failure.py`, and, on Linux with the actual current project API PID, `.venv/bin/python scripts/verify_restart.py --api-pid PID`. The last command deliberately restarts the API and this project's Qdrant; it verifies ownership before sending a signal. Logs and machine-readable records are `.data/backend.log`, `.data/verification.json`, `.data/failure-verification.json`, and `.data/restart-verification.json`. `npm --prefix frontend run test:e2e` writes a local screenshot to `.data/workbench.png`.
 
-Local repository workflow: initial governance commit on `main`, implementation on `Feature/first-rag-milestone`, English commit subject and bilingual PR draft. The owner requested GitHub publication for later; no remote repository/PR is created by assumption. Follow [AGENTS.md](../AGENTS.md) for subsequent push/PR/check/review/merge work.
+Local repository workflow: initial governance commit on `main`, implementation on `Feature/first-rag-milestone`, English commit subject and bilingual PR draft. At initial milestone completion, the owner had deferred publication and no remote PR existed. The owner subsequently authorized the first GitHub delivery together with the layout and model-guide update. Follow [AGENTS.md](../AGENTS.md) for subsequent push/PR/check/review/merge work.
 
 ## Limits and next milestone
 

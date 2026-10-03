@@ -18,14 +18,14 @@ const labels = {
       'Upload your PDF or download the field guide to trace a real answer back to its source.',
     original: 'Original PDF',
     parsed: 'Parsed content',
-    question: 'Ask the document',
+    question: 'Query',
     placeholder: 'What is the maximum upload size for the Cedar trial?',
     ask: 'Retrieve & answer',
     asking: 'Retrieving & generating…',
     evidence: 'Retrieved evidence',
-    answer: 'Grounded answer',
-    noRun: 'Every answer starts with evidence.',
-    noRunHint: 'Ask a question to inspect retrieved chunks, citations, and timing side by side.',
+    answer: 'Document answer',
+    noRun: 'No query results yet',
+    noRunHint: 'Run a query to inspect the answer and its source evidence here.',
     verified: 'Citations validated',
     insufficient: 'Insufficient evidence',
     chunks: 'chunks',
@@ -63,6 +63,24 @@ const labels = {
     depends: 'Service status',
     reset: 'Refresh',
     sampleLabel: 'Sample PDF',
+    library: 'Document library',
+    inspect: 'Inspector',
+    workbench: 'Workbench',
+    retrieval: 'Retrieval',
+    retrievalOptions: 'Retrieval options',
+    pageIndex: 'Pages',
+    record: 'Query record',
+    filename: 'File',
+    state: 'Status',
+    opened: 'Uploaded',
+    total: 'Total',
+    completed: 'Completed',
+    running: 'Running',
+    generation: 'Generation',
+    citation_validation: 'Citation validation',
+    queryContext: 'Question in this record',
+    evidenceHint: 'Select a passage to expand it and locate its source.',
+    processing: 'Processing document',
   },
   'zh-TW': {
     workspace: '文件診斷工作台',
@@ -75,14 +93,14 @@ const labels = {
     noDocsHint: '上傳 PDF，或下載範例文件，將真實模型回答追查回原始證據。',
     original: '原始 PDF',
     parsed: '解析內容',
-    question: '向文件提問',
+    question: '查詢問題',
     placeholder: 'Cedar 試用方案的上傳容量上限是多少？',
     ask: '檢索並回答',
     asking: '正在檢索與生成…',
     evidence: '檢索證據',
-    answer: '模型回答',
-    noRun: '每個回答，從證據開始。',
-    noRunHint: '輸入問題，並排查看檢索片段、引用來源與執行耗時。',
+    answer: '文件答案',
+    noRun: '尚無查詢結果',
+    noRunHint: '輸入問題後，這裡會列出本次答案與引用證據。',
     verified: '引用已驗證',
     insufficient: '證據不足',
     chunks: '片段',
@@ -120,6 +138,24 @@ const labels = {
     depends: '服務狀態',
     reset: '重新整理',
     sampleLabel: '範例 PDF',
+    library: '文件庫',
+    inspect: '檢視面板',
+    workbench: '工作台',
+    retrieval: '檢索',
+    retrievalOptions: '檢索選項',
+    pageIndex: '頁碼',
+    record: '查詢紀錄',
+    filename: '檔名',
+    state: '狀態',
+    opened: '上傳時間',
+    total: '總耗時',
+    completed: '已完成',
+    running: '執行中',
+    generation: '生成回答',
+    citation_validation: '引用驗證',
+    queryContext: '此紀錄的問題',
+    evidenceHint: '點選片段可展開內容，並定位到原文。',
+    processing: '正在處理文件',
   },
 }
 type LabelKey = keyof typeof labels.en
@@ -142,6 +178,23 @@ const querying = ref(false)
 const view = ref('pdf')
 const parsedChunks = ref<Evidence[]>([])
 const fileInput = ref<HTMLInputElement>()
+const catalog = ref<HTMLDialogElement>()
+const catalogMode = ref<'documents' | 'history'>('documents')
+const servicesReady = computed(
+  () => health.value.llm === 'ready' && health.value.qdrant === 'ready',
+)
+const retrievalValid = computed(
+  () =>
+    Number.isInteger(topK.value) &&
+    topK.value >= 1 &&
+    topK.value <= 12 &&
+    Number.isFinite(threshold.value) &&
+    threshold.value >= 0 &&
+    threshold.value <= 1,
+)
+const thresholdLabel = computed(() =>
+  Number.isFinite(threshold.value) ? threshold.value.toFixed(2) : '—',
+)
 let refreshTimer: ReturnType<typeof setInterval>
 const provenance = computed(() =>
   selectedEvidence.value?.document_id === selectedId.value ? selectedEvidence.value.provenance : [],
@@ -160,6 +213,11 @@ const status = (value: string) => (value in labels.en ? t(value as LabelKey) : v
 function setLocale() {
   localStorage.setItem('ragglass-language', locale.value)
   window.document.documentElement.lang = locale.value === 'en' ? 'en' : 'zh-Hant'
+}
+
+function openCatalog(mode: 'documents' | 'history') {
+  catalogMode.value = mode
+  catalog.value?.showModal()
 }
 
 async function refresh() {
@@ -184,6 +242,7 @@ async function selectDocument(id: string) {
   selectedEvidence.value = null
   parsedChunks.value = []
   if (view.value === 'parsed') await loadChunks()
+  catalog.value?.close()
 }
 
 async function upload(event: Event) {
@@ -217,7 +276,13 @@ async function reindex() {
 }
 
 async function ask() {
-  if (!question.value.trim() || !document.value || querying.value) return
+  if (
+    !question.value.trim() ||
+    document.value?.status !== 'ready' ||
+    !retrievalValid.value ||
+    querying.value
+  )
+    return
   querying.value = true
   error.value = ''
   selectedEvidence.value = null
@@ -300,186 +365,151 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
 
 <template>
   <div class="app-shell">
-    <aside class="sidebar">
+    <input ref="fileInput" type="file" accept="application/pdf,.pdf" hidden @change="upload" />
+
+    <header class="masthead">
       <a class="brand" href="/" aria-label="RAGGlass home">
-        <svg class="brand-mark" viewBox="0 0 40 40" fill="none">
-          <rect width="40" height="40" rx="11" fill="#183b31" />
-          <path d="M10 11h16v5H15v13h-5V11Z" fill="#a9edc9" />
-          <path d="M20 21h10v10H20V21Z" stroke="#a9edc9" stroke-width="3" />
+        <svg class="brand-mark" viewBox="0 0 36 40" fill="none" aria-hidden="true">
+          <path d="M18 2 34 11v18l-16 9-16-9V11L18 2Z" stroke="currentColor" stroke-width="1.5" />
+          <path
+            d="m2 11 16 9 16-9M18 20v18M10 6.5 26 16v18"
+            stroke="currentColor"
+            stroke-width="1.5"
+          />
         </svg>
-        <span>RAG<span class="brand-light">Glass</span><small>See inside your RAG.</small></span>
+        <span>RAG<span class="brand-glass">Glass</span></span>
       </a>
-      <div class="workspace-label">
-        <span class="status-dot" />{{ t('local') }}<span class="mono">M1</span>
-      </div>
-      <div class="sidebar-heading">
-        {{ t('docs') }} <span>{{ docs.length }}</span>
-      </div>
-      <input ref="fileInput" type="file" accept="application/pdf,.pdf" hidden @change="upload" />
-      <button class="upload-button" :disabled="uploading" @click="fileInput?.click()">
-        <span>＋</span>{{ uploading ? '…' : t('upload') }}
-      </button>
-      <p class="upload-hint">{{ t('uploadHint') }} {{ config?.max_upload_mb || 30 }} MB</p>
-      <nav class="document-list" aria-label="Documents">
-        <button
-          v-for="doc in docs"
-          :key="doc.id"
-          class="document-item"
-          :class="{ active: selectedId === doc.id }"
-          @click="selectDocument(doc.id)"
-        >
-          <span class="file-icon">PDF</span
-          ><span class="document-text"
-            ><strong>{{ doc.filename }}</strong
-            ><small
-              ><i class="status-dot" :class="doc.status" />{{ status(doc.status) }} ·
-              {{ doc.page_count }} {{ t('pages') }}</small
-            ></span
-          >
+      <nav class="main-nav" aria-label="Workspace navigation">
+        <span class="nav-current">{{ t('workbench') }}</span>
+        <button data-testid="open-library" @click="openCatalog('documents')">
+          {{ t('library') }} <span>{{ docs.length }}</span>
+        </button>
+        <button data-testid="open-history" @click="openCatalog('history')">
+          {{ t('history') }} <span>{{ runs.length }}</span>
         </button>
       </nav>
-      <a class="sample-link" href="/api/sample.pdf" download="ragglass-field-guide.pdf"
-        >↓ {{ t('sample') }}</a
-      >
-      <div class="sidebar-heading history-heading">
-        {{ t('history') }} <span>{{ runs.length }}</span>
-      </div>
-      <div class="history-list">
-        <p v-if="!runs.length" class="muted tiny">{{ t('noHistory') }}</p>
-        <button
-          v-for="item in runs"
-          :key="item.id"
-          class="history-item"
-          :class="{ active: run?.id === item.id }"
-          @click="openRun(item.id)"
-        >
-          <span>{{ item.question }}</span
-          ><small
-            ><span :class="item.status === 'failed' ? 'red' : 'muted'">{{
-              item.status === 'failed' ? t('failed') : date(item.created_at)
-            }}</span>
-            · {{ ms(item.timings_ms.total || 0) }}</small
-          >
+      <div class="header-tools">
+        <details class="service-menu">
+          <summary>
+            <i class="status-dot" :class="{ failed: !servicesReady }" />{{ t('local') }}
+          </summary>
+          <div class="service-popover">
+            <strong>{{ t('depends') }}</strong>
+            <p v-for="(value, name) in health" :key="name">
+              <span>{{ name }}</span
+              ><span class="mono">{{ value }}</span>
+            </p>
+            <button class="text-button" @click="refresh">{{ t('reset') }}</button>
+          </div>
+        </details>
+        <select v-model="locale" aria-label="Language" @change="setLocale">
+          <option value="zh-TW">繁體中文</option>
+          <option value="en">English</option>
+        </select>
+        <button class="upload-button" :disabled="uploading" @click="fileInput?.click()">
+          <span>＋</span>{{ uploading ? '…' : t('upload') }}
         </button>
       </div>
-      <div class="sidebar-bottom">
-        <span class="status-dot" />SQLite + Qdrant<small>{{ t('saved') }}</small>
-      </div>
-    </aside>
+    </header>
 
     <main class="main-workspace">
-      <header class="app-header">
+      <div class="workspace-heading">
         <div>
-          <span class="eyebrow">RAG DIAGNOSTICS</span>
           <h1>{{ t('workspace') }}</h1>
+          <p>See inside your RAG.</p>
         </div>
-        <div class="header-tools">
-          <span v-for="(value, name) in health" :key="name" class="service-pill" :title="value"
-            ><i class="status-dot" :class="{ failed: value !== 'ready' }" />{{ name
-            }}<span v-if="value !== 'ready'">!</span></span
+        <div class="document-switcher">
+          <span class="file-icon">PDF</span>
+          <select
+            v-if="docs.length"
+            :value="selectedId"
+            :aria-label="t('selected')"
+            @change="selectDocument(($event.target as HTMLSelectElement).value)"
           >
-          <select v-model="locale" aria-label="Language" @change="setLocale">
-            <option value="zh-TW">繁體中文</option>
-            <option value="en">English</option>
+            <option v-for="doc in docs" :key="doc.id" :value="doc.id">{{ doc.filename }}</option>
           </select>
+          <span v-else class="muted">{{ t('noDocs') }}</span>
+          <a class="sample-link" href="/api/sample.pdf" download="ragglass-field-guide.pdf"
+            >↓ {{ t('sample') }}</a
+          >
         </div>
-      </header>
+      </div>
 
       <div v-if="error" class="global-error" role="alert">
         {{ error }}<button aria-label="Dismiss error" @click="error = ''">×</button>
       </div>
-      <div v-if="health.llm === 'model_missing'" class="global-error">{{ t('modelMissing') }}</div>
-
-      <section class="query-panel">
-        <div class="section-label">
-          <span class="step-number">01</span>{{ t('question')
-          }}<span class="model-label">{{ config?.llm.model || 'HTTP API' }}</span>
-        </div>
-        <form class="query-form" @submit.prevent="ask">
-          <input
-            v-model="question"
-            :placeholder="t('placeholder')"
-            aria-label="Question"
-            maxlength="2000"
-            :disabled="querying"
-          />
-          <button
-            class="primary"
-            :disabled="!question.trim() || document?.status !== 'ready' || querying"
-            type="submit"
-          >
-            {{ querying ? t('asking') : t('ask') }} <span v-if="!querying">↗</span>
-          </button>
-        </form>
-        <div class="query-options">
-          <label
-            >{{ t('topk') }}
-            <input v-model.number="topK" type="number" min="1" max="12" aria-label="Top K"
-          /></label>
-          <label
-            >{{ t('threshold') }}
-            <input
-              v-model.number="threshold"
-              type="number"
-              min="0"
-              max="1"
-              step="0.01"
-              aria-label="Minimum score"
-          /></label>
-          <span class="mono tiny muted">dense · cosine</span>
-          <button
-            class="text-button example-button"
-            type="button"
-            @click="
-              question =
-                locale === 'en'
-                  ? 'What is the maximum upload size for the Cedar trial?'
-                  : 'Cedar 試用方案的上傳容量上限是多少？'
-            "
-          >
-            {{ t('demoQuestion') }} ↗
-          </button>
-        </div>
-      </section>
+      <div v-if="health.llm === 'model_missing'" class="global-error" role="alert">
+        {{ t('modelMissing') }}
+      </div>
 
       <div class="inspection-grid">
-        <section class="document-panel">
-          <div class="panel-title">
-            <span class="step-number">02</span>
-            <div class="tabs">
-              <button :class="{ active: view === 'pdf' }" @click="view = 'pdf'">
-                {{ t('original') }}</button
-              ><button :class="{ active: view === 'parsed' }" @click="loadChunks">
+        <section class="document-panel" :aria-label="t('original')">
+          <div class="document-bar">
+            <div class="tabs" role="tablist" :aria-label="t('source')">
+              <button
+                role="tab"
+                :aria-selected="view === 'pdf'"
+                :class="{ active: view === 'pdf' }"
+                @click="view = 'pdf'"
+              >
+                {{ t('original') }}
+              </button>
+              <button
+                role="tab"
+                :aria-selected="view === 'parsed'"
+                :class="{ active: view === 'parsed' }"
+                @click="loadChunks"
+              >
                 {{ t('parsed') }}
               </button>
             </div>
-            <span class="mono tiny muted">{{ document?.page_count || '—' }} {{ t('pages') }}</span>
+            <span v-if="document" class="badge" :class="document.status"
+              ><i class="status-dot" :class="document.status" />{{ status(document.status) }}</span
+            >
+            <button
+              v-if="document"
+              class="text-button reindex-button"
+              :disabled="!['ready', 'failed'].includes(document.status)"
+              @click="reindex"
+            >
+              ↻ {{ t('retry') }}
+            </button>
           </div>
+
           <template v-if="document">
-            <div class="document-bar">
-              <strong>{{ document.filename }}</strong
-              ><span class="badge" :class="document.status">{{ status(document.status) }}</span
-              ><button
-                class="text-button"
-                :disabled="!['ready', 'failed'].includes(document.status)"
-                @click="reindex"
-              >
-                {{ t('retry') }}
-              </button>
-            </div>
             <div v-if="document.error" class="error-box" role="alert">{{ document.error }}</div>
-            <PdfViewer
-              v-if="view === 'pdf'"
-              :document-id="selectedId"
-              :page="page"
-              :provenance="provenance"
-              :locale="locale"
-              @page="page = $event"
-            />
+            <div class="reading-surface" v-if="view === 'pdf'">
+              <nav class="page-index" :aria-label="t('pageIndex')">
+                <span>{{ t('pageIndex') }}</span>
+                <button
+                  v-for="p in document.page_count"
+                  :key="p"
+                  :class="{ active: page === p, cited: selectedEvidence?.pages.includes(p) }"
+                  :aria-label="`Page ${p}`"
+                  :aria-current="page === p ? 'page' : undefined"
+                  @click="page = p"
+                >
+                  <span class="page-outline"><i /><i /><i /></span
+                  ><strong>{{ String(p).padStart(2, '0') }}</strong>
+                </button>
+              </nav>
+              <PdfViewer
+                :document-id="selectedId"
+                :page="page"
+                :provenance="provenance"
+                :locale="locale"
+                @page="page = $event"
+              />
+            </div>
             <div v-else class="parsed-scroll">
               <div class="parsed-links">
-                <a :href="`/api/documents/${selectedId}/parsed`" target="_blank">Markdown ↗</a
-                ><a :href="`/api/documents/${selectedId}/parsed?format=json`" target="_blank"
+                <span>{{ document.chunk_count }} {{ t('chunks') }}</span
+                ><a :href="`/api/documents/${selectedId}/parsed`" target="_blank" rel="noopener"
+                  >Markdown ↗</a
+                ><a
+                  :href="`/api/documents/${selectedId}/parsed?format=json`"
+                  target="_blank"
+                  rel="noopener"
                   >Docling JSON ↗</a
                 >
               </div>
@@ -492,48 +522,132 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
               </article>
             </div>
             <div class="document-footer">
-              <span>{{ t('pdfHint') }}</span>
-              <details>
+              <p>{{ t('pdfHint') }}</p>
+              <details class="document-details">
                 <summary>{{ t('documentDetails') }}</summary>
                 <pre>{{ JSON.stringify(document, null, 2) }}</pre>
               </details>
             </div>
           </template>
           <div v-else class="empty-document">
-            <div class="empty-graphic"><span>PDF</span><i /></div>
+            <div class="empty-page" aria-hidden="true"><span>PDF</span><i /><i /><i /></div>
             <h2>{{ t('noDocs') }}</h2>
             <p>{{ t('noDocsHint') }}</p>
-            <button class="primary" @click="fileInput?.click()">＋ {{ t('upload') }}</button
-            ><a href="/api/sample.pdf" download="ragglass-field-guide.pdf">{{ t('sample') }} ↓</a>
+            <button class="primary" @click="fileInput?.click()">＋ {{ t('upload') }}</button>
+            <span class="upload-hint"
+              >{{ t('uploadHint') }} {{ config?.max_upload_mb || 30 }} MB</span
+            >
           </div>
         </section>
 
-        <section class="results-panel">
-          <div class="panel-title">
-            <span class="step-number">03</span><strong>{{ t('answer') }}</strong
-            ><span class="mono tiny muted">{{ run ? run.id.slice(0, 8) : 'WAITING' }}</span>
+        <section class="results-panel" :aria-label="t('inspect')">
+          <div class="inspector-heading">
+            <span class="inspector-mark" aria-hidden="true">⌕</span>
+            <h2>{{ t('inspect') }}</h2>
+            <span class="mono">{{ run ? run.id.slice(0, 8) : '—' }}</span>
           </div>
+          <section class="query-panel">
+            <form class="query-form" @submit.prevent="ask">
+              <label for="question">{{ t('question') }}</label>
+              <textarea
+                id="question"
+                v-model="question"
+                :placeholder="t('placeholder')"
+                aria-label="Question"
+                maxlength="2000"
+                rows="2"
+                :disabled="querying"
+                @keydown.ctrl.enter.prevent="ask"
+                @keydown.meta.enter.prevent="ask"
+              />
+              <div class="query-actions">
+                <button
+                  class="text-button example-button"
+                  type="button"
+                  @click="
+                    question =
+                      locale === 'en'
+                        ? 'What is the maximum upload size for the Cedar pilot?'
+                        : 'Cedar 試用方案的上傳容量上限是多少？'
+                  "
+                >
+                  {{ t('demoQuestion') }}</button
+                ><span class="keyboard-hint">⌘ / Ctrl ↵</span
+                ><button
+                  class="primary"
+                  :disabled="
+                    !question.trim() || document?.status !== 'ready' || !retrievalValid || querying
+                  "
+                  type="submit"
+                >
+                  {{ querying ? t('asking') : t('ask') }} <span v-if="!querying">→</span>
+                </button>
+              </div>
+            </form>
+            <details class="retrieval-options">
+              <summary>
+                {{ t('retrievalOptions')
+                }}<span class="mono">K {{ topK }} · ≥ {{ thresholdLabel }}</span>
+              </summary>
+              <div class="query-options">
+                <label
+                  >{{ t('topk')
+                  }}<input
+                    v-model.number="topK"
+                    type="number"
+                    min="1"
+                    max="12"
+                    aria-label="Top K" /></label
+                ><label
+                  >{{ t('threshold')
+                  }}<input
+                    v-model.number="threshold"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    aria-label="Minimum score"
+                /></label>
+              </div>
+            </details>
+          </section>
+
           <div v-if="!run" class="empty-results">
-            <svg viewBox="0 0 80 80" width="72" fill="none">
-              <rect x="12" y="18" width="40" height="46" rx="5" stroke="#b7c5be" stroke-width="2" />
-              <path d="M22 30h20M22 38h13M22 46h15" stroke="#b7c5be" stroke-width="2" />
-              <circle cx="52" cy="51" r="14" fill="#f5f8f6" stroke="#5c9e80" stroke-width="2" />
-              <path d="m62 62 10 10" stroke="#5c9e80" stroke-width="3" />
-            </svg>
-            <h2>{{ t('noRun') }}</h2>
+            <div class="empty-rule" />
+            <h3>{{ t('noRun') }}</h3>
             <p>{{ t('noRunHint') }}</p>
-            <span class="mono tiny">PDF → CHUNKS → EVIDENCE → ANSWER</span>
+            <dl>
+              <div>
+                <dt>{{ t('model') }}</dt>
+                <dd class="mono">{{ config?.llm.model || '—' }}</dd>
+              </div>
+              <div>
+                <dt>{{ t('source') }}</dt>
+                <dd>
+                  {{
+                    document
+                      ? `${document.page_count} ${t('pages')} / ${document.chunk_count} ${t('chunks')}`
+                      : '—'
+                  }}
+                </dd>
+              </div>
+            </dl>
           </div>
-          <div v-else class="results-scroll">
+          <div v-else class="results-scroll" aria-live="polite">
+            <div class="run-context">
+              <span>{{ t('queryContext') }}</span>
+              <p>{{ run.question }}</p>
+            </div>
             <div v-if="run.error" class="error-box" role="alert">
               <strong>{{ run.error_code }}</strong>
               <p>{{ run.error }}</p>
             </div>
             <article v-if="run.answer" class="answer-card" data-testid="answer">
-              <div class="answer-status">
-                <span class="status-dot" :class="{ queued: !run.answerable }" />{{
+              <div class="answer-heading">
+                <h3>{{ t('answer') }}</h3>
+                <span class="answer-status" :class="{ insufficient: !run.answerable }">{{
                   run.answerable ? t('verified') : t('insufficient')
-                }}<span class="mono">{{ run.settings.llm.model }}</span>
+                }}</span>
               </div>
               <p>{{ run.answer }}</p>
               <div class="citations">
@@ -545,36 +659,44 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
                     :data-chunk-id="citation.id"
                     @click="navigate(citation, p)"
                   >
-                    [{{ index + 1 }}] {{ citation.filename }} · p. {{ p }} ↗
+                    <span class="citation-number">{{ index + 1 }}</span
+                    ><span>{{ citation.filename }} · p. {{ p }}</span
+                    ><span>↗</span>
                   </button></template
                 >
               </div>
+              <span class="answer-model mono">{{ run.settings.llm.model }}</span>
             </article>
             <div class="evidence-heading">
-              <h2>{{ t('evidence') }}</h2>
-              <span>{{ run.evidence.length }} {{ t('chunks') }}</span>
+              <h3>{{ t('evidence') }}</h3>
+              <span class="mono">{{ String(run.evidence.length).padStart(2, '0') }}</span>
             </div>
-            <p v-if="!run.evidence.length" class="muted tiny">{{ t('noEvidence') }}</p>
-            <button
-              v-for="chunk in run.evidence"
-              :key="chunk.id"
-              class="evidence-card"
-              :class="{ selected: selectedEvidence?.id === chunk.id }"
-              :data-chunk-id="chunk.id"
-              @click="navigate(chunk)"
-            >
-              <div class="evidence-card-top">
-                <span class="rank">{{ String(chunk.rank).padStart(2, '0') }}</span
-                ><strong>{{ chunk.filename }}</strong
-                ><span class="score" :title="t('score')">{{ chunk.score.toFixed(3) }}</span>
-              </div>
-              <p>{{ chunk.text }}</p>
-              <div class="evidence-meta">
-                <span>p. {{ chunk.pages.join(', ') }} ↗</span
-                ><span>{{ chunk.coordinates_available ? t('coords') : t('noCoords') }}</span>
-              </div>
-              <span class="chunk-id mono">{{ chunk.id }}</span>
-            </button>
+            <p class="evidence-hint">
+              {{ run.evidence.length ? t('evidenceHint') : t('noEvidence') }}
+            </p>
+            <ol class="evidence-list">
+              <li v-for="chunk in run.evidence" :key="chunk.id">
+                <button
+                  class="evidence-card"
+                  :class="{ selected: selectedEvidence?.id === chunk.id }"
+                  :data-chunk-id="chunk.id"
+                  :aria-expanded="selectedEvidence?.id === chunk.id"
+                  @click="navigate(chunk)"
+                >
+                  <div class="evidence-card-top">
+                    <span class="rank">{{ String(chunk.rank).padStart(2, '0') }}</span
+                    ><strong>{{ chunk.filename }}</strong
+                    ><span class="score" :title="t('score')">{{ chunk.score.toFixed(3) }}</span>
+                  </div>
+                  <p>{{ chunk.text }}</p>
+                  <div class="evidence-meta">
+                    <span>p. {{ chunk.pages.join(', ') }} ↗</span
+                    ><span>{{ chunk.coordinates_available ? t('coords') : t('noCoords') }}</span>
+                  </div>
+                  <span class="chunk-id mono">{{ chunk.id }}</span>
+                </button>
+              </li>
+            </ol>
             <details class="run-details">
               <summary>{{ t('settings') }}</summary>
               <pre>{{
@@ -600,8 +722,8 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
 
       <footer class="trace-panel">
         <div class="trace-label">
-          <span class="trace-icon">⌁</span>{{ t('trace')
-          }}<span class="mono tiny">{{ run?.status || 'IDLE' }}</span>
+          <i class="status-dot" :class="{ queued: querying }" /><strong>{{ t('trace') }}</strong
+          ><span>{{ querying ? t('running') : run ? status(run.status) : '—' }}</span>
         </div>
         <div class="trace-stages">
           <template v-if="run"
@@ -611,14 +733,82 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
               class="trace-stage"
               :class="{ total: key === 'total' }"
             >
-              <span>{{ key }}</span
+              <span>{{ status(String(key)) }}</span
               ><strong class="mono">{{ ms(value) }}</strong>
             </div></template
-          ><span v-else class="muted tiny"
-            >embedding → retrieval → generation → citation validation</span
+          ><span v-else class="muted"
+            >{{ config?.llm.model }} <span class="trace-separator">/</span> {{ t('saved') }}</span
           >
         </div>
       </footer>
     </main>
+
+    <dialog
+      ref="catalog"
+      class="catalog-dialog"
+      aria-labelledby="catalog-title"
+      @click="$event.target === catalog && catalog?.close()"
+    >
+      <div class="catalog-content">
+        <header class="catalog-header">
+          <div>
+            <span class="catalog-kicker">RAGGlass / {{ t('local') }}</span>
+            <h2 id="catalog-title">
+              {{ catalogMode === 'documents' ? t('library') : t('history') }}
+            </h2>
+          </div>
+          <button class="icon-button" :aria-label="t('close')" @click="catalog?.close()">×</button>
+        </header>
+        <template v-if="catalogMode === 'documents'"
+          ><div class="catalog-actions">
+            <p>{{ t('uploadHint') }} {{ config?.max_upload_mb || 30 }} MB</p>
+            <button class="primary" :disabled="uploading" @click="fileInput?.click()">
+              ＋ {{ t('upload') }}
+            </button>
+          </div>
+          <nav class="document-list" aria-label="Documents">
+            <button
+              v-for="doc in docs"
+              :key="doc.id"
+              class="document-item"
+              :class="{ active: selectedId === doc.id }"
+              @click="selectDocument(doc.id)"
+            >
+              <span class="file-icon">PDF</span
+              ><span class="document-text"
+                ><strong>{{ doc.filename }}</strong
+                ><small
+                  >{{ doc.page_count }} {{ t('pages') }} · {{ doc.chunk_count }} {{ t('chunks') }} ·
+                  {{ date(doc.created_at) }}</small
+                ></span
+              ><span class="badge" :class="doc.status">{{ status(doc.status) }}</span
+              ><span>→</span>
+            </button>
+          </nav>
+          <p v-if="!docs.length" class="catalog-empty">{{ t('noDocsHint') }}</p></template
+        >
+        <template v-else
+          ><p v-if="!runs.length" class="catalog-empty">{{ t('noHistory') }}</p>
+          <div class="history-list">
+            <button
+              v-for="item in runs"
+              :key="item.id"
+              class="history-item"
+              :class="{ active: run?.id === item.id }"
+              @click="openRun(item.id)"
+            >
+              <span class="history-time mono">{{ date(item.created_at) }}</span
+              ><span class="history-question"
+                >{{ item.question
+                }}<small>{{ item.settings.llm.model }} · {{ status(item.status) }}</small></span
+              ><span class="history-duration mono">{{
+                item.timings_ms.total !== undefined ? ms(item.timings_ms.total) : '—'
+              }}</span
+              ><span>↗</span>
+            </button>
+          </div></template
+        >
+      </div>
+    </dialog>
   </div>
 </template>

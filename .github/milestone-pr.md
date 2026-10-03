@@ -1,33 +1,31 @@
-# feat: add the first executable RAGGlass workbench
-
 ## Change
 
-Engineers can upload a native-text PDF, inspect the original with PDF.js and the Docling output, ask a question, and trace a real model answer back to retrieved chunk IDs and source pages. The backend rejects citations outside the current evidence. Original files, chunks, document metadata, exact query settings/prompts, evidence, answers, errors, and measured timings survive service restarts through SQLite, local files, and persistent Qdrant storage.
+Deliver the first executable RAGGlass workbench. Engineers can upload a native-text PDF, inspect the original and parsed content, ask a real model, and follow validated retrieved chunk citations to original source pages. SQLite, local files, and persistent Qdrant preserve documents, evidence, prompts/settings, answers, errors, and measured timings after restarts.
 
-The Vue 3/TypeScript UI defaults to Traditional Chinese and offers persistent English selection. Independent CPU Docling/E5 adapters and configurable Ollama/OpenAI-compatible HTTP model clients leave clear interfaces for hybrid retrieval, reranking, OCR/VLM, evaluation, and embedding tuning. The app reuses the existing local Ollama `gemma4:e4b`; no second model service or driver upgrade is introduced.
+The document inspection interface uses a horizontal masthead, PDF page rail, adjacent answer/evidence inspector, document/history dialogs, and a measured execution trace. It defaults to Traditional Chinese with a persistent English switch and stacks vertically on narrow screens. English-first bilingual READMEs document setup, sample questions, model recommendations, exact Ollama names, and reproduction steps. `gemma4:e4b` is the real-tested baseline; Qwen3.8-27B and Gemma4-31B are explicitly untested comparison candidates. Future Ollama embedding choices are clearly separated from answer models and require an adapter/reindexing.
 
-Includes English-first bilingual README/AGENTS/contribution docs, pinned Python/npm dependencies, loopback Qdrant v1.15.5 Compose, local/SSH preview instructions, a three-page original CC0 PDF, six verification questions, CI checks, and a measured milestone report.
+Includes independent FastAPI parser/embedding/retrieval/model adapters, pinned uv/npm dependencies, loopback Qdrant v1.15.5 Compose, a publishable three-page CC0 fixture, six questions, bilingual AGENTS/contribution rules, CI, and measured milestone evidence. Existing model services and other GPU workloads are preserved.
 
 ## Validation
 
-- `bash scripts/check.sh`: Ruff lint/format, Prettier, 11 passing contract/API tests, TypeScript and Vite build, bilingual delivery-file checks.
-- `npm --prefix frontend audit --audit-level=high`: 0 reported vulnerabilities.
-- `.venv/bin/python scripts/verify_e2e.py`: real Docling/E5/Qdrant/Ollama, all six questions passed, including no evidence for electricity cost. Verified page mapping, known evidence, and citation membership. First successful ingest: 36.15 s including model initialization/downloads; first query: 7.45 s; subsequent five: 0.81–1.04 s.
-- `npm --prefix frontend run test:e2e`: real Chrome upload/question/source-page/history/language test passed.
-- The default Traditional Chinese question retrieved the English PDF and returned 30 MB with a page-2 citation (1,001.11 ms).
-- `.venv/bin/python scripts/verify_failure.py`: real retrieval with unreachable LLM preserves failed-run evidence and a clear actionable error.
-- `.venv/bin/python scripts/verify_restart.py --api-pid <verified-project-pid>`: actual API/Qdrant restart preserved the document, seven existing runs, and six vectors; a fresh real answer cited page 2. Built UI returned HTTP 200.
+- [x] `bash scripts/check.sh`: Ruff lint/format, **11 passing contract/API tests**, Prettier, TypeScript/Vite, bilingual delivery-file checks.
+- [x] `.venv/bin/python scripts/verify_e2e.py`: **6 real-model questions passed**, known evidence/page mappings and citation membership checked; insufficient evidence refuses without citations. Latest total query times: 772.06, 1,166.68, 815.05, 924.18, 818.73, 838.34 ms.
+- [x] `npm --prefix frontend run test:e2e`: **2 real Chrome tests passed**, 6.4 s.
+- [x] `RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e`: **2 real Chrome tests passed**, 4.9 s. Includes live answer, PDF/page highlight, parsed chunks, history, bilingual persistence, document catalog, Escape/focus restoration, invalid retrieval input, and resized 390-pixel mobile layout.
+- [x] Initial milestone also verified actual API/Qdrant restart persistence, a Chinese question against the English PDF, and real retrieval with an unreachable model endpoint (`verify_restart.py`, `verify_failure.py`; see the bilingual milestone record). These disruptive checks were not repeated for the UI/docs-only update.
+- [x] Both documentation languages updated with official model sources checked on 2026-10-03.
+- [x] Working changes and local Git history checked for secrets, private uploads, caches, model weights, and build output. Only the original public fixture and its selected UI screenshot are included.
 
-The OpenAI adapter HTTP test uses an explicitly synthetic fixture. Native Ollama inference and all displayed fixture answers are live, not precomputed. GPU snapshots include unrelated concurrent work and are not attributed solely to this application.
+Contract inputs and the OpenAI HTTP fixture are explicitly synthetic. The sample facts are fictional; native Ollama inference, PDF rendering, retrieval, and the recorded UI screenshot are real. GPU snapshots include other workloads; no peak memory or candidate-model benchmark is claimed. Hosted CI runs contracts/build/docs; real model evidence comes from the local stack.
 
 ## Limits and tradeoffs
 
-Native-text PDFs only. Single-user loopback workbench, serialized background ingestion, no distributed job queue/authentication. Source coordinates represent Docling item bounds. Citation validity does not prove claim entailment. Live vLLM, a remote SSH client, large corpora, and adversarial faithfulness remain unverified. Suggested next milestone: fixed evaluation sets and before/after comparisons with hybrid retrieval/reranking adapters.
+Native-text PDFs only. Single-user loopback service with serialized ingestion and no authentication/distributed jobs. Docling coordinates identify source items, not exact text spans. Citation membership does not prove semantic entailment. Live vLLM, remote-client SSH, large corpora, adversarial faithfulness, and all recommended replacement models remain unverified. The first publication preserves the local governance/implementation ancestry; subsequent PRs can use the normal squash workflow.
+
+Next milestone: fixed bilingual evaluation sets and before/after run comparisons, then replaceable hybrid retrieval and reranking. Embedding migration requires a separate evaluated adapter, fresh vectors, and calibrated thresholds.
 
 ## 繁體中文摘要
 
-完成可實際操作的 RAGGlass 第一里程碑：上傳 PDF、查看解析與原始文件、真實模型問答、引用跳頁、設定／耗時與歷史紀錄。引用由後端限制為當次檢索 chunk ID，文件、證據與 run 透過 SQLite、本機檔案與 Qdrant 持久保存。
+首次交付可執行的 RAGGlass：PDF 上傳／解析／索引、真實模型問答、後端驗證引用跳原頁，以及可持久重開的文件／執行紀錄。版面改為頂部導覽、原始文件閱讀區與答案／證據檢視面板，提供文件庫、歷史對話框與手機垂直配置。
 
-11 個契約／API 測試、六題真實模型、Chrome 瀏覽器、模型無法連線與實際 API／Qdrant 重啟驗證通過；TypeScript／Vite 建置與雙語交付檢查通過。保留既有服務，採 CPU 解析／embedding 與獨立 Ollama 模型 API。尚未支援 OCR、混合檢索、reranker 或正式量化評測；未實測遠端 vLLM、SSH 客戶端、大型 corpus 與對抗性語意支持。
-
-This is a ready-to-use PR body, not evidence that a remote PR has been created. GitHub publication was requested for later.
+中英文 README 已加入 Ollama 模型用途、取捨、確切名稱、切換與重現步驟；E4B 是已實測預設，Qwen3.8-27B／Gemma4-31B 是未評測候選，embedding 選項尚須獨立整合。11 個契約測試、六題真實模型，以及開發／正式版各兩個瀏覽器測試均通過。初始里程碑亦已實測重啟持久化、中文查詢及模型不可連線錯誤。未下載其他模型、修改驅動或停止共用服務；OCR、混合檢索、reranker、正式品質評測及大型資料驗證仍待後續里程碑。

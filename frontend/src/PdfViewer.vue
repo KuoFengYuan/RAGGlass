@@ -132,9 +132,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="pdf-viewer">
     <div class="pdf-toolbar">
-      <span class="mono muted"
-        >PDF.js · {{ locale === 'en' ? 'Original document' : '原始文件' }}</span
-      >
+      <span class="mono muted">{{ locale === 'en' ? 'Original file' : '原始檔案' }}</span>
       <div class="page-controls">
         <button
           class="icon-button"

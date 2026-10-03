@@ -8,6 +8,10 @@ A locally deployable diagnostic workbench for engineers building document RAG. T
 
 The first milestone implements native-text PDF ingestion with Docling, multilingual dense retrieval with Qdrant, and grounded answers from an independent model HTTP service. The application uses real embeddings and model inference; there are no canned demo answers. The original [sample PDF](examples/ragglass-field-guide.pdf) describes a fictional Cedar pilot and includes a simple table and [six test questions](examples/questions.json), including one the document cannot answer.
 
+![Document workbench showing the original PDF, answer, and retrieved evidence](docs/images/workbench.png)
+
+*Actual interface with the fictional CC0 fixture and a live `gemma4:e4b` answer; timings shown belong to that execution.*
+
 ## Requirements
 
 - Linux/macOS with Python **3.12**, Node.js **20.19+**, npm, and Docker Compose. The verified host uses Ubuntu 24.04, system Python 3.12.3, Node 20.20.2, and Docker 29.3.0.
@@ -75,15 +79,67 @@ The adapter calls `/chat/completions` and requests JSON output; disable `LLM_JSO
 
 Embedding uses the immutable E5 revision in `.env.example`, normalized vectors, `query: ` / `passage: ` prefixes, and the model's tokenizer. Changing embedding settings selects a different Qdrant collection; reindex existing documents before querying. Docling downloads layout/table models automatically. `DOCLING_CACHE_DIR` is a download cache; `DOCLING_ARTIFACTS_PATH` is optional and must contain already downloaded models.
 
+### Recommended Ollama models
+
+Recommendations checked against official model cards and the Ollama registry on **2026-10-03**. These are candidates for this workbench, not a claim that one model is universally best. General coding/reasoning benchmarks do not establish document answer quality, citation accuracy, or refusal reliability.
+
+| Answer model | Suggested use | Status in this installation |
+| --- | --- | --- |
+| [`gemma4:e4b`](https://ollama.com/library/gemma4) | **Default and verified baseline.** Start here for a compact local installation and the documented sample workflow. | Installed; real PDF/model/browser checks passed. Keep as the baseline when comparing changes. |
+| [`qwen3.8:27b`](https://ollama.com/library/qwen3.8) | **First candidate to compare** for Chinese/English document questions on a GPU workstation. The official model supports configurable thinking; start with this app's thinking-disabled JSON configuration. | Installed under the exact local name **`Qwen3.8:27b`**; used by other work. RAGGlass answer quality and latency have not been measured with it. |
+| [`gemma4:31b`](https://ollama.com/library/gemma4) | Larger dense-model comparison within the Gemma family when memory and latency budgets permit. | Installed; not yet evaluated in this application. |
+| [`gemma4:12b`](https://ollama.com/library/gemma4:12b) | Intermediate-size candidate for machines where 27B/31B models are impractical. | Official registry entry checked; not installed or tested on this host. Confirm compatibility with your Ollama version. |
+
+**Practical recommendation:** keep E4B as the first-release default, compare Qwen3.8-27B next, then compare Gemma4-31B if the evaluation justifies its cost. The verified host has two GPUs reporting 97,887 MiB each, but other workloads share them. Model file size is not a VRAM requirement; actual memory and latency depend on quantization, context, concurrency, and the serving engine. No resource estimate for an untested candidate is presented as a measurement.
+
+The app currently runs `intfloat/multilingual-e5-small` locally through Sentence Transformers on CPU. Docling's layout/table models also run on CPU, with OCR disabled. Answer generation is the only model HTTP call. The following Ollama **embedding** options are recommendations for a later adapter and evaluation, not selectable answer models:
+
+| Embedding model | Suggested use | Integration status |
+| --- | --- | --- |
+| [`qwen3-embedding:0.6b`](https://ollama.com/library/qwen3-embedding) | First multilingual retrieval candidate; the family supports Chinese/English and task instructions. | Not integrated or tested; requires an Ollama `/api/embed` adapter. |
+| [`qwen3-embedding:4b`](https://ollama.com/library/qwen3-embedding) | Larger retrieval comparison after 0.6B, if measured recall gains justify the resources. | Not integrated or tested. |
+| [`embeddinggemma:300m`](https://ollama.com/library/embeddinggemma) | Compact multilingual alternative for a future resource-conscious deployment. | Not integrated or tested; registry specifies Ollama 0.11.10 or newer. |
+
+Embedding migration requires the correct model-specific instructions/pooling, tokenizer, vector dimensions and normalization, a new collection, full reindexing, and recalibration of retrieval thresholds. **Do not put these names in `LLM_MODEL` or simply replace the current E5 environment settings.** The E5 adapter uses E5-specific prefixes. Reranking and multimodal PDF retrieval remain future capabilities; selecting a vision-capable answer model does not enable OCR/VLM in the parser.
+
+### Select and verify an answer model
+
+```bash
+# Inspect the existing service before downloading anything.
+curl -fsS http://127.0.0.1:11434/api/tags
+# Only if your selected model is missing, pull ONE candidate:
+ollama pull qwen3.8:27b
+# Alternatives: ollama pull gemma4:e4b / gemma4:31b / gemma4:12b
+```
+
+Copy the **exact installed name** into `.env`; this host uses `Qwen3.8:27b`, while a fresh official pull normally uses `qwen3.8:27b`. An installed model is not proof of application compatibility.
+
+```dotenv
+LLM_PROVIDER=ollama
+LLM_BASE_URL=http://127.0.0.1:11434
+LLM_MODEL=qwen3.8:27b
+LLM_THINK=false
+LLM_CONTEXT_TOKENS=8192
+LLM_MAX_TOKENS=768
+LLM_TIMEOUT_SECONDS=180
+LLM_TEMPERATURE=0
+```
+
+Restart **only the RAGGlass API** to load the edited settings. Verify `curl -fsS http://127.0.0.1:8000/api/config`, then run `.venv/bin/python scripts/verify_e2e.py` and the browser checks below. An answer-model change does not require document reindexing. Keep the same PDFs, questions, prompt, retrieval/chunk settings, and generation options when comparing models; include Chinese/English table questions and unanswerable questions. Inspect saved answers and citations, not just the script's pass/fail. The six fixture questions are a smoke test, not a quality ranking.
+
+Ollama tags can change after a pull. Save the installed metadata/digests with `curl -fsS http://127.0.0.1:11434/api/tags > .data/model-tags.json` before an evaluation; `.data` is ignored. Runs store model names/options and returned metrics, but do not archive model weights. Preserve the evaluated weights for reproduction. The checked first-release E4B digest and actual timings are in the [milestone record](docs/MILESTONE.md). No model download, default-model replacement, or shared Ollama restart was performed for this recommendation update.
+
 ## Try the complete flow
 
-1. Download the sample from the sidebar or use `examples/ragglass-field-guide.pdf`, then upload it. Watch queued → parsing → chunking → embedding → indexing → indexed. The first ingestion includes model downloads. The original PDF can be viewed during processing.
+1. Download the sample from the document toolbar or use `examples/ragglass-field-guide.pdf`, then upload it. Watch queued → parsing → chunking → embedding → indexing → indexed. The first ingestion includes model downloads. The original PDF can be viewed during processing.
 2. Ask **What is the maximum upload size for the Cedar pilot?** The expected fact is **30 MB**, from the table on **page 2**. The answer is generated live.
-3. Click a source button under the answer. PDF.js jumps to the corresponding original page; available source item boxes are highlighted. Evidence cards show full chunk IDs, cosine scores, page numbers, and coordinate availability.
+3. Click a source button under the answer. PDF.js jumps to the corresponding original page; available source item boxes are highlighted. Select a retrieved passage to expand its full text, chunk ID, cosine score, page numbers, and coordinate availability. The page rail also lets you browse original pages directly.
 4. Open **Parsed content** to inspect chunks or raw Markdown/Docling JSON. Open document details for SHA-256, parser/chunk/embedding settings, and ingestion timings.
 5. Inspect the execution trace, expand the run settings/prompt, or download run JSON. The run records the exact evidence, prompt, model endpoint/name/options, tokenizer revision, chunk settings, and retrieval settings, excluding API keys.
 6. Ask **What is the pilot's annual electricity cost in dollars?** It must state that the document cannot confirm the answer and show no citations.
-7. Restart the API and Qdrant without deleting their storage. Uploaded files, documents, and query history remain available. Click a saved run to reopen its answer, evidence, and configuration.
+7. Restart the API and Qdrant without deleting their storage. Uploaded files, documents, and query history remain available. Open **Run history** in the top navigation and select a saved run to reopen its answer, evidence, and configuration.
+
+The workspace places the original PDF on the left and a query/answer/evidence inspector on the right, with measured execution timings along the bottom. **Document library** and **Run history** open list dialogs from the top navigation; the active document can also be changed in the document selector. On narrow screens, the PDF and inspector stack vertically.
 
 The UI defaults to Traditional Chinese; switch to English in the top-right selector. The language preference survives a reload. Backend actionable errors are currently in Traditional Chinese.
 
@@ -110,7 +166,7 @@ RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e
 
 Contract tests cover valid/invalid citations, malformed model output, actual TCP connection refusal, SQLite persistence, interrupted-work recovery, and secret exclusion. They use small explicitly synthetic inputs; they do not pretend to be live inference.
 
-`verify_e2e.py` uploads the fixture, checks Docling page/coordinate mappings and known retrieved evidence, and asks all six questions through the real model. It writes measured records to ignored `.data/verification.json`. Browser tests exercise PDF upload, live question/answer, source navigation, history after reload, and language switching. They use local Google Chrome by default; alternatively run `PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/playwright" frontend/node_modules/.bin/playwright install chromium` and set `RAGGLASS_BROWSER=chromium` for tests. For a machine without an NVIDIA GPU, the API still runs on CPU; the measurement script reports GPU telemetry unavailable rather than inventing numbers.
+`verify_e2e.py` uploads the fixture, checks Docling page/coordinate mappings and known retrieved evidence, and asks all six questions through the real model. It writes measured records to ignored `.data/verification.json`. Browser tests exercise PDF upload, live question/answer, source navigation, history after reload, language switching, document/page navigation, keyboard dialog dismissal, retrieval input validation, and a 390-pixel mobile layout. They use local Google Chrome by default; alternatively run `PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/playwright" frontend/node_modules/.bin/playwright install chromium` and set `RAGGLASS_BROWSER=chromium` for tests. For a machine without an NVIDIA GPU, the API still runs on CPU; the measurement script reports GPU telemetry unavailable rather than inventing numbers.
 
 ## Data and architecture
 

@@ -73,13 +73,27 @@
 - 最終格式整理與實際服務重啟後，Chrome 開發介面測試再次通過，耗時 **3.8 秒**。FastAPI 正式建置介面另以 `RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e` 驗證。
 - TypeScript 與 Vite 正式建置通過，Ruff lint／format、Prettier 通過。`bash scripts/check.sh` 全部通過，`git diff --cached --check` 通過。本機實測紀錄與瀏覽器截圖保存在 Git 忽略的 `.data/`。
 
+## 文件檢視版面與模型建議
+
+後續改版以頂部導覽及文件／紀錄對話框取代常駐側欄。原始 PDF 為主要閱讀區，提供頁碼列與解析內容頁籤；相鄰檢視面板呈現問題、答案、已驗證來源連結與可展開檢索片段，底部顯示實測階段耗時。紙張色／炭灰／赭紅版面與稜鏡標記皆使用本機 CSS／SVG，無外部字型或圖片服務；保留繁體中文預設與持久英文切換。空白或超出範圍的檢索參數會阻止提交，鍵盤快捷鍵亦適用。
+
+改版後於 **2026-10-03** 驗證：
+
+- `bash scripts/check.sh` 通過：**11 個契約／API 測試**、Ruff、Prettier、TypeScript、Vite 與雙語文件。
+- **兩個 Chrome 測試在兩種介面皆通過**：開發版（`npm --prefix frontend run test:e2e`，**6.4 秒**）及 FastAPI 正式建置介面（`RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e`，**4.9 秒**）。涵蓋真實推論、引用跳頁／標示、歷史重開、解析內容、語言偏好、文件庫、Escape 關閉與焦點恢復、無效檢索輸入，以及 390 × 844 視窗的 PDF 重新縮放和整體頁面無水平溢出。
+- `.venv/bin/python scripts/verify_e2e.py` 再次通過全部**六題真實模型問題**。依範例順序總查詢耗時為 **772.06、1,166.68、815.05、924.18、818.73、838.34 ms**。本次上傳重用既有範例索引，未重新量測文件處理；電費題拒答且無引用。
+- 該次前後快照皆為 GPU 0 **11,284 MiB／0%**、GPU 1 **36,906 MiB／95%**。這是包含其他工作的整體快照，不能當作應用峰值顯存。
+- README 圖片源自正式建置介面的實際執行，內容僅含可散布的虛構範例；本機截圖／報告留在 `.data`，只有選定的文件展示圖片提交 Git。
+
+兩份 README 現在都包含回答模型建議、本機與 registry 的確切名稱、切換／重現步驟，以及後續 Ollama embedding 候選，官方來源於同日核對。`gemma4:e4b` 保留為已量測預設；已安裝的 `Qwen3.8:27b` 與 `gemma4:31b` 是待比較候選，`gemma4:12b` 與 Ollama embedding 尚未測試。本次未下載、替換或評測其他候選，未將建議寫成已證明更好，並保留共用模型服務與其他 GPU 工作。
+
 ## 持久化與交付
 
 SQLite 重開契約已通過，隨後 `scripts/verify_restart.py --api-pid 2758755` 實際只停止已確認屬於本專案的 API、重啟本專案 Qdrant 容器，再啟動新 API。**上傳文件與原有七筆紀錄完整保留，Qdrant 六個 points 也全數保留。** 重啟後再次詢問真實模型，回覆 **30 MB** 且引用第 2 頁；port 8000 的正式建置介面回傳 HTTP 200。新 API PID 為 2769439。PID 僅用來識別本次執行，不可拿來重啟之後的服務。
 
 重現真實流程可執行 `.venv/bin/python scripts/verify_e2e.py`、`.venv/bin/python scripts/verify_failure.py`；Linux 上使用當前實際 API PID 執行 `.venv/bin/python scripts/verify_restart.py --api-pid PID`。最後一項會重啟 API 與本專案 Qdrant，發送訊號前先確認程序歸屬。日誌與機器可讀紀錄位於 `.data/backend.log`、`.data/verification.json`、`.data/failure-verification.json`、`.data/restart-verification.json`。`npm --prefix frontend run test:e2e` 產生本機截圖 `.data/workbench.png`。
 
-本機 Git 流程：先在 `main` 建立治理初始提交，實作於 `Feature/first-rag-milestone`，使用英文提交及雙語 PR 草稿。使用者表示之後才發布 GitHub，因此未自行建立遠端 repository／PR。後續 push／PR／checks／reviews／merge 請依 [AGENTS.md](../AGENTS.zh-TW.md)。
+本機 Git 流程：先在 `main` 建立治理初始提交，實作於 `Feature/first-rag-milestone`，使用英文提交及雙語 PR 草稿。初始里程碑完成時，使用者延後 GitHub 發布，因此當時沒有遠端 PR；後續已授權將版面與模型指南更新一起進行首次 GitHub 交付。後續 push／PR／checks／reviews／merge 請依 [AGENTS.md](../AGENTS.zh-TW.md)。
 
 ## 限制與下一里程碑
 
