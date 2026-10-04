@@ -2,8 +2,10 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { api, ApiError } from './api'
 import PdfViewer from './PdfViewer.vue'
+import DocumentProgress from './DocumentProgress.vue'
 import WorkspaceCatalog from './WorkspaceCatalog.vue'
 import { answerText, runMarkdown } from './report'
+import { inspectUpload, UploadProblem } from './uploadInspection'
 import type { Citation, CleanupResult, Config, Document, Evidence, Run, RunCatalog } from './types'
 
 const locale = ref(localStorage.getItem('ragglass-language') || 'zh-TW')
@@ -102,6 +104,16 @@ const labels = {
     copied: 'Answer and sources copied.',
     copyFailed: 'Clipboard access was denied. Select the answer to copy it, or download Markdown.',
     markdown: 'Download Markdown',
+    checkingUpload: 'Checking PDF…',
+    sendingUpload: 'Uploading PDF…',
+    uploadSize: 'PDF exceeds the size limit. Reduce the file size or split it.',
+    uploadInvalid: 'Cannot read this PDF. Choose a valid PDF or export it again.',
+    uploadEncrypted: 'This PDF is encrypted. Remove its password before uploading.',
+    uploadPages: 'PDF exceeds the page limit. Split it into smaller files.',
+    uploadNoText: 'This PDF has no selectable text. OCR is not supported yet; use a text PDF.',
+    uploadDuplicate: 'This PDF is already in the document library.',
+    uploadAccepted: 'PDF uploaded. Processing is queued; you can read the original now.',
+    limits: 'Upload limits',
   },
   'zh-TW': {
     workspace: '文件診斷工作台',
@@ -195,6 +207,16 @@ const labels = {
     copied: '已複製答案與來源。',
     copyFailed: '瀏覽器未允許使用剪貼簿。請選取答案複製，或下載 Markdown。',
     markdown: '下載 Markdown',
+    checkingUpload: '正在檢查 PDF…',
+    sendingUpload: '正在上傳 PDF…',
+    uploadSize: 'PDF 超過容量上限，請縮小或拆分檔案。',
+    uploadInvalid: '無法讀取此 PDF，請選擇有效 PDF 或重新匯出。',
+    uploadEncrypted: '此 PDF 已加密，請先移除密碼後上傳。',
+    uploadPages: 'PDF 超過頁數上限，請拆分文件。',
+    uploadNoText: 'PDF 沒有可選取文字，目前尚未支援 OCR，請使用含文字的 PDF。',
+    uploadDuplicate: '此 PDF 已在文件庫中。',
+    uploadAccepted: 'PDF 已上傳並排入處理；現在即可閱讀原始文件。',
+    limits: '上傳限制',
   },
 }
 type LabelKey = keyof typeof labels.en
@@ -215,6 +237,8 @@ const health = ref<Record<string, string>>({})
 const error = ref('')
 const notice = ref('')
 const uploading = ref(false)
+const uploadStage = ref<'checkingUpload' | 'sendingUpload'>('checkingUpload')
+const uploadFilename = ref('')
 const querying = ref(false)
 const activeQuery = ref('')
 const stopping = ref(false)
@@ -256,7 +280,9 @@ const thresholdLabel = computed(() =>
   Number.isFinite(threshold.value) ? threshold.value.toFixed(2) : '—',
 )
 let refreshTimer: ReturnType<typeof setInterval>
+let documentTimer: ReturnType<typeof setInterval>
 let refreshNumber = 0
+let documentRefreshNumber = 0
 const provenance = computed(() =>
   selectedEvidence.value?.document_id === selectedId.value ? selectedEvidence.value.provenance : [],
 )
@@ -280,18 +306,12 @@ function openCatalog(mode: 'documents' | 'history') {
   catalog.value?.open(mode)
 }
 
-async function refresh() {
-  const current = ++refreshNumber
+async function refreshDocuments() {
+  const current = ++documentRefreshNumber
   try {
-    const [documents, history, dependency] = await Promise.all([
-      api<Document[]>('/documents'),
-      api<RunCatalog>('/runs/catalog?limit=1'),
-      api<{ dependencies: Record<string, string> }>('/health'),
-    ])
-    if (current !== refreshNumber) return
+    const documents = await api<Document[]>('/documents')
+    if (current !== documentRefreshNumber || disposed) return
     docs.value = documents
-    historyTotal.value = history.total
-    health.value = dependency.dependencies
     if (!documents.some((doc) => doc.id === selectedId.value)) {
       selectedId.value = run.value
         ? run.value.document_ids.find((id) => documents.some((doc) => doc.id === id)) || ''
@@ -301,6 +321,23 @@ async function refresh() {
       parsedChunks.value = []
       if (view.value === 'parsed') await loadChunks()
     }
+    revision.value++
+  } catch (e) {
+    if (!disposed) error.value = `${t('apiError')} ${(e as Error).message}`
+  }
+}
+
+async function refresh() {
+  const current = ++refreshNumber
+  try {
+    const [, history, dependency] = await Promise.all([
+      refreshDocuments(),
+      api<RunCatalog>('/runs/catalog?limit=1'),
+      api<{ dependencies: Record<string, string> }>('/health'),
+    ])
+    if (current !== refreshNumber || disposed) return
+    historyTotal.value = history.total
+    health.value = dependency.dependencies
     if (run.value && !activeQuery.value) {
       const runId = run.value.id
       try {
@@ -340,17 +377,27 @@ async function cleaned(result: CleanupResult) {
 async function upload(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
-  if (!file) return
+  if (!file || uploading.value) return
   uploading.value = true
+  uploadFilename.value = file.name
+  uploadStage.value = 'checkingUpload'
   error.value = ''
+  notice.value = ''
   try {
+    const limits = config.value || { max_upload_mb: 30, max_pdf_pages: 200 }
+    await inspectUpload(file, limits)
+    uploadStage.value = 'sendingUpload'
     const data = new FormData()
     data.append('file', file)
-    const doc = await api<Document>('/documents', { method: 'POST', body: data })
+    const doc = await api<Document & { duplicate?: boolean }>('/documents', {
+      method: 'POST',
+      body: data,
+    })
     await refresh()
     await selectDocument(doc.id)
+    notice.value = t(doc.duplicate ? 'uploadDuplicate' : 'uploadAccepted')
   } catch (e) {
-    error.value = (e as Error).message
+    error.value = e instanceof UploadProblem ? t(e.code) : (e as Error).message
   } finally {
     uploading.value = false
     input.value = ''
@@ -549,10 +596,19 @@ onMounted(async () => {
   }
   if (disposed) return
   refreshTimer = setInterval(refresh, 4000)
+  documentTimer = setInterval(() => {
+    if (
+      docs.value.some((doc) =>
+        ['queued', 'parsing', 'chunking', 'embedding', 'indexing'].includes(doc.status),
+      )
+    )
+      void refreshDocuments()
+  }, 750)
 })
 onBeforeUnmount(() => {
   disposed = true
   clearInterval(refreshTimer)
+  clearInterval(documentTimer)
   clearInterval(clockTimer)
   clearTimeout(queryTimer)
 })
@@ -602,7 +658,7 @@ onBeforeUnmount(() => {
           <option value="en">English</option>
         </select>
         <button class="upload-button" :disabled="uploading" @click="fileInput?.click()">
-          <span>＋</span>{{ uploading ? '…' : t('upload') }}
+          <span>＋</span>{{ uploading ? t(uploadStage) : t('upload') }}
         </button>
       </div>
     </header>
@@ -630,6 +686,13 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+      <p class="upload-limits" data-testid="upload-limits">
+        {{ t('limits') }} · {{ t('uploadHint') }} {{ config?.max_upload_mb || 30 }} MB ·
+        {{ config?.max_pdf_pages || 200 }} {{ t('pages') }}
+      </p>
+      <div v-if="uploading" class="upload-checking" role="status" data-testid="upload-status">
+        {{ t(uploadStage) }} <span>{{ uploadFilename }}</span>
+      </div>
       <div v-if="error" class="global-error" role="alert">
         {{ error }}<button aria-label="Dismiss error" @click="error = ''">×</button>
       </div>
@@ -668,7 +731,8 @@ onBeforeUnmount(() => {
               v-if="document"
               class="text-button reindex-button"
               :disabled="
-                querying || !['ready', 'failed', 'delete_failed'].includes(document.status)
+                querying ||
+                !['ready', 'failed', 'cancelled', 'delete_failed'].includes(document.status)
               "
               @click="reindex"
             >
@@ -677,6 +741,12 @@ onBeforeUnmount(() => {
           </div>
 
           <template v-if="document">
+            <DocumentProgress
+              :document="document"
+              :locale="locale"
+              @refresh="refreshDocuments"
+              @error="error = $event"
+            />
             <div v-if="document.error" class="error-box" role="alert">{{ document.error }}</div>
             <div class="reading-surface" v-if="view === 'pdf'">
               <nav class="page-index" :aria-label="t('pageIndex')">
@@ -733,9 +803,12 @@ onBeforeUnmount(() => {
             <div class="empty-page" aria-hidden="true"><span>PDF</span><i /><i /><i /></div>
             <h2>{{ t('noDocs') }}</h2>
             <p>{{ t('noDocsHint') }}</p>
-            <button class="primary" @click="fileInput?.click()">＋ {{ t('upload') }}</button>
+            <button class="primary" :disabled="uploading" @click="fileInput?.click()">
+              ＋ {{ t('upload') }}
+            </button>
             <span class="upload-hint"
-              >{{ t('uploadHint') }} {{ config?.max_upload_mb || 30 }} MB</span
+              >{{ t('uploadHint') }} {{ config?.max_upload_mb || 30 }} MB ·
+              {{ config?.max_pdf_pages || 200 }} {{ t('pages') }}</span
             >
           </div>
         </section>
@@ -1002,6 +1075,7 @@ onBeforeUnmount(() => {
       :uploading="uploading"
       :querying="querying"
       :max-upload="config?.max_upload_mb || 30"
+      :max-pages="config?.max_pdf_pages || 200"
       @select="selectDocument"
       @open-run="openRun"
       @upload="fileInput?.click()"

@@ -25,6 +25,11 @@ export interface Document {
   parser: unknown
   chunking: unknown
   embedding: unknown
+  queued_at?: string
+  processing_started_at?: string | null
+  finished_at?: string | null
+  cancel_requested?: boolean
+  progress?: { total_chunks: number | null; embedded_chunks: number; indexed_chunks: number }
 }
 export interface Evidence {
   id: string
@@ -84,4 +89,5 @@ export interface Config {
   embedding: { model: string }
   retrieval: { top_k: number; score_threshold: number }
   max_upload_mb: number
+  max_pdf_pages: number
 }

@@ -7,6 +7,7 @@ import uuid
 
 from .embedding import Embedder
 from .errors import PipelineError
+from .ingestion import IngestCancelled, IngestControl
 from .llm import LLMClient, make_prompt, validate_completion
 from .parser import Parser, make_chunks
 from .retrieval import VectorIndex
@@ -60,24 +61,31 @@ class Pipeline:
         with self.workspace.activity([doc_id]):
             self._ingest(doc_id)
 
-    def _ingest(self, doc_id):
+    def _ingest(self, doc_id, control=None):
         with self.ingest_lock:
             doc = self.store.document(doc_id)
             if not doc:
                 return
+            control = control or IngestControl(self.store, doc)
             started = time.perf_counter()
-            timings = {}
+            timings = {"queue_wait": round((started - control.queued_at) * 1000, 2)}
+            progress = {"total_chunks": None, "embedded_chunks": 0, "indexed_chunks": 0}
 
             def stage(name, operation):
-                doc.update(status=name, timings_ms=timings)
-                self.store.save_document(doc)
+                control.check()
+                control.update(status=name, stage_started_at=now(), timings_ms=timings.copy())
                 t = time.perf_counter()
                 try:
                     return operation()
                 finally:
-                    timings[name] = round((time.perf_counter() - t) * 1000, 2)
+                    timings[name] = round(
+                        timings.get(name, 0) + (time.perf_counter() - t) * 1000, 2
+                    )
+                    control.update(timings_ms=timings.copy())
 
             try:
+                control.check()
+                control.update(processing_started_at=now(), progress=progress.copy())
                 folder = self.store.directory / "documents" / doc_id
                 parsed = stage("parsing", lambda: self.parser.parse(folder / "original.pdf"))
                 (folder / "docling.json").write_text(
@@ -99,32 +107,54 @@ class Pipeline:
                         "no_native_text", "PDF 未產生可引用片段，請檢查原生文字。", 422
                     )
                 self.store.save_chunks(doc_id, chunks)
-                vectors = stage(
-                    "embedding", lambda: self.embedder.encode([c["text"] for c in chunks])
-                )
-                stage("indexing", lambda: self.index.index(chunks, vectors))
-                doc.update(
-                    status="ready",
-                    page_count=parsed["page_count"],
+                progress["total_chunks"] = len(chunks)
+                control.update(
                     chunk_count=len(chunks),
-                    collection=self.index.collection,
-                    embedding=self.embedder.snapshot(),
+                    page_count=parsed["page_count"],
+                    progress=progress.copy(),
                     parser=self.parser.snapshot(),
                     chunking=self.chunk_snapshot(),
-                    error=None,
+                    embedding=self.embedder.snapshot(),
                 )
+                size = self.settings.ingest_batch_size
+                for offset in range(0, len(chunks), size):
+                    batch = chunks[offset : offset + size]
+                    vectors = stage(
+                        "embedding", lambda: self.embedder.encode([c["text"] for c in batch])
+                    )
+                    progress["embedded_chunks"] += len(batch)
+                    control.update(progress=progress.copy())
+
+                    def write_batch():
+                        if offset == 0:
+                            self.index.begin_document(doc_id, len(vectors[0]))
+                            control.update(partial_index_collection=self.index.collection)
+                        # A stop during preparation does not start another write.
+                        control.check()
+                        self.index.upsert_batch(batch, vectors)
+
+                    stage("indexing", write_batch)
+                    progress["indexed_chunks"] += len(batch)
+                    control.update(progress=progress.copy())
+                    # Release this batch before encoding the next one, including on stop.
+                    vectors = None
+                with control.lock:
+                    control.check()
+                    control.update(status="ready", collection=self.index.collection, error=None)
+            except IngestCancelled:
+                control.update(status="cancelled", error=None, error_code=None)
             except Exception as exc:
                 log.exception("Ingestion failed for document %s", doc_id)
-                doc.update(
+                control.update(
                     status="failed",
+                    error_code=exc.code if isinstance(exc, PipelineError) else "ingestion_failed",
                     error=exc.message
                     if isinstance(exc, PipelineError)
                     else ("文件處理失敗。請檢查後端日誌與模型下載連線，修正後按重新索引。"),
                 )
             finally:
                 timings["total"] = round((time.perf_counter() - started) * 1000, 2)
-                doc.update(timings_ms=timings, updated_at=now())
-                self.store.save_document(doc)
+                control.update(timings_ms=timings, finished_at=now())
 
     def query(self, question, documents, top_k, threshold):
         with self.workspace.activity([d["id"] for d in documents], query=True):

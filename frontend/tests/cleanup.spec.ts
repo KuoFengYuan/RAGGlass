@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 import { mkdir, writeFile } from 'node:fs/promises'
+import { uploadPdf } from './upload'
 
 // Destructive browser checks run only in the disposable server started by verify_cleanup.py.
 test('real query, cleanup confirmation, document removal, retained evidence, and history clearing', async ({
@@ -14,11 +15,10 @@ test('real query, cleanup confirmation, document removal, retained evidence, and
   page.on('pageerror', (error) => errors.push(error.message))
   await page.goto('/')
   await page.getByLabel('Language').selectOption('en')
-  await page
-    .locator('input[type=file]')
-    .setInputFiles(
-      fileURLToPath(new URL('../../examples/ragglass-field-guide.pdf', import.meta.url)),
-    )
+  await uploadPdf(
+    page,
+    fileURLToPath(new URL('../../examples/ragglass-field-guide.pdf', import.meta.url)),
+  )
   await expect(page.locator('.document-bar .badge')).toHaveText('Indexed', { timeout: 180_000 })
   await expect(page.locator('.pdf-paper > canvas')).toBeVisible()
   const question = 'What is the maximum upload size for the Cedar pilot?'

@@ -1,20 +1,21 @@
+import asyncio
 import hashlib
 import uuid
 from contextlib import asynccontextmanager
-from io import BytesIO
 
 import httpx
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, model_validator
-from pypdf import PdfReader
 
 from .config import ROOT, Settings
 from .errors import PipelineError
+from .ingestion import IngestJobs
 from .pipeline import Pipeline
 from .query_jobs import QueryJobs
 from .store import Store, now
+from .uploads import inspect_pdf
 
 
 class Query(BaseModel):
@@ -44,6 +45,7 @@ def create_app(settings=None):
     store = Store(s.ragglass_data_dir)
     pipeline = Pipeline(s, store)
     jobs = QueryJobs(pipeline)
+    ingestion = IngestJobs(pipeline)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -51,13 +53,14 @@ def create_app(settings=None):
         try:
             yield
         finally:
-            await jobs.close()
+            await asyncio.gather(jobs.close(), ingestion.close())
             pipeline.index.client.close()
 
     app = FastAPI(title="RAGGlass", version="0.1.0", lifespan=lifespan)
     app.state.store = store
     app.state.pipeline = pipeline
     app.state.query_jobs = jobs
+    app.state.ingest_jobs = ingestion
 
     @app.exception_handler(PipelineError)
     async def pipeline_error(request, exc):
@@ -141,6 +144,7 @@ def create_app(settings=None):
                 "score_threshold": s.retrieval_score_threshold,
             },
             "max_upload_mb": s.max_upload_mb,
+            "max_pdf_pages": s.max_pdf_pages,
         }
 
     @app.get("/api/documents")
@@ -158,24 +162,12 @@ def create_app(settings=None):
         return pipeline.workspace.cleanup("documents", [doc_id])
 
     @app.post("/api/documents", status_code=202)
-    async def upload(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
-        data = await file.read(s.max_upload_mb * 1024 * 1024 + 1)
-        await file.close()
-        if len(data) > s.max_upload_mb * 1024 * 1024:
-            raise HTTPException(413, f"PDF 超過 {s.max_upload_mb} MB，請縮小或拆分檔案。")
-        if not data.startswith(b"%PDF-"):
-            raise HTTPException(422, "檔案不是有效的 PDF，請上傳 PDF 文件。")
+    async def upload(file: UploadFile = File(...)):
         try:
-            pdf = PdfReader(BytesIO(data))
-            if pdf.is_encrypted:
-                raise HTTPException(422, "PDF 已加密，請先移除密碼後上傳。")
-            page_count = len(pdf.pages)
-            if not 1 <= page_count <= s.max_pdf_pages:
-                raise HTTPException(422, f"PDF 頁數須介於 1 與 {s.max_pdf_pages}，請拆分文件。")
-        except HTTPException:
-            raise
-        except Exception as exc:
-            raise HTTPException(422, "PDF 損壞或無法讀取，請重新匯出 PDF。") from exc
+            data = await file.read(s.max_upload_mb * 1024 * 1024 + 1)
+        finally:
+            await file.close()
+        page_count = await asyncio.to_thread(inspect_pdf, data, s)
         digest = hashlib.sha256(data).hexdigest()
         with pipeline.workspace.mutation():
             existing = store.by_hash(digest)
@@ -194,6 +186,7 @@ def create_app(settings=None):
                 "created_at": now(),
                 "updated_at": now(),
                 "page_count": page_count,
+                "size_bytes": len(data),
                 "chunk_count": 0,
                 "error": None,
                 "parser": pipeline.parser.snapshot(),
@@ -201,9 +194,7 @@ def create_app(settings=None):
                 "embedding": pipeline.embedder.snapshot(),
                 "timings_ms": {},
             }
-            store.save_document(doc)
-            background_tasks.add_task(pipeline.ingest, doc_id)
-            return doc
+            return ingestion.enqueue(doc)
 
     @app.get("/api/documents/{doc_id}")
     def document(doc_id: str):
@@ -241,18 +232,19 @@ def create_app(settings=None):
         )
 
     @app.post("/api/documents/{doc_id}/reindex", status_code=202)
-    def reindex(doc_id: str, background_tasks: BackgroundTasks):
+    def reindex(doc_id: str):
         with pipeline.workspace.mutation():
             doc = get_doc(doc_id)
             if (
-                doc["status"] not in {"ready", "failed", "delete_failed"}
+                doc["status"] not in {"ready", "failed", "cancelled", "delete_failed"}
                 or pipeline.workspace.active_documents[doc_id]
             ):
                 raise HTTPException(409, "文件正在處理，請等待完成。")
-            doc.update(status="queued", error=None, updated_at=now())
-            store.save_document(doc)
-            background_tasks.add_task(pipeline.ingest, doc_id)
-            return doc
+            return ingestion.enqueue(doc)
+
+    @app.post("/api/documents/{doc_id}/cancel")
+    def cancel_document(doc_id: str):
+        return ingestion.cancel(doc_id)
 
     def query_documents(request):
         question = request.question.strip()

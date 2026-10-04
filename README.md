@@ -16,6 +16,7 @@ RAGGlass is a local, open-source workbench for engineers building PDF RAG. Inspe
 - **Inspect parsing and retrieval:** compare Docling output and scored passages with the document.
 - **Reproduce a run:** retain prompts, settings, evidence, answers, and measured timings after restarts.
 - **Manage your workspace:** search documents/history and remove selected items or clear all with explicit confirmation.
+- **Process PDFs with feedback:** check upload limits before transfer, follow confirmed chunk progress, and stop queued or running processing.
 - **Use your model service:** real embeddings and live Ollama or compatible HTTP inference.
 
 [Quick start](#quick-start) · [Watch the demo](#watch-the-demo) · [Illustrated usage](docs/USAGE.md) · [Deployment](docs/DEPLOYMENT.md) · [Model choices](#recommended-ollama-models)
@@ -43,6 +44,7 @@ See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0
 | [Illustrated usage](docs/USAGE.md) | Upload, status, questions, citations, parsed content, history, and five actual UI views. |
 | [Cleanup guide](docs/CLEANUP.md) | Search/filter catalogs, delete PDFs or records, missing-source behavior, and cleanup verification. |
 | [Reading and query controls](docs/USABILITY.md) | Query progress/cancellation, PDF search/zoom/selection, answer copying, Markdown reports, and isolated verification. |
+| [Upload and processing](docs/INGESTION.md) | Local PDF checks, document progress/stop, bounded vector batches, retry behavior, and isolated validation. |
 | [Video tutorial](docs/DEMO.md) | Nine numbered steps, scene times, and instructional subtitles already visible in the video. |
 | [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
 | [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |
@@ -172,7 +174,7 @@ Ollama tags can change after a pull. Save the installed metadata/digests with `c
 
 ## Try the complete flow
 
-1. Download the sample from the document toolbar or use `examples/ragglass-field-guide.pdf`, then upload it. Watch queued → parsing → chunking → embedding → indexing → indexed. The first ingestion includes model downloads. The original PDF can be viewed during processing.
+1. Download the sample from the document toolbar or use `examples/ragglass-field-guide.pdf`, then upload it. The browser checks native text, encryption, and configured size/page limits before transfer. Watch queued → parsing → chunking, then embedding/indexing batches → indexed, with elapsed time and confirmed chunk counts. Stop processing if needed; the original PDF can be viewed during processing. The first ingestion includes model downloads.
 2. Ask **What is the maximum upload size for the Cedar pilot?** The expected fact is **30 MB**, from the table on **page 2**. The answer is generated live.
 3. Click a source button under the answer. PDF.js jumps to the corresponding original page; available source item boxes are highlighted. Select a retrieved passage to expand its full text, chunk ID, cosine score, page numbers, and coordinate availability. The page rail also lets you browse original pages directly.
 4. Open **Parsed content** to inspect chunks or raw Markdown/Docling JSON. Open document details for SHA-256, parser/chunk/embedding settings, and ingestion timings.
@@ -220,7 +222,7 @@ Vue + PDF.js → FastAPI → Docling → page-aware token chunks → local E5 �
 SQLite: document metadata, chunks, runs        Local files: PDFs, Markdown, Docling JSON
 ```
 
-The adapters are `parser.py`, `embedding.py`, `retrieval.py`, and `llm.py`; `pipeline.py` orchestrates them. Background ingestion is serialized for predictable CPU memory use. Query workers remain separate from the UI request loop. SQLite is the metadata source of truth; Qdrant can be rebuilt from documents by reindexing. Each chunk retains all source pages, including multi-page items. Coordinates refer to original Docling source items, which can be larger than an individual token window; they are not fabricated exact phrase bounds. Missing coordinates are explicitly marked.
+The adapters are `parser.py`, `embedding.py`, `retrieval.py`, and `llm.py`; `pipeline.py` orchestrates them. A single document worker manages queued jobs and cooperative stops. Each bounded vector batch is written and released before the next one; parsing and text metadata still use memory for the whole document. Query workers remain separate from the UI request loop. SQLite is the metadata source of truth; Qdrant can be rebuilt from documents by reindexing. Each chunk retains all source pages, including multi-page items. Coordinates refer to original Docling source items, which can be larger than an individual token window; they are not fabricated exact phrase bounds. Missing coordinates are explicitly marked.
 
 `.data/documents/<document-id>/` contains `original.pdf`, `parsed.md`, and `docling.json`; `.data/ragglass.sqlite3` stores metadata/chunks/runs. Back up `.data` together with the Qdrant Docker volume. `docker compose down` keeps the volume; **`docker compose down -v` deletes the vector storage**. `.env`, data, caches, dependencies, build output, and local reports are ignored by Git. The sample fixture is the only PDF intended for publication.
 

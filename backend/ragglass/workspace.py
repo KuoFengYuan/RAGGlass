@@ -58,7 +58,8 @@ class Workspace:
             if kind == "documents":
                 busy = any(
                     self.active_documents[did]
-                    or documents[did]["status"] not in {"ready", "failed", "delete_failed"}
+                    or documents[did]["status"]
+                    not in {"ready", "failed", "cancelled", "delete_failed"}
                     for did in targets
                 )
             else:
