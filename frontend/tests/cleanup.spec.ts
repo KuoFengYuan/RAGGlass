@@ -20,7 +20,7 @@ test('real query, cleanup confirmation, document removal, retained evidence, and
       fileURLToPath(new URL('../../examples/ragglass-field-guide.pdf', import.meta.url)),
     )
   await expect(page.locator('.document-bar .badge')).toHaveText('Indexed', { timeout: 180_000 })
-  await expect(page.locator('canvas')).toBeVisible()
+  await expect(page.locator('.pdf-paper > canvas')).toBeVisible()
   const question = 'What is the maximum upload size for the Cedar pilot?'
   await page.getByLabel('Question', { exact: true }).fill(question)
   await page.getByRole('button', { name: 'Retrieve & answer' }).click()
@@ -44,7 +44,7 @@ test('real query, cleanup confirmation, document removal, retained evidence, and
   await catalog.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(page.getByTestId('answer')).not.toBeVisible()
   await expect(page.getByLabel('Question', { exact: true })).toHaveValue(question)
-  await expect(page.locator('canvas')).toBeVisible()
+  await expect(page.locator('.pdf-paper > canvas')).toBeVisible()
 
   await page.getByRole('button', { name: 'Retrieve & answer' }).click()
   await expect(page.getByTestId('answer')).toContainText('30 MB', { timeout: 180_000 })
@@ -72,7 +72,7 @@ test('real query, cleanup confirmation, document removal, retained evidence, and
   await expect(catalog.locator('.document-item')).toHaveCount(0)
   await catalog.getByRole('button', { name: '關閉', exact: true }).click()
   await expect(page.getByTestId('answer')).toContainText('30 MB')
-  await expect(page.locator('canvas')).not.toBeVisible()
+  await expect(page.locator('.pdf-paper > canvas')).not.toBeVisible()
   await expect(page.locator('.missing-source')).toContainText('原始 PDF 已刪除')
   await expect(page.locator('.citation-button').first()).toBeDisabled()
   await page.locator('.evidence-card').first().click()
@@ -107,7 +107,7 @@ test('real query, cleanup confirmation, document removal, retained evidence, and
   await expect(catalog.locator('.history-item')).toHaveCount(0)
   await expect(page.getByTestId('open-history')).toContainText('0')
   await page.reload()
-  await expect(page.locator('canvas')).not.toBeVisible()
+  await expect(page.locator('.pdf-paper > canvas')).not.toBeVisible()
   await page.getByTestId('open-history').click()
   await expect(page.locator('.history-item')).toHaveCount(0)
   expect(errors).toEqual([])

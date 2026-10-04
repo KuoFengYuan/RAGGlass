@@ -44,6 +44,7 @@ const labels = {
     deleting: 'Deleting',
     completed: 'Completed',
     running: 'Running',
+    cancelled: 'Cancelled',
     pages: 'pages',
     chunks: 'chunks',
     delete: 'Delete',
@@ -110,6 +111,7 @@ const labels = {
     deleting: '刪除中',
     completed: '已完成',
     running: '執行中',
+    cancelled: '已取消',
     pages: '頁',
     chunks: '片段',
     delete: '刪除',
@@ -368,7 +370,8 @@ onBeforeUnmount(() => {
           <template v-else
             ><option value="completed">{{ t('completed') }}</option>
             <option value="failed">{{ t('failed') }}</option>
-            <option value="running">{{ t('running') }}</option></template
+            <option value="running">{{ t('running') }}</option>
+            <option value="cancelled">{{ t('cancelled') }}</option></template
           >
         </select>
       </div>

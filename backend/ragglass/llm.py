@@ -112,7 +112,7 @@ class LLMClient:
             "json_mode": s.llm_json_mode,
         }
 
-    def generate(self, messages):
+    def _request(self, messages):
         s = self.settings
         headers = {"Authorization": f"Bearer {s.llm_api_key}"} if s.llm_api_key else {}
         if s.llm_provider == "ollama":
@@ -140,29 +140,52 @@ class LLMClient:
             }
             if s.llm_json_mode:
                 payload["response_format"] = {"type": "json_object"}
+        return s.llm_base_url.rstrip("/") + route, payload, headers
+
+    def generate(self, messages):
+        url, payload, headers = self._request(messages)
         try:
-            with httpx.Client(timeout=s.llm_timeout_seconds, trust_env=False) as client:
-                response = client.post(
-                    s.llm_base_url.rstrip("/") + route, json=payload, headers=headers
-                )
+            with httpx.Client(timeout=self.settings.llm_timeout_seconds, trust_env=False) as client:
+                response = client.post(url, json=payload, headers=headers)
                 response.raise_for_status()
                 data = response.json()
-        except httpx.HTTPStatusError as exc:
+        except (httpx.HTTPError, ValueError) as exc:
+            raise self._request_error(exc) from exc
+        return self._completion(data)
+
+    async def generate_async(self, messages):
+        # Cancelling this await closes this request, without touching the shared model service.
+        url, payload, headers = self._request(messages)
+        try:
+            async with httpx.AsyncClient(
+                timeout=self.settings.llm_timeout_seconds, trust_env=False
+            ) as client:
+                response = await client.post(url, json=payload, headers=headers)
+                response.raise_for_status()
+                data = response.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            raise self._request_error(exc) from exc
+        return self._completion(data)
+
+    @staticmethod
+    def _request_error(exc):
+        if isinstance(exc, httpx.HTTPStatusError):
             code = exc.response.status_code
-            raise PipelineError(
+            return PipelineError(
                 "llm_http_error",
                 f"模型 API 回傳 HTTP {code}。請確認 LLM_MODEL、LLM_PROVIDER 與 API key，"
                 "並檢查模型服務日誌。檢索結果已保存。",
                 502,
-            ) from exc
-        except (httpx.RequestError, ValueError) as exc:
-            raise PipelineError(
-                "llm_unavailable",
-                "無法連線模型 API 或請求逾時。請啟動模型服務，檢查 LLM_BASE_URL 與"
-                " LLM_TIMEOUT_SECONDS，然後重試。檢索結果已保存。",
-            ) from exc
+            )
+        return PipelineError(
+            "llm_unavailable",
+            "無法連線模型 API 或請求逾時。請啟動模型服務，檢查 LLM_BASE_URL 與"
+            " LLM_TIMEOUT_SECONDS，然後重試。檢索結果已保存。",
+        )
+
+    def _completion(self, data):
         try:
-            if s.llm_provider == "ollama":
+            if self.settings.llm_provider == "ollama":
                 content = data["message"]["content"]
                 metrics = {
                     k: data[k]

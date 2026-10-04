@@ -12,6 +12,7 @@
 RAGGlass is a local, open-source workbench for engineers building PDF RAG. Inspect a missing table fact, irrelevant retrieval, or an unsupported answer by tracing the actual document → parse → chunks → evidence → answer path.
 
 - **Trace citations:** click a validated source link to its original PDF page.
+- **Read and reuse results:** search/zoom/select PDF text, follow or stop queries, and copy answers or export Markdown reports.
 - **Inspect parsing and retrieval:** compare Docling output and scored passages with the document.
 - **Reproduce a run:** retain prompts, settings, evidence, answers, and measured timings after restarts.
 - **Manage your workspace:** search documents/history and remove selected items or clear all with explicit confirmation.
@@ -41,6 +42,7 @@ See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0
 | --- | --- |
 | [Illustrated usage](docs/USAGE.md) | Upload, status, questions, citations, parsed content, history, and five actual UI views. |
 | [Cleanup guide](docs/CLEANUP.md) | Search/filter catalogs, delete PDFs or records, missing-source behavior, and cleanup verification. |
+| [Reading and query controls](docs/USABILITY.md) | Query progress/cancellation, PDF search/zoom/selection, answer copying, Markdown reports, and isolated verification. |
 | [Video tutorial](docs/DEMO.md) | Nine numbered steps, scene times, and instructional subtitles already visible in the video. |
 | [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
 | [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |

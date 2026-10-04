@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { api, ApiError } from './api'
 import PdfViewer from './PdfViewer.vue'
 import WorkspaceCatalog from './WorkspaceCatalog.vue'
+import { answerText, runMarkdown } from './report'
 import type { Citation, CleanupResult, Config, Document, Evidence, Run, RunCatalog } from './types'
 
 const locale = ref(localStorage.getItem('ragglass-language') || 'zh-TW')
@@ -90,6 +91,17 @@ const labels = {
     cleanedDocs: 'Documents deleted',
     cleanedRuns: 'Run records deleted',
     cleanupIncomplete: 'Some items could not be deleted. Review the catalog error and retry.',
+    stopQuery: 'Stop query',
+    stopping: 'Stopping…',
+    cancelled: 'Cancelled',
+    queryCancelled: 'Query stopped. Retrieved evidence remains in this record.',
+    waiting: 'Starting query…',
+    elapsed: 'Elapsed',
+    reconnecting: 'Connection interrupted. Reconnecting to this query…',
+    copyAnswer: 'Copy answer & sources',
+    copied: 'Answer and sources copied.',
+    copyFailed: 'Clipboard access was denied. Select the answer to copy it, or download Markdown.',
+    markdown: 'Download Markdown',
   },
   'zh-TW': {
     workspace: '文件診斷工作台',
@@ -172,6 +184,17 @@ const labels = {
     cleanedDocs: '已刪除文件',
     cleanedRuns: '已刪除執行紀錄',
     cleanupIncomplete: '部分項目未能刪除，請查看列表錯誤並重試。',
+    stopQuery: '停止查詢',
+    stopping: '正在停止…',
+    cancelled: '已取消',
+    queryCancelled: '查詢已停止；已取得的證據仍保留於此紀錄。',
+    waiting: '正在啟動查詢…',
+    elapsed: '已等待',
+    reconnecting: '連線中斷，正在重新連接此查詢…',
+    copyAnswer: '複製答案與來源',
+    copied: '已複製答案與來源。',
+    copyFailed: '瀏覽器未允許使用剪貼簿。請選取答案複製，或下載 Markdown。',
+    markdown: '下載 Markdown',
   },
 }
 type LabelKey = keyof typeof labels.en
@@ -193,6 +216,19 @@ const error = ref('')
 const notice = ref('')
 const uploading = ref(false)
 const querying = ref(false)
+const activeQuery = ref('')
+const stopping = ref(false)
+const queryConnectionLost = ref(false)
+const copying = ref(false)
+const clock = ref(Date.now())
+let queryTimer: ReturnType<typeof setTimeout> | undefined
+let clockTimer: ReturnType<typeof setInterval>
+let disposed = false
+const elapsed = computed(() =>
+  run.value && querying.value
+    ? Math.max(0, (clock.value - Date.parse(run.value.created_at)) / 1000).toFixed(1)
+    : '0.0',
+)
 const view = ref('pdf')
 const parsedChunks = ref<Evidence[]>([])
 const fileInput = ref<HTMLInputElement>()
@@ -265,11 +301,12 @@ async function refresh() {
       parsedChunks.value = []
       if (view.value === 'parsed') await loadChunks()
     }
-    if (run.value) {
+    if (run.value && !activeQuery.value) {
       const runId = run.value.id
       try {
         const saved = await api<Run>(`/runs/${runId}`)
-        if (current === refreshNumber && run.value?.id === runId) run.value = saved
+        if (current === refreshNumber && run.value?.id === runId && !activeQuery.value)
+          run.value = saved
       } catch (e) {
         if ((e as ApiError).status === 404 && run.value?.id === runId) run.value = null
         else throw e
@@ -339,10 +376,14 @@ async function ask() {
   )
     return
   querying.value = true
+  stopping.value = false
+  queryConnectionLost.value = false
   error.value = ''
+  notice.value = ''
+  run.value = null
   selectedEvidence.value = null
   try {
-    run.value = await api<Run>('/query', {
+    const started = await api<Run>('/query/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -352,15 +393,71 @@ async function ask() {
         score_threshold: threshold.value,
       }),
     })
-    await refresh()
+    if (disposed) return
+    run.value = started
+    followQuery(started.id)
   } catch (e) {
     error.value = (e as Error).message
-  } finally {
     querying.value = false
   }
 }
 
+function followQuery(id: string) {
+  clearTimeout(queryTimer)
+  activeQuery.value = id
+  querying.value = true
+  sessionStorage.setItem('ragglass-active-run', id)
+  void pollQuery(id)
+}
+
+async function pollQuery(id: string) {
+  if (disposed || activeQuery.value !== id) return
+  try {
+    const current = await api<Run>(`/runs/${id}`)
+    if (disposed || activeQuery.value !== id) return
+    run.value = current
+    stopping.value = stopping.value || !!current.cancel_requested
+    queryConnectionLost.value = false
+    if (current.status !== 'running') {
+      activeQuery.value = ''
+      querying.value = false
+      stopping.value = false
+      sessionStorage.removeItem('ragglass-active-run')
+      if (current.status === 'cancelled') notice.value = t('queryCancelled')
+      await refresh()
+      return
+    }
+  } catch (e) {
+    if (disposed || activeQuery.value !== id) return
+    if ((e as ApiError).status === 404) {
+      activeQuery.value = ''
+      querying.value = false
+      sessionStorage.removeItem('ragglass-active-run')
+      error.value = (e as Error).message
+      return
+    }
+    queryConnectionLost.value = true
+  }
+  if (!disposed && activeQuery.value === id) {
+    queryTimer = setTimeout(() => void pollQuery(id), queryConnectionLost.value ? 2000 : 500)
+  }
+}
+
+async function stopQuery() {
+  if (!activeQuery.value || stopping.value) return
+  const id = activeQuery.value
+  stopping.value = true
+  try {
+    const stopped = await api<Run>(`/runs/${id}/cancel`, { method: 'POST' })
+    if (activeQuery.value === id) run.value = stopped
+  } catch (e) {
+    stopping.value = false
+    error.value = (e as Error).message
+  }
+}
+
 async function openRun(id: string) {
+  if (activeQuery.value && activeQuery.value !== id) return
   try {
     run.value = await api<Run>(`/runs/${id}`)
     question.value = run.value.question
@@ -369,6 +466,7 @@ async function openRun(id: string) {
     threshold.value = retrieval.score_threshold
     const available = run.value.document_ids.find((id) => docs.value.some((doc) => doc.id === id))
     await selectDocument(available || '')
+    if (run.value?.status === 'running') followQuery(id)
   } catch (e) {
     error.value = (e as Error).message
   }
@@ -406,8 +504,36 @@ function downloadRun() {
   URL.revokeObjectURL(url)
 }
 
+async function copyAnswer() {
+  if (!run.value?.answer || copying.value) return
+  copying.value = true
+  try {
+    await navigator.clipboard.writeText(answerText(run.value, locale.value))
+    notice.value = t('copied')
+  } catch {
+    error.value = t('copyFailed')
+  } finally {
+    copying.value = false
+  }
+}
+
+function downloadMarkdown() {
+  if (!run.value) return
+  const url = URL.createObjectURL(
+    new Blob([runMarkdown(run.value, locale.value, window.location.origin)], {
+      type: 'text/markdown;charset=utf-8',
+    }),
+  )
+  const link = window.document.createElement('a')
+  link.href = url
+  link.download = `ragglass-run-${run.value.id}.md`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 onMounted(async () => {
   setLocale()
+  clockTimer = setInterval(() => (clock.value = Date.now()), 250)
   try {
     config.value = await api<Config>('/config')
     topK.value = config.value.retrieval.top_k
@@ -416,9 +542,20 @@ onMounted(async () => {
     error.value = (e as Error).message
   }
   await refresh()
+  const pending = sessionStorage.getItem('ragglass-active-run')
+  if (pending && !disposed) {
+    await openRun(pending)
+    if (run.value?.status !== 'running') sessionStorage.removeItem('ragglass-active-run')
+  }
+  if (disposed) return
   refreshTimer = setInterval(refresh, 4000)
 })
-onBeforeUnmount(() => clearInterval(refreshTimer))
+onBeforeUnmount(() => {
+  disposed = true
+  clearInterval(refreshTimer)
+  clearInterval(clockTimer)
+  clearTimeout(queryTimer)
+})
 </script>
 
 <template>
@@ -530,7 +667,9 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
             <button
               v-if="document"
               class="text-button reindex-button"
-              :disabled="!['ready', 'failed', 'delete_failed'].includes(document.status)"
+              :disabled="
+                querying || !['ready', 'failed', 'delete_failed'].includes(document.status)
+              "
               @click="reindex"
             >
               ↻ {{ t('retry') }}
@@ -645,6 +784,28 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
                 </button>
               </div>
             </form>
+            <div v-if="querying" class="query-progress" data-testid="query-progress">
+              <div>
+                <strong role="status">{{
+                  queryConnectionLost
+                    ? t('reconnecting')
+                    : stopping
+                      ? t('stopping')
+                      : run?.stage
+                        ? status(run.stage)
+                        : t('waiting')
+                }}</strong>
+                <span class="mono">{{ t('elapsed') }} {{ elapsed }} s</span>
+              </div>
+              <button
+                type="button"
+                class="text-button"
+                :disabled="!activeQuery || stopping"
+                @click="stopQuery"
+              >
+                {{ stopping ? t('stopping') : t('stopQuery') }}
+              </button>
+            </div>
             <details class="retrieval-options">
               <summary>
                 {{ t('retrievalOptions')
@@ -706,6 +867,9 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
               <strong>{{ run.error_code }}</strong>
               <p>{{ run.error }}</p>
             </div>
+            <p v-if="run.status === 'cancelled'" class="missing-source" role="status">
+              {{ t('queryCancelled') }}
+            </p>
             <article v-if="run.answer" class="answer-card" data-testid="answer">
               <div class="answer-heading">
                 <h3>{{ t('answer') }}</h3>
@@ -736,6 +900,9 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
                 >
               </div>
               <span class="answer-model mono">{{ run.settings.llm.model }}</span>
+              <button class="text-button copy-answer" :disabled="copying" @click="copyAnswer">
+                {{ t('copyAnswer') }}
+              </button>
             </article>
             <div class="evidence-heading">
               <h3>{{ t('evidence') }}</h3>
@@ -785,9 +952,18 @@ onBeforeUnmount(() => clearInterval(refreshTimer))
                 )
               }}</pre>
             </details>
-            <button class="text-button download-run" @click="downloadRun">
-              ↓ {{ t('download') }}
-            </button>
+            <div class="run-exports">
+              <button class="text-button download-run" @click="downloadRun">
+                ↓ {{ t('download') }}
+              </button>
+              <button
+                class="text-button"
+                :disabled="run.status === 'running'"
+                @click="downloadMarkdown"
+              >
+                ↓ {{ t('markdown') }}
+              </button>
+            </div>
           </div>
         </section>
       </div>

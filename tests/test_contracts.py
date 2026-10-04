@@ -1,3 +1,4 @@
+import asyncio
 import json
 import uuid
 
@@ -138,3 +139,38 @@ def test_openai_compatible_wire_format(monkeypatch):
     assert json.loads(requests[0].content)["response_format"] == {"type": "json_object"}
     assert metrics["model"] == "fixture-model"
     assert validate_completion(raw, [])["answerable"] is False
+
+
+@pytest.mark.parametrize("provider", ["ollama", "openai"])
+def test_async_model_adapter_uses_same_json_contract(provider, monkeypatch):
+    # Explicit synthetic wire-format fixture; no live model inference.
+    requests = []
+    content = json.dumps({"answerable": False, "answer": "Cannot confirm.", "citation_ids": []})
+
+    def responder(request):
+        requests.append(request)
+        body = (
+            {"model": "fixture", "message": {"content": content}, "eval_count": 4}
+            if provider == "ollama"
+            else {"model": "fixture", "choices": [{"message": {"content": content}}]}
+        )
+        return httpx.Response(200, json=body)
+
+    original_client = httpx.AsyncClient
+    monkeypatch.setattr(
+        httpx,
+        "AsyncClient",
+        lambda **kw: original_client(transport=httpx.MockTransport(responder), **kw),
+    )
+    client = LLMClient(
+        Settings(llm_provider=provider, llm_base_url="http://fixture.invalid", llm_model="fixture")
+    )
+    raw, metrics = asyncio.run(client.generate_async([{"role": "user", "content": "Question"}]))
+    payload = json.loads(requests[0].content)
+    assert metrics["model"] == "fixture" and raw == content
+    if provider == "ollama":
+        assert requests[0].url.path == "/api/chat"
+        assert payload["stream"] is False and payload["format"]["type"] == "object"
+    else:
+        assert requests[0].url.path == "/chat/completions"
+        assert payload["response_format"] == {"type": "json_object"}

@@ -48,6 +48,10 @@ export interface Run {
   created_at: string
   status: string
   question: string
+  stage?: string
+  stage_started_at?: string
+  cancel_requested?: boolean
+  finished_at?: string
   document_ids: string[]
   answer: string | null
   answerable: boolean
