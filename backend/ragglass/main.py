@@ -2,14 +2,16 @@ import asyncio
 import hashlib
 import uuid
 from contextlib import asynccontextmanager
+from typing import Literal
 
 import httpx
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .config import ROOT, Settings
+from .context import GenerationOptions
 from .errors import PipelineError
 from .ingestion import IngestJobs
 from .pipeline import Pipeline
@@ -19,10 +21,19 @@ from .uploads import inspect_pdf
 
 
 class Query(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     question: str = Field(min_length=1, max_length=2000)
     document_ids: list[str] = Field(min_length=1, max_length=30)
     top_k: int = Field(default=5, ge=1, le=12)
     score_threshold: float = Field(default=0.70, ge=0, le=1)
+    generation: GenerationOptions | None = None
+
+
+class SummaryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    document_ids: list[str] = Field(min_length=1, max_length=30)
+    language: Literal["zh-TW", "en"] = "zh-TW"
+    generation: GenerationOptions | None = None
 
 
 class CleanupSelection(BaseModel):
@@ -145,6 +156,13 @@ def create_app(settings=None):
             },
             "max_upload_mb": s.max_upload_mb,
             "max_pdf_pages": s.max_pdf_pages,
+            "workflow": {
+                "context_margin_tokens": s.llm_context_margin,
+                "max_attempts_per_node": s.llm_max_attempts,
+                "max_repairs_per_node": s.llm_max_repairs,
+                "max_calls": s.workflow_max_calls,
+                "timeout_seconds": s.workflow_timeout_seconds,
+            },
         }
 
     @app.get("/api/documents")
@@ -261,7 +279,25 @@ def create_app(settings=None):
     async def start_query(request: Query):
         question, docs = query_documents(request)
         return source_status(
-            jobs.start(question, docs, request.top_k, request.score_threshold), source_ids()
+            jobs.start(question, docs, request.top_k, request.score_threshold, request.generation),
+            source_ids(),
+        )
+
+    @app.post("/api/summary/start", status_code=202)
+    async def start_summary(request: SummaryRequest):
+        docs = [get_doc(did) for did in dict.fromkeys(request.document_ids)]
+        question = "文件三點摘要" if request.language == "zh-TW" else "Three-point document summary"
+        return source_status(
+            jobs.start(
+                question,
+                docs,
+                s.retrieval_top_k,
+                s.retrieval_score_threshold,
+                request.generation,
+                kind="summary",
+                language=request.language,
+            ),
+            source_ids(),
         )
 
     @app.post("/api/runs/{run_id}/cancel")
@@ -273,7 +309,10 @@ def create_app(settings=None):
         question, docs = query_documents(request)
         # A failed generation still returns the saved run, including retrieval and actionable error.
         return source_status(
-            pipeline.query(question, docs, request.top_k, request.score_threshold), source_ids()
+            pipeline.query(
+                question, docs, request.top_k, request.score_threshold, request.generation
+            ),
+            source_ids(),
         )
 
     @app.get("/api/runs")

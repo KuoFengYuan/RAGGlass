@@ -908,11 +908,11 @@ pre {
   gap: 15px;
   white-space: nowrap;
 }
-.retrieval-options {
+:is(.retrieval-options, .generation-options) {
   margin-top: 15px;
   font-size: 10px;
 }
-.retrieval-options > summary {
+:is(.retrieval-options, .generation-options) > summary {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -920,19 +920,19 @@ pre {
   min-height: 37px;
   color: var(--muted);
 }
-.retrieval-options > summary::-webkit-details-marker {
+:is(.retrieval-options, .generation-options) > summary::-webkit-details-marker {
   display: none;
 }
-.retrieval-options > summary::before {
+:is(.retrieval-options, .generation-options) > summary::before {
   content: '+';
   color: #85765f;
   font-size: 15px;
   width: 10px;
 }
-.retrieval-options[open] > summary::before {
+:is(.retrieval-options, .generation-options)[open] > summary::before {
   content: '−';
 }
-.retrieval-options summary .mono {
+:is(.retrieval-options, .generation-options) summary .mono {
   margin-left: auto;
   font-size: 9px;
 }
@@ -1890,4 +1890,8 @@ pre {
   .history-item > span:last-child {
     display: none;
   }
+}
+
+.summary-button {
+  margin: 8px 0 0;
 }

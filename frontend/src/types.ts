@@ -48,10 +48,51 @@ export interface Evidence {
   source_available?: boolean
 }
 export interface Citation extends Omit<Evidence, 'text' | 'score' | 'rank' | 'token_count'> {}
+export interface GenerationOptions {
+  temperature: number
+  top_p: number
+  max_tokens: number
+}
+export interface ContextReport {
+  estimated_input_tokens: number
+  input_budget_tokens: number
+  context_tokens: number
+  reserved_output_tokens: number
+  safety_margin_tokens: number
+  selected_ids?: string[]
+  omitted_ids?: string[]
+  actual_input_tokens?: number
+  actual_output_tokens?: number
+  actual_exceeds_reservation?: boolean
+}
+export interface ModelAttempt {
+  node: string
+  number: number
+  reason: string
+  status: string
+  error_code?: string
+  elapsed_ms?: number
+  context: ContextReport
+  prompt?: unknown
+  raw_response?: string
+  model_metrics?: unknown
+}
+export interface WorkflowNode {
+  id: string
+  phase: string
+  level: number
+  status: string
+  source_ids: string[]
+  elapsed_ms?: number
+  context: ContextReport
+  prompt?: unknown
+  output?: unknown
+}
 export interface Run {
   id: string
   created_at: string
   status: string
+  kind?: 'query' | 'summary'
   question: string
   stage?: string
   stage_started_at?: string
@@ -65,7 +106,20 @@ export interface Run {
   error: string | null
   error_code: string | null
   timings_ms: Record<string, number>
-  settings: { llm: { model: string; provider: string }; [key: string]: unknown }
+  settings: {
+    llm: { model: string; provider: string } & Partial<GenerationOptions>
+    [key: string]: unknown
+  }
+  context?: ContextReport
+  attempts?: ModelAttempt[]
+  usage?: {
+    reported_input_tokens: number
+    reported_output_tokens: number
+    reported_calls: number
+    unreported_calls: number
+  }
+  workflow?: { nodes: WorkflowNode[]; source_chunk_count: number; map_batches?: number }
+  summary_points?: { text: string; citation_ids: string[] }[]
   prompt?: unknown
   documents?: unknown
   raw_response?: string
@@ -85,9 +139,10 @@ export interface CleanupResult {
   failures: { id: string; code: string; message: string }[]
 }
 export interface Config {
-  llm: { model: string; provider: string }
+  llm: { model: string; provider: string; context_tokens?: number } & Partial<GenerationOptions>
   embedding: { model: string }
   retrieval: { top_k: number; score_threshold: number }
   max_upload_mb: number
   max_pdf_pages: number
+  workflow?: { context_margin_tokens: number; max_calls: number; timeout_seconds: number }
 }

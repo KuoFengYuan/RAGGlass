@@ -4,6 +4,7 @@ import re
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from .context import GenerationOptions
 from .errors import PipelineError
 
 SYSTEM_PROMPT = """You answer questions using ONLY the supplied evidence from PDF documents.
@@ -97,14 +98,14 @@ class LLMClient:
     def __init__(self, settings):
         self.settings = settings
 
-    def snapshot(self):
+    def snapshot(self, options=None):
         s = self.settings
+        options = options or GenerationOptions.defaults(s)
         return {
             "provider": s.llm_provider,
             "base_url": s.llm_base_url,
             "model": s.llm_model,
-            "temperature": s.llm_temperature,
-            "max_tokens": s.llm_max_tokens,
+            **options.model_dump(),
             "timeout_seconds": s.llm_timeout_seconds,
             "context_tokens": s.llm_context_tokens,
             "think": s.llm_think,
@@ -112,8 +113,9 @@ class LLMClient:
             "json_mode": s.llm_json_mode,
         }
 
-    def _request(self, messages):
+    def _request(self, messages, options=None, schema=None):
         s = self.settings
+        options = options or GenerationOptions.defaults(s)
         headers = {"Authorization": f"Bearer {s.llm_api_key}"} if s.llm_api_key else {}
         if s.llm_provider == "ollama":
             route = "/api/chat"
@@ -123,10 +125,11 @@ class LLMClient:
                 "stream": False,
                 "think": s.llm_think,
                 "keep_alive": s.llm_keep_alive,
-                "format": Completion.model_json_schema(),
+                "format": schema or Completion.model_json_schema(),
                 "options": {
-                    "temperature": s.llm_temperature,
-                    "num_predict": s.llm_max_tokens,
+                    "temperature": options.temperature,
+                    "top_p": options.top_p,
+                    "num_predict": options.max_tokens,
                     "num_ctx": s.llm_context_tokens,
                 },
             }
@@ -135,8 +138,9 @@ class LLMClient:
             payload = {
                 "model": s.llm_model,
                 "messages": messages,
-                "temperature": s.llm_temperature,
-                "max_tokens": s.llm_max_tokens,
+                "temperature": options.temperature,
+                "top_p": options.top_p,
+                "max_tokens": options.max_tokens,
             }
             if s.llm_json_mode:
                 payload["response_format"] = {"type": "json_object"}
@@ -153,12 +157,12 @@ class LLMClient:
             raise self._request_error(exc) from exc
         return self._completion(data)
 
-    async def generate_async(self, messages):
+    async def generate_async(self, messages, *, options=None, schema=None, timeout=None):
         # Cancelling this await closes this request, without touching the shared model service.
-        url, payload, headers = self._request(messages)
+        url, payload, headers = self._request(messages, options, schema)
         try:
             async with httpx.AsyncClient(
-                timeout=self.settings.llm_timeout_seconds, trust_env=False
+                timeout=timeout or self.settings.llm_timeout_seconds, trust_env=False
             ) as client:
                 response = await client.post(url, json=payload, headers=headers)
                 response.raise_for_status()
@@ -176,11 +180,17 @@ class LLMClient:
                 f"模型 API 回傳 HTTP {code}。請確認 LLM_MODEL、LLM_PROVIDER 與 API key，"
                 "並檢查模型服務日誌。檢索結果已保存。",
                 502,
+                retryable=code == 429 or code in {500, 502, 503, 504},
+            )
+        if isinstance(exc, ValueError):
+            return PipelineError(
+                "invalid_model_response", "模型 API 未回傳有效 JSON，請檢查 API 相容性。", 502
             )
         return PipelineError(
             "llm_unavailable",
             "無法連線模型 API 或請求逾時。請啟動模型服務，檢查 LLM_BASE_URL 與"
             " LLM_TIMEOUT_SECONDS，然後重試。檢索結果已保存。",
+            retryable=isinstance(exc, (httpx.TransportError, httpx.TimeoutException)),
         )
 
     def _completion(self, data):

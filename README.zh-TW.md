@@ -17,6 +17,7 @@ RAGGlass 是給 PDF RAG 工程師的地端開源工作台。從實際「文件 �
 - **重現執行：**保存 prompt、設定、證據、答案與實測耗時，重啟後仍可查看。
 - **管理工作空間：**搜尋文件與歷史紀錄，確認範圍後可刪除所選或全部清空。
 - **掌握文件處理：**傳送前檢查上傳限制、查看實際片段進度，並停止排隊或處理中的文件。
+- **檢查模型流程：**每次執行可調整生成參數、限制 context、檢查有限次重試，並將全文整理為三點有引用的摘要。
 - **連接自己的模型服務：**使用真實 embedding 與即時 Ollama／相容 HTTP 推論。
 
 [快速啟動](#快速啟動) · [觀看操作示範](#觀看操作示範) · [圖解操作](docs/USAGE.zh-TW.md) · [部署指南](docs/DEPLOYMENT.zh-TW.md) · [模型建議](#建議的-ollama-模型)
@@ -33,7 +34,7 @@ https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017
 
 [v0.1.0 預覽版](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0)提供版本說明與公開範例。靜態畫面見[實際工作台截圖](docs/images/workbench.zh-TW.png)及下方圖解指南。
 
-**第一版：**Docling 原生文字 PDF 處理、Qdrant 多語向量檢索、引用 ID 驗證及本機持久紀錄。[原創範例 PDF](examples/ragglass-field-guide.pdf) 含表格與[六個問題](examples/questions.json)，包含文件無法回答的問題。自動診斷、混合檢索、reranking 與修改前後品質比較屬於後續規劃，此版尚未實作。
+**目前工作台：**原生文字 PDF、多語 dense retrieval、引用 ID 驗證、持久追溯紀錄、context／錯誤恢復控制及文件摘要。[原創範例 PDF](examples/ragglass-field-guide.pdf) 含表格與[六個問題](examples/questions.json)，包含無法回答的問題。[中英文標註評測](examples/evaluation-cases.json) 支援固定條件下的生成比較；自主診斷、混合檢索、reranking 與 Fine-tuning 仍屬後續規劃。
 
 **技術：**Vue 3／TypeScript／PDF.js · FastAPI · Docling · Qdrant · SQLite · 獨立模型 HTTP API。
 
@@ -45,6 +46,7 @@ https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017
 | [清理指南](docs/CLEANUP.zh-TW.md) | 搜尋與篩選、刪除 PDF 或執行紀錄、來源缺失標示與清理驗證。 |
 | [閱讀與查詢控制](docs/USABILITY.zh-TW.md) | 查詢進度／取消、PDF 搜尋／縮放／選字、答案複製、Markdown 與獨立驗證。 |
 | [上傳與文件處理](docs/INGESTION.zh-TW.md) | 本機 PDF 檢查、文件進度／停止、有界向量批次、重試行為與隔離驗證。 |
+| [Context 與模型流程](docs/WORKFLOWS.zh-TW.md) | Token 估算／實際用量、生成參數、有限次錯誤恢復、三點摘要、評測與面試案例。 |
 | [影片教學](docs/DEMO.zh-TW.md) | 九個編號步驟、場景時間與已嵌入影片的操作字幕。 |
 | [安裝與部署](docs/DEPLOYMENT.zh-TW.md) | 環境、模型、Qdrant、開發／正式模式、選用 user service、SSH、備份、更新與排錯。 |
 | [實測里程碑](docs/MILESTONE.zh-TW.md) | 真實模型／瀏覽器／重啟結果、硬體、耗時與限制。 |
@@ -207,6 +209,8 @@ bash scripts/check.sh
 npm --prefix frontend run test:e2e
 # 驗證 FastAPI 直接提供的正式建置介面：
 RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e
+# 隔離的真實流程與正式建置 Chrome 檢查，只重用模型服務：
+.venv/bin/python scripts/verify_workflows.py
 ```
 
 契約測試包含有效／無效引用、錯誤模型格式、實際 TCP 拒絕連線、SQLite 持久化、中斷作業復原及敏感資訊排除。這些採小型、明確標示的合成輸入，不冒充真實推論。

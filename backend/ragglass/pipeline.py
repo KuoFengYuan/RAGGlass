@@ -5,13 +5,16 @@ import threading
 import time
 import uuid
 
+from .context import GenerationOptions
 from .embedding import Embedder
 from .errors import PipelineError
+from .generation import GenerationRunner
 from .ingestion import IngestCancelled, IngestControl
-from .llm import LLMClient, make_prompt, validate_completion
+from .llm import Completion, LLMClient, make_prompt, validate_completion
 from .parser import Parser, make_chunks
 from .retrieval import VectorIndex
 from .store import now
+from .summary import summarize
 from .workspace import Workspace
 
 log = logging.getLogger(__name__)
@@ -156,12 +159,30 @@ class Pipeline:
                 timings["total"] = round((time.perf_counter() - started) * 1000, 2)
                 control.update(timings_ms=timings, finished_at=now())
 
-    def query(self, question, documents, top_k, threshold):
+    def query(self, question, documents, top_k, threshold, generation=None):
         with self.workspace.activity([d["id"] for d in documents], query=True):
-            run = self.new_query(question, documents, top_k, threshold)
+            run = self.new_query(question, documents, top_k, threshold, generation)
             return asyncio.run(self.execute_query(run, QueryControl()))
 
-    def new_query(self, question, documents, top_k, threshold):
+    def new_query(
+        self,
+        question,
+        documents,
+        top_k,
+        threshold,
+        generation=None,
+        *,
+        kind="query",
+        language="zh-TW",
+    ):
+        options = generation or GenerationOptions.defaults(self.settings)
+        if (
+            options.max_tokens + self.settings.llm_context_margin
+            >= self.settings.llm_context_tokens
+        ):
+            raise PipelineError(
+                "context_budget_exceeded", "輸出保留額度未留下可用的輸入空間。", 422
+            )
         documents = [self.store.document(d["id"]) for d in documents]
         if any(d is None for d in documents):
             raise PipelineError("cleanup_missing", "文件已刪除，請重新選取文件。", 404)
@@ -177,6 +198,7 @@ class Pipeline:
             "stage_started_at": now(),
             "cancel_requested": False,
             "question": question,
+            "kind": kind,
             "document_ids": [d["id"] for d in documents],
             "documents": [
                 {
@@ -194,15 +216,29 @@ class Pipeline:
                 for d in documents
             ],
             "settings": {
-                "llm": self.llm.snapshot(),
+                "llm": self.llm.snapshot(options),
                 "embedding": self.embedder.snapshot(),
                 "retrieval": {
-                    "strategy": "dense-cosine",
+                    "strategy": "dense-cosine" if kind == "query" else "all-parsed-chunks",
                     "top_k": top_k,
                     "score_threshold": threshold,
                     "collection": self.index.collection,
                 },
-                "prompt_version": "grounded-json-v1",
+                "prompt_version": "grounded-json-v2"
+                if kind == "query"
+                else "document-three-points-v1",
+                "summary_language": language,
+                "context": {
+                    "estimator": "utf8-bytes-plus-framing-v1",
+                    "safety_margin_tokens": self.settings.llm_context_margin,
+                },
+                "resilience": {
+                    "max_attempts_per_node": self.settings.llm_max_attempts,
+                    "max_repairs_per_node": self.settings.llm_max_repairs,
+                    "retry_delay_seconds": self.settings.llm_retry_delay_seconds,
+                    "workflow_timeout_seconds": self.settings.workflow_timeout_seconds,
+                    "workflow_max_calls": self.settings.workflow_max_calls,
+                },
             },
             "timings_ms": {},
             "evidence": [],
@@ -218,6 +254,7 @@ class Pipeline:
     async def execute_query(self, run, control):
         started = time.perf_counter()
         retrieval = run["settings"]["retrieval"]
+        runner = GenerationRunner(self.settings, self.llm, run, self.store.save_run, control)
 
         async def stage(name, operation, threaded=True):
             control.check()
@@ -245,32 +282,66 @@ class Pipeline:
                         control.generation = None
                 return result
             finally:
-                run["timings_ms"][name] = round((time.perf_counter() - t) * 1000, 2)
+                run["timings_ms"][name] = round(
+                    run["timings_ms"].get(name, 0) + (time.perf_counter() - t) * 1000, 2
+                )
                 self.store.save_run(run)
 
         try:
-            vector = await stage(
-                "embedding", lambda: self.embedder.encode([run["question"]], query=True)[0]
-            )
-            evidence = await stage(
-                "retrieval",
-                lambda: self.index.search(
-                    vector, run["document_ids"], retrieval["top_k"], retrieval["score_threshold"]
-                ),
-            )
-            run["evidence"] = evidence
-            run["prompt"] = make_prompt(run["question"], evidence)
-            self.store.save_run(run)
-            if evidence:
-                raw, metrics = await stage(
-                    "generation", lambda: self.llm.generate_async(run["prompt"]), threaded=False
+            if run["kind"] == "summary":
+                chunks = await stage(
+                    "source_loading",
+                    lambda: [c for did in run["document_ids"] for c in self.store.chunks(did)],
                 )
-                run.update(raw_response=raw, model_metrics=metrics)
-                run.update(
-                    await stage("citation_validation", lambda: validate_completion(raw, evidence))
+                run["evidence"] = [{**c, "rank": i, "score": 0.0} for i, c in enumerate(chunks, 1)]
+                self.store.save_run(run)
+                await stage(
+                    "generation",
+                    lambda: summarize(run, runner, self.store, control),
+                    threaded=False,
                 )
             else:
-                run.update(answer="檢索未找到符合門檻的證據，無法從文件確認答案。")
+                vector = await stage(
+                    "embedding", lambda: self.embedder.encode([run["question"]], query=True)[0]
+                )
+                evidence = await stage(
+                    "retrieval",
+                    lambda: self.index.search(
+                        vector,
+                        run["document_ids"],
+                        retrieval["top_k"],
+                        retrieval["score_threshold"],
+                    ),
+                )
+                run["evidence"] = evidence
+                run["prompt"] = make_prompt(run["question"], evidence)
+                self.store.save_run(run)
+                if evidence:
+
+                    def prepare():
+                        selected, report = runner.budget.select(
+                            evidence,
+                            lambda items: make_prompt(run["question"], items),
+                            Completion.model_json_schema(),
+                        )
+                        run["context"] = report
+                        run["prompt"] = make_prompt(run["question"], selected)
+                        return selected
+
+                    selected = await stage("context_budget", prepare)
+                    run.update(
+                        await stage(
+                            "generation",
+                            lambda: runner.complete(
+                                run["prompt"],
+                                Completion.model_json_schema(),
+                                lambda raw: validate_completion(raw, selected),
+                            ),
+                            threaded=False,
+                        )
+                    )
+                else:
+                    run.update(answer="檢索未找到符合門檻的證據，無法從文件確認答案。")
             control.check()
             run["status"] = "completed"
         except QueryCancelled:

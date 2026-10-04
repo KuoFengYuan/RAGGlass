@@ -17,6 +17,7 @@ RAGGlass is a local, open-source workbench for engineers building PDF RAG. Inspe
 - **Reproduce a run:** retain prompts, settings, evidence, answers, and measured timings after restarts.
 - **Manage your workspace:** search documents/history and remove selected items or clear all with explicit confirmation.
 - **Process PDFs with feedback:** check upload limits before transfer, follow confirmed chunk progress, and stop queued or running processing.
+- **Inspect model workflows:** control generation per run, budget context, inspect bounded retries and summarize a whole document into three cited points.
 - **Use your model service:** real embeddings and live Ollama or compatible HTTP inference.
 
 [Quick start](#quick-start) · [Watch the demo](#watch-the-demo) · [Illustrated usage](docs/USAGE.md) · [Deployment](docs/DEPLOYMENT.md) · [Model choices](#recommended-ollama-models)
@@ -33,7 +34,7 @@ https://github.com/user-attachments/assets/5ebfca43-fd95-4244-a178-7e5f174f51a6
 
 See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0) for release notes and the public sample. For still images, see the [actual workbench screenshot](docs/images/workbench.png) and the illustrated guide below.
 
-**First release:** native-text PDF ingestion with Docling, multilingual dense retrieval with Qdrant, validated source IDs, and persistent local history. The [original sample PDF](examples/ragglass-field-guide.pdf) includes a table and [six test questions](examples/questions.json), including one it cannot answer. Automated diagnosis, hybrid search, reranking, and before/after quality comparisons are planned; they are not implemented in this release.
+**Current workbench:** native-text PDF ingestion, multilingual dense retrieval, validated source IDs, persistent traces, context/recovery controls and document summaries. The [original sample PDF](examples/ragglass-field-guide.pdf) includes a table and [six test questions](examples/questions.json), including one it cannot answer. A [bilingual annotated evaluation](examples/evaluation-cases.json) supports controlled generation comparisons. Autonomous diagnosis, hybrid search, reranking and fine-tuning remain planned.
 
 **Stack:** Vue 3 / TypeScript / PDF.js · FastAPI · Docling · Qdrant · SQLite · independent model HTTP API.
 
@@ -45,6 +46,7 @@ See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0
 | [Cleanup guide](docs/CLEANUP.md) | Search/filter catalogs, delete PDFs or records, missing-source behavior, and cleanup verification. |
 | [Reading and query controls](docs/USABILITY.md) | Query progress/cancellation, PDF search/zoom/selection, answer copying, Markdown reports, and isolated verification. |
 | [Upload and processing](docs/INGESTION.md) | Local PDF checks, document progress/stop, bounded vector batches, retry behavior, and isolated validation. |
+| [Context and model workflows](docs/WORKFLOWS.md) | Token estimates/native usage, per-run generation, bounded recovery, three-point summaries, evaluation and interview examples. |
 | [Video tutorial](docs/DEMO.md) | Nine numbered steps, scene times, and instructional subtitles already visible in the video. |
 | [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
 | [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |
@@ -207,6 +209,8 @@ bash scripts/check.sh
 npm --prefix frontend run test:e2e
 # To check the built UI served directly by FastAPI:
 RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e
+# Isolated real workflows and built Chrome checks; reuses only the model service:
+.venv/bin/python scripts/verify_workflows.py
 ```
 
 Contract tests cover valid/invalid citations, malformed model output, actual TCP connection refusal, SQLite persistence, interrupted-work recovery, and secret exclusion. They use small explicitly synthetic inputs; they do not pretend to be live inference.

@@ -22,6 +22,7 @@ for name in [
     "docs/CLEANUP",
     "docs/USABILITY",
     "docs/INGESTION",
+    "docs/WORKFLOWS",
     "docs/RELEASE-v0.1.0",
     "examples/README",
 ]:

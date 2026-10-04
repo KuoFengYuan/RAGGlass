@@ -4,9 +4,20 @@ import { api, ApiError } from './api'
 import PdfViewer from './PdfViewer.vue'
 import DocumentProgress from './DocumentProgress.vue'
 import WorkspaceCatalog from './WorkspaceCatalog.vue'
+import GenerationControls from './GenerationControls.vue'
+import WorkflowTrace from './WorkflowTrace.vue'
 import { answerText, runMarkdown } from './report'
 import { inspectUpload, UploadProblem } from './uploadInspection'
-import type { Citation, CleanupResult, Config, Document, Evidence, Run, RunCatalog } from './types'
+import type {
+  Citation,
+  CleanupResult,
+  Config,
+  Document,
+  Evidence,
+  GenerationOptions,
+  Run,
+  RunCatalog,
+} from './types'
 
 const locale = ref(localStorage.getItem('ragglass-language') || 'zh-TW')
 const labels = {
@@ -82,6 +93,11 @@ const labels = {
     running: 'Running',
     generation: 'Generation',
     citation_validation: 'Citation validation',
+    context_budget: 'Checking context budget',
+    source_loading: 'Loading document sources',
+    retry_wait: 'Waiting to retry model call',
+    summarize: 'Summarize document in 3 points',
+    omitted: 'Excluded from model context',
     queryContext: 'Question in this record',
     evidenceHint: 'Select a passage to expand it and locate its source.',
     processing: 'Processing document',
@@ -186,6 +202,11 @@ const labels = {
     running: '執行中',
     generation: '生成回答',
     citation_validation: '引用驗證',
+    context_budget: '檢查 context 預算',
+    source_loading: '載入文件來源',
+    retry_wait: '等待重試模型呼叫',
+    summarize: '三點文件摘要',
+    omitted: '未納入模型 context',
     queryContext: '此紀錄的問題',
     evidenceHint: '點選片段可展開內容，並定位到原文。',
     processing: '正在處理文件',
@@ -232,6 +253,7 @@ const page = ref(1)
 const question = ref('')
 const topK = ref(5)
 const threshold = ref(0.7)
+const generation = ref<GenerationOptions>({ temperature: 0, top_p: 1, max_tokens: 768 })
 const config = ref<Config | null>(null)
 const health = ref<Record<string, string>>({})
 const error = ref('')
@@ -279,6 +301,22 @@ const retrievalValid = computed(
 const thresholdLabel = computed(() =>
   Number.isFinite(threshold.value) ? threshold.value.toFixed(2) : '—',
 )
+const generationValid = computed(() => {
+  const g = generation.value
+  return (
+    Number.isFinite(g.temperature) &&
+    g.temperature >= 0 &&
+    g.temperature <= 2 &&
+    Number.isFinite(g.top_p) &&
+    g.top_p > 0 &&
+    g.top_p <= 1 &&
+    Number.isInteger(g.max_tokens) &&
+    g.max_tokens >= 64 &&
+    g.max_tokens <= 4096 &&
+    g.max_tokens + (config.value?.workflow?.context_margin_tokens || 256) <
+      (config.value?.llm.context_tokens || 8192)
+  )
+})
 let refreshTimer: ReturnType<typeof setInterval>
 let documentTimer: ReturnType<typeof setInterval>
 let refreshNumber = 0
@@ -414,11 +452,12 @@ async function reindex() {
   }
 }
 
-async function ask() {
+async function ask(kind: 'query' | 'summary' = 'query') {
   if (
-    !question.value.trim() ||
+    (kind === 'query' && !question.value.trim()) ||
     document.value?.status !== 'ready' ||
-    !retrievalValid.value ||
+    (kind === 'query' && !retrievalValid.value) ||
+    !generationValid.value ||
     querying.value
   )
     return
@@ -430,15 +469,24 @@ async function ask() {
   run.value = null
   selectedEvidence.value = null
   try {
-    const started = await api<Run>('/query/start', {
+    const started = await api<Run>(kind === 'summary' ? '/summary/start' : '/query/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question: question.value,
-        document_ids: [selectedId.value],
-        top_k: topK.value,
-        score_threshold: threshold.value,
-      }),
+      body: JSON.stringify(
+        kind === 'summary'
+          ? {
+              document_ids: [selectedId.value],
+              generation: generation.value,
+              language: locale.value,
+            }
+          : {
+              question: question.value,
+              document_ids: [selectedId.value],
+              top_k: topK.value,
+              score_threshold: threshold.value,
+              generation: generation.value,
+            },
+      ),
     })
     if (disposed) return
     run.value = started
@@ -511,6 +559,12 @@ async function openRun(id: string) {
     const retrieval = run.value.settings.retrieval as { top_k: number; score_threshold: number }
     topK.value = retrieval.top_k
     threshold.value = retrieval.score_threshold
+    const saved = run.value.settings.llm
+    generation.value = {
+      temperature: saved.temperature ?? config.value?.llm.temperature ?? 0,
+      top_p: saved.top_p ?? config.value?.llm.top_p ?? 1,
+      max_tokens: saved.max_tokens ?? config.value?.llm.max_tokens ?? 768,
+    }
     const available = run.value.document_ids.find((id) => docs.value.some((doc) => doc.id === id))
     await selectDocument(available || '')
     if (run.value?.status === 'running') followQuery(id)
@@ -585,6 +639,11 @@ onMounted(async () => {
     config.value = await api<Config>('/config')
     topK.value = config.value.retrieval.top_k
     threshold.value = config.value.retrieval.score_threshold
+    generation.value = {
+      temperature: config.value.llm.temperature ?? 0,
+      top_p: config.value.llm.top_p ?? 1,
+      max_tokens: config.value.llm.max_tokens ?? 768,
+    }
   } catch (e) {
     error.value = (e as Error).message
   }
@@ -820,7 +879,7 @@ onBeforeUnmount(() => {
             <span class="mono">{{ run ? run.id.slice(0, 8) : '—' }}</span>
           </div>
           <section class="query-panel">
-            <form class="query-form" @submit.prevent="ask">
+            <form class="query-form" @submit.prevent="ask()">
               <label for="question">{{ t('question') }}</label>
               <textarea
                 id="question"
@@ -830,8 +889,8 @@ onBeforeUnmount(() => {
                 maxlength="2000"
                 rows="2"
                 :disabled="querying"
-                @keydown.ctrl.enter.prevent="ask"
-                @keydown.meta.enter.prevent="ask"
+                @keydown.ctrl.enter.prevent="ask()"
+                @keydown.meta.enter.prevent="ask()"
               />
               <div class="query-actions">
                 <button
@@ -849,7 +908,11 @@ onBeforeUnmount(() => {
                 ><button
                   class="primary"
                   :disabled="
-                    !question.trim() || document?.status !== 'ready' || !retrievalValid || querying
+                    !question.trim() ||
+                    document?.status !== 'ready' ||
+                    !retrievalValid ||
+                    !generationValid ||
+                    querying
                   "
                   type="submit"
                 >
@@ -905,6 +968,20 @@ onBeforeUnmount(() => {
                 /></label>
               </div>
             </details>
+            <GenerationControls
+              v-model="generation"
+              :locale="locale"
+              :disabled="querying"
+              :valid="generationValid"
+            />
+            <button
+              type="button"
+              class="text-button summary-button"
+              :disabled="document?.status !== 'ready' || !generationValid || querying"
+              @click="ask('summary')"
+            >
+              {{ t('summarize') }}
+            </button>
           </section>
 
           <div v-if="!run" class="empty-results">
@@ -977,6 +1054,7 @@ onBeforeUnmount(() => {
                 {{ t('copyAnswer') }}
               </button>
             </article>
+            <WorkflowTrace :run="run" :locale="locale" />
             <div class="evidence-heading">
               <h3>{{ t('evidence') }}</h3>
               <span class="mono">{{ String(run.evidence.length).padStart(2, '0') }}</span>
@@ -996,8 +1074,13 @@ onBeforeUnmount(() => {
                   <div class="evidence-card-top">
                     <span class="rank">{{ String(chunk.rank).padStart(2, '0') }}</span
                     ><strong>{{ chunk.filename }}</strong
-                    ><span class="score" :title="t('score')">{{ chunk.score.toFixed(3) }}</span>
+                    ><span v-if="run.kind !== 'summary'" class="score" :title="t('score')">{{
+                      chunk.score.toFixed(3)
+                    }}</span>
                   </div>
+                  <small v-if="run.context?.omitted_ids?.includes(chunk.id)">{{
+                    t('omitted')
+                  }}</small>
                   <p>{{ chunk.text }}</p>
                   <div class="evidence-meta">
                     <span
@@ -1019,6 +1102,10 @@ onBeforeUnmount(() => {
                     prompt: run.prompt,
                     raw_response: run.raw_response,
                     model_metrics: run.model_metrics,
+                    context: run.context,
+                    usage: run.usage,
+                    attempts: run.attempts,
+                    workflow: run.workflow,
                   },
                   null,
                   2,

@@ -17,6 +17,9 @@ const words = (locale: string) =>
         error: 'Error',
         topK: 'Retrieved chunk limit',
         threshold: 'Minimum retrieval score',
+        usage: 'Reported input / output tokens',
+        unknownUsage: 'Calls with unknown token usage',
+        context: 'Estimated input / input budget',
         limitation:
           'Citation IDs are validated against retrieved evidence; semantic correctness is not guaranteed. PDF links require this workspace.',
       }
@@ -35,6 +38,9 @@ const words = (locale: string) =>
         error: '錯誤',
         topK: '檢索片段上限',
         threshold: '最低檢索分數',
+        usage: '實際回報輸入／輸出 token',
+        unknownUsage: 'token 用量未知的呼叫',
+        context: '估算輸入／輸入預算',
         limitation:
           '引用 ID 已對照本次檢索證據驗證，仍需核對答案的語意正確性。PDF 連結需透過原工作空間開啟。',
       }
@@ -76,6 +82,20 @@ export function runMarkdown(run: Run, locale: string, origin: string): string {
   if (typeof retrieval?.score_threshold === 'number')
     details.push(`- ${t.threshold}: ${retrieval.score_threshold}`)
   if (run.error) details.push(`- ${t.error}: ${literal(run.error)}`)
+  if (run.settings.llm.temperature !== undefined)
+    details.push(
+      `- Temperature: ${run.settings.llm.temperature}; Top-P: ${run.settings.llm.top_p}; output: ${run.settings.llm.max_tokens}`,
+    )
+  if (run.context)
+    details.push(
+      `- ${t.context}: ${run.context.estimated_input_tokens} / ${run.context.input_budget_tokens} (UTF-8 estimate)`,
+    )
+  if (run.usage) {
+    details.push(
+      `- ${t.usage}: ${run.usage.reported_input_tokens} / ${run.usage.reported_output_tokens}`,
+    )
+    details.push(`- ${t.unknownUsage}: ${run.usage.unreported_calls}`)
+  }
   const timings = Object.entries(run.timings_ms).map(
     ([stage, value]) => `- ${literal(stage)}: ${value.toFixed(2)} ms`,
   )

@@ -1,0 +1,136 @@
+{
+  "version": "field-guide-bilingual-v1",
+  "license": "CC0-1.0; fictional fixture",
+  "document_sha256": "878bfa94da33d16c947f174d12560e3f7b4efa807cbd0b189f0841af7db58d8a",
+  "cases": [
+    {
+      "id": "en-1",
+      "question": "What is the maximum upload size for the Cedar pilot?",
+      "answerable": true,
+      "expected_pages": [
+        2
+      ],
+      "expected_any": [
+        "30"
+      ]
+    },
+    {
+      "id": "en-2",
+      "question": "How many tokens overlap between adjacent chunks?",
+      "answerable": true,
+      "expected_pages": [
+        2
+      ],
+      "expected_any": [
+        "32"
+      ]
+    },
+    {
+      "id": "en-3",
+      "question": "Who maintains the Cedar pilot?",
+      "answerable": true,
+      "expected_pages": [
+        1
+      ],
+      "expected_any": [
+        "Mira Chen"
+      ]
+    },
+    {
+      "id": "en-4",
+      "question": "Does the first release support OCR for scanned PDFs?",
+      "answerable": true,
+      "expected_pages": [
+        1
+      ],
+      "expected_any": [
+        "disabled"
+      ]
+    },
+    {
+      "id": "en-5",
+      "question": "Where are document metadata and query history stored?",
+      "answerable": true,
+      "expected_pages": [
+        1
+      ],
+      "expected_any": [
+        "SQLite"
+      ]
+    },
+    {
+      "id": "en-6",
+      "question": "What is the pilot's annual electricity cost in dollars?",
+      "answerable": false,
+      "expected_pages": [],
+      "expected_any": []
+    },
+    {
+      "id": "zh-1",
+      "question": "Cedar 試用方案的上傳容量上限是多少？",
+      "answerable": true,
+      "expected_pages": [
+        2
+      ],
+      "expected_any": [
+        "30"
+      ]
+    },
+    {
+      "id": "zh-2",
+      "question": "相鄰文件片段會重疊多少 token？",
+      "answerable": true,
+      "expected_pages": [
+        2
+      ],
+      "expected_any": [
+        "32"
+      ]
+    },
+    {
+      "id": "zh-3",
+      "question": "Cedar 試用方案的維護者是誰？",
+      "answerable": true,
+      "expected_pages": [
+        1
+      ],
+      "expected_any": [
+        "Mira Chen"
+      ]
+    },
+    {
+      "id": "zh-4",
+      "question": "第一版支援掃描 PDF 的 OCR 嗎？",
+      "answerable": true,
+      "expected_pages": [
+        1
+      ],
+      "expected_any": [
+        "停用",
+        "關閉",
+        "不支援",
+        "不支持",
+        "disabled",
+        "禁用"
+      ]
+    },
+    {
+      "id": "zh-5",
+      "question": "文件中繼資料和查詢歷史存在哪裡？",
+      "answerable": true,
+      "expected_pages": [
+        1
+      ],
+      "expected_any": [
+        "SQLite"
+      ]
+    },
+    {
+      "id": "zh-6",
+      "question": "這個試用方案每年的電費是多少美元？",
+      "answerable": false,
+      "expected_pages": [],
+      "expected_any": []
+    }
+  ]
+}

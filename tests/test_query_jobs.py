@@ -69,7 +69,7 @@ def test_stop_generation_closes_await_retains_evidence_and_is_idempotent(tmp_pat
     app, evidence, request = stack(tmp_path, monkeypatch)
     entered, closed = threading.Event(), threading.Event()
 
-    async def slow_model(_):
+    async def slow_model(_, **kwargs):
         entered.set()
         try:
             await asyncio.Event().wait()
@@ -135,7 +135,7 @@ def test_async_completion_validates_citations_and_persists_failure(
 ):
     app, evidence, request = stack(tmp_path, monkeypatch)
 
-    async def model(_):
+    async def model(_, **kwargs):
         if response_kind == "unavailable":
             raise PipelineError("llm_unavailable", "Synthetic endpoint failure")
         return (
@@ -178,7 +178,7 @@ def test_stop_retrieval_retains_finished_evidence_without_starting_model(tmp_pat
         assert release.wait(5)
         return evidence
 
-    async def unexpected_model(_):
+    async def unexpected_model(_, **kwargs):
         raise AssertionError("Generation must not start after cancellation")
 
     monkeypatch.setattr(app.state.pipeline.index, "search", slow_retrieval)
@@ -200,7 +200,7 @@ def test_shutdown_stops_active_generation_and_restart_keeps_cancelled_record(tmp
     app, _, request = stack(tmp_path, monkeypatch)
     entered = threading.Event()
 
-    async def model(_):
+    async def model(_, **kwargs):
         entered.set()
         await asyncio.Event().wait()
 
