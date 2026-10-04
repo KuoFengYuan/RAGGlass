@@ -1,56 +1,111 @@
 WEBVTT
 
-00:00:00.000 --> 00:00:04.001
-RAGGlass · See inside your RAG.
-A practical tour: upload → ask → check the PDF source.
-Real local inference · PDF + retrieved evidence + answer.
+00:00:00.000 --> 00:00:04.002
+RAGGlass / See inside your RAG
+Follow a PDF from upload to evidence and a grounded answer.
+Fresh footage, real local inference, fictional CC0 documents.
 
-00:00:04.001 --> 00:00:09.029
-Step 1 / Upload a PDF
-Click Upload PDF, choose the sample, and wait for Indexed.
-This recording reuses the sample's existing index.
+00:00:04.002 --> 00:00:17.797
+Step 1 / Upload and track processing
+Click Upload PDF; watch inspection, parsing and indexing.
+This empty workspace creates a fresh index; OCR is disabled.
 
-00:00:09.029 --> 00:00:14.013
-Step 2 / Ask a document question
-Type your question, then click Retrieve & answer.
-Inspect the retrieved passages beside the live model's answer.
+00:00:17.797 --> 00:00:23.898
+Step 2 / Set generation options
+Open Generation options; set Temperature, Top-P and output limit.
+These options are saved per run, not applied to the shared model server.
 
-00:00:14.013 --> 00:00:21.285
-Step 3 / Follow the citation
-Click the source link → page 2. Verify 30 MB in the table.
-The backend maps the retrieved chunk ID to the original PDF page.
+00:00:23.898 --> 00:00:30.117
+Step 3 / Ask with vector retrieval
+Ask the upload-limit question; click Retrieve & answer.
+Query progress follows real E5, Qdrant and model inference.
 
-00:00:21.285 --> 00:00:26.409
-Step 4 / Inspect parsed evidence
-Open Parsed content; compare the table, chunk ID, and page.
-Source boxes are item bounds, not exact text spans.
+00:00:30.117 --> 00:00:36.351
+Step 4 / Follow a source citation
+Click the page-2 source and verify 30 MB in the original table.
+Valid source IDs do not prove every claim is semantically supported.
 
-00:00:26.409 --> 00:00:31.489
-Step 5 / Review the run settings
-Expand Run settings & prompt to inspect the saved configuration.
-Check the prompt, model, retrieval settings, and stage timings.
+00:00:36.351 --> 00:00:42.848
+Step 5 / Search and zoom the PDF
+Search for 30 MB and change PDF zoom to 125%.
+Native text remains searchable and selectable; this is not OCR.
 
-00:00:31.489 --> 00:00:37.408
-Step 6 / Test an unsupported question
-Ask about annual electricity cost; check the refusal.
-The document cannot confirm it; this run has no citations.
+00:00:42.848 --> 00:00:48.052
+Step 6 / Inspect parsed chunks
+Open Parsed content and locate the upload-limit table.
+Compare text, chunk IDs and retained source pages.
 
-00:00:37.408 --> 00:00:42.658
-Step 7 / Reopen a saved run
-Open Run history, select a past query, and revisit its evidence.
-The question, answer, evidence, and settings remain saved locally.
+00:00:48.052 --> 00:00:59.956
+Step 7 / Try Chinese keyword retrieval
+Upload the retrieval lab; choose Keyword and ask about retention.
+BM25 skips query embedding; the cosine threshold is disabled.
 
-00:00:42.658 --> 00:00:53.055
-Step 8 / Clean up PDFs
-Open Document library → select the PDF → Delete selected.
-Confirm removal; saved history remains with disabled source links.
+00:00:59.956 --> 00:01:06.533
+Step 8 / Check the Chinese original
+Follow page 6 and search the PDF for 九十天.
+Local PDF.js character maps preserve native Chinese text.
 
-00:00:53.055 --> 00:01:02.375
-Step 9 / Clear run history
-Open Run history → Clear all → Delete permanently.
-PDF and history cleanup are independent; neither can be undone.
+00:01:06.533 --> 00:01:13.840
+Step 9 / Combine vector and keyword retrieval
+Choose Hybrid: Top K 3, 20 candidates; ask about CEDAR-X17.
+RRF merges ranks; cosine filters only the vector branch.
 
-00:01:02.375 --> 00:01:24.693
-Your turn / Reproduce the workflow
-Try the CC0 PDF and six questions with your own model service.
-Share a reproducible issue; star RAGGlass if it helps your work.
+00:01:13.840 --> 00:01:22.146
+Step 10 / Inspect both candidate lists
+Expand Retrieval rankings; compare raw scores and selected IDs.
+Cosine, BM25 and RRF use different scales; none is confidence.
+
+00:01:22.146 --> 00:01:29.240
+Step 11 / Compare estimates and actual tokens
+Inspect Context & model calls: input budget and reported usage.
+UTF-8 preflight estimates differ from model-native token counts.
+
+00:01:29.240 --> 00:01:34.409
+Step 12 / Copy and export evidence
+Copy answer & sources, then download the Markdown report.
+The actual export includes saved hybrid settings and branch scores.
+
+00:01:34.409 --> 00:01:48.048
+Step 13 / Summarize the whole document
+Select the field guide; click Summarize document in 3 points.
+The live summary covers stored chunks and requires cited sources.
+
+00:01:48.048 --> 00:01:54.235
+Step 14 / Inspect summary nodes
+Expand a Document summary step to inspect its sources and prompt.
+Map/final nodes run live; reduce is needed only when notes exceed budget.
+
+00:01:54.235 --> 00:02:01.351
+Step 15 / Stop a running summary
+Start another summary, then click Stop query during generation.
+The cancelled record retains evidence and shows no final answer.
+
+00:02:01.351 --> 00:02:08.677
+Step 16 / Test an unsupported question
+Ask about annual electricity cost and inspect the uncited refusal.
+This fictional document does not provide the requested cost.
+
+00:02:08.677 --> 00:02:17.043
+Step 17 / Restore a hybrid run
+Open Run history and reopen the CEDAR-X17 question.
+The original PDF, retrieval mode and candidate depth are restored.
+
+00:02:17.043 --> 00:02:22.435
+Step 18 / Switch language persistently
+Choose 繁體中文; reload and verify the language is retained.
+UI language does not translate an existing model answer.
+
+00:02:22.435 --> 00:02:33.935
+Step 19 / Delete a PDF independently
+Select the retrieval lab in Document library; confirm Delete selected.
+History remains; links to the removed original become disabled.
+
+00:02:33.935 --> 00:02:42.392
+Step 20 / Clear saved runs
+Open Run history, choose Clear all and confirm the scope.
+The remaining field-guide PDF and index are preserved.
+
+00:02:42.392 --> 00:02:48.393
+Your turn / Reproduce and evaluate
+Try both CC0 PDFs; use the CLI for controlled mode comparisons.
+See the bilingual guide for limitations and the 16-case evaluation.

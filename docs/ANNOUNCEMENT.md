@@ -2,7 +2,7 @@
 
 **English** | [繁體中文](ANNOUNCEMENT.zh-TW.md)
 
-These drafts describe the current native-text PDF release. Before posting, adapt the motivation to your own experience and confirm that you can help people run it. Pair a post with the [English-captioned demo](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.mp4) or [share cover](images/social-preview.png). Channel rules and a suggested first-week plan are in [Sharing RAGGlass](LAUNCH.md).
+These drafts describe the current native-text PDF workbench. Before posting, adapt the motivation to your own experience and confirm that you can help people run it. Pair a post with the [current English-captioned demo](../README.md#watch-the-demo) or [share cover](images/social-preview.png). Channel rules and a suggested first-week plan are in [Sharing RAGGlass](LAUNCH.md).
 
 ## Short post
 
@@ -20,14 +20,16 @@ PDF RAG can return a plausible answer while making it hard to check what the mod
 
 I'm building **RAGGlass — See inside your RAG.** It's an MIT-licensed local workbench for inspecting that document-to-answer path.
 
-The first release lets you:
+The current workbench lets you:
 
 - Upload a native-text PDF and inspect Docling's parsed content.
 - Compare the original PDF, scored retrieved passages, and a live model answer.
 - Click validated source IDs to open the corresponding original pages.
+- Inspect vector/BM25/hybrid rankings, context budgets and reported model tokens.
+- Generate a three-point document summary, stop a run, and export evidence.
 - Reopen saved runs with prompts, evidence, configuration, answers, and stage timings.
 
-The demo asks about a fictional pilot's upload limit, follows the 30 MB answer to a table on page 2, then asks an electricity-cost question the document cannot answer. Inference uses a real local model; the recording reuses the sample's existing index.
+The fresh 20-step demo indexes two fictional CC0 PDFs, follows the 30 MB answer to the original table, searches Chinese source text, compares BM25/hybrid candidates and inspects actual token usage. It also shows a three-point summary, cancellation, exports, an unsupported question, history and independent cleanup. Inference uses a real local model at normal speed; complete controlled evaluation is a separate CLI workflow.
 
 Stack: Vue 3/PDF.js, FastAPI, Docling, Qdrant, SQLite, local E5 embeddings, and a separate Ollama or compatible model HTTP service. English and Traditional Chinese setup/usage guides are included.
 

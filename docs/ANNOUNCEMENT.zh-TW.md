@@ -2,7 +2,7 @@
 
 [English](ANNOUNCEMENT.md) | **繁體中文**
 
-草稿描述目前的原生文字 PDF 版本。發布前請加入自己真實的開發動機，確認能協助讀者試用。搭配[繁體中文字幕影片](https://github.com/KuoFengYuan/RAGGlass/releases/download/v0.1.0/ragglass-demo.zh-TW.mp4)或[分享封面](images/social-preview.zh-TW.png)。社群規則與第一週建議見[分享 RAGGlass](LAUNCH.zh-TW.md)。
+草稿描述目前的原生文字 PDF 工作台。發布前請加入自己真實的開發動機，確認能協助讀者試用。搭配[最新繁體中文字幕影片](../README.zh-TW.md#觀看操作示範)或[分享封面](images/social-preview.zh-TW.png)。社群規則與第一週建議見[分享 RAGGlass](LAUNCH.zh-TW.md)。
 
 ## 短貼文
 
@@ -20,14 +20,16 @@ PDF RAG 能回傳看似合理的答案，卻常讓人難以確認模型看到了
 
 我正在開發 **RAGGlass — See inside your RAG.**，一個採 MIT 授權的地端工作台，用來檢視從文件到答案的完整路徑。
 
-第一版可以：
+目前工作台可以：
 
 - 上傳原生文字 PDF，查看 Docling 解析結果。
 - 並排對照原始 PDF、檢索片段分數與真實模型回答。
 - 點擊已驗證的來源 ID，跳回對應的原始頁面。
+- 檢查向量／BM25／混合排名、context 預算與模型回報的 token。
+- 產生三點文件摘要、停止執行並匯出證據。
 - 重新開啟歷史紀錄，查看 prompt、證據、設定、答案與各階段耗時。
 
-影片詢問虛構試用方案的上傳限制，從 30 MB 答案回到第 2 頁表格，再問文件沒有記載的年度電費。模型推論是真實執行，錄製重用範例已存在的索引。
+新的 20 步影片重新索引兩份虛構 CC0 PDF，從 30 MB 答案回到原始表格、搜尋中文來源、比較 BM25／混合候選並檢查實際 token。另展示三點摘要、取消、匯出、無法回答問題、歷史與獨立清理。真實本機模型以正常速度推論；完整固定條件評測由獨立 CLI 執行。
 
 技術使用 Vue 3／PDF.js、FastAPI、Docling、Qdrant、SQLite、本機 E5 embedding，以及獨立 Ollama／相容 HTTP 模型服務，附完整英文與繁體中文操作／部署文件。
 

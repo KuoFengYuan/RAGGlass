@@ -27,13 +27,13 @@ RAGGlass 是給 PDF RAG 工程師的地端開源工作台。從實際「文件 �
 
 ## 觀看操作示範
 
-https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017
+https://github.com/user-attachments/assets/0465611b-f92c-45a1-900f-eae7289428c3
 
-**直接按上方播放，觀看 84.7 秒基本流程教學；繁體中文操作字幕已嵌入影片。** 每個步驟都說明要點哪個按鈕、檢查什麼，可暫停或拖曳進度跟著操作。學習上傳、提問、引用跳頁、解析與設定、無證據拒答、重新查看歷史，以及獨立清理 PDF／執行紀錄。[查看影片九步教學與目前功能](docs/DEMO.zh-TW.md)。
+**直接按上方播放，觀看 168.4 秒最新版教學；繁體中文操作字幕已嵌入影片。** 20 個步驟涵蓋新上傳／進度、PDF 引用／搜尋／縮放、向量／BM25／混合檢索及排名、生成設定、Context／Token、複製／Markdown、三點摘要、停止執行、拒答、歷史、語言保存與獨立清理。[查看影片時間表與目前功能](docs/DEMO.zh-TW.md)。
 
-**影片版本：**應用提交 `7e16f9b`，早於閱讀工具、上傳進度、模型流程與混合檢索更新。PDF 搜尋／縮放、停止控制、匯出、生成參數、Context／Token 紀錄、三點摘要、檢索模式／排名與評測，請依[目前功能操作說明](docs/DEMO.zh-TW.md#操作目前的功能)練習。這些功能已在目前應用實作，但尚未出現在這段錄影中。
+**影片版本：**應用提交 `7855a83`，包含最新混合檢索更新。[涵蓋範圍／目前操作指南](docs/DEMO.zh-TW.md#影片涵蓋範圍)明列實錄內容，另有未錄入影片的文件處理停止／重建、條件式恢復／reduce 與完整 CLI 評測說明。
 
-*正常速度的真實模型錄影，英文介面、繁體中文字幕；使用虛構 CC0 範例，重用工作區已有的索引。[追查表格答案](docs/CASE_STUDY.zh-TW.md) · [錄製來源紀錄](docs/media/demo-recording.json)*
+*新畫面與正常速度真實推論：空白暫存工作區重新索引兩份虛構 CC0 PDF，四次問答、一次完成摘要與一次取消摘要。[追查表格答案](docs/CASE_STUDY.zh-TW.md) · [錄製來源紀錄](docs/media/demo-recording.json)*
 
 [v0.1.0 預覽版](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0)提供版本說明與公開範例。靜態畫面見[實際工作台截圖](docs/images/workbench.zh-TW.png)及下方圖解指南。
 
@@ -51,7 +51,7 @@ https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017
 | [上傳與文件處理](docs/INGESTION.zh-TW.md) | 本機 PDF 檢查、文件進度／停止、有界向量批次、重試行為與隔離驗證。 |
 | [Context 與模型流程](docs/WORKFLOWS.zh-TW.md) | Token 估算／實際用量、生成參數、有限次錯誤恢復、三點摘要、評測與面試案例。 |
 | [檢索模式與比較](docs/RETRIEVAL.zh-TW.md) | 向量／BM25／RRF 控制、候選追蹤、分數定義、中英文進階題型與固定條件評測。 |
-| [影片教學與目前功能](docs/DEMO.zh-TW.md) | 錄製版本／涵蓋範圍、影片九步時間，以及目前上傳、閱讀、context、摘要、檢索模式與評測操作。 |
+| [影片教學與目前功能](docs/DEMO.zh-TW.md) | 錄製版本／涵蓋範圍、影片 20 步時間，以及延伸上傳、閱讀、context、摘要、檢索與評測操作。 |
 | [安裝與部署](docs/DEPLOYMENT.zh-TW.md) | 環境、模型、Qdrant、開發／正式模式、選用 user service、SSH、備份、更新與排錯。 |
 | [實測里程碑](docs/MILESTONE.zh-TW.md) | 真實模型／瀏覽器／重啟結果、硬體、耗時與限制。 |
 | [表格與來源案例](docs/CASE_STUDY.zh-TW.md) | 從真實答案回到第 2 頁，並檢查文件無法回答的問題。 |

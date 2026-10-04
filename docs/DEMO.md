@@ -6,35 +6,47 @@
 
 ## What the video covers
 
-The published **84.7-second** recording uses application commit `7e16f9b`. Reading/query controls, upload progress, model workflows and hybrid retrieval were added afterward. The timed steps below describe that footage; the [current-controls walkthrough](#try-the-current-controls) describes the application after those updates. It has no video timestamps because these controls have not been recorded in the published video.
+The freshly recorded **168.4-second** tutorial uses application commit `7855a83`, including the current reading, upload-progress, model-workflow and hybrid-retrieval controls. It starts from empty disposable storage and indexes both original fictional CC0 PDFs. The timed steps describe the actual footage; the [current-controls walkthrough](#try-the-current-controls) also covers operations and evaluation outside the recording.
 
-| Capability | In the published video? | Current instructions |
+| Capability | In the published video? | Further instructions |
 | --- | --- | --- |
-| Upload, question, citation, parsing, refusal, history and cleanup | Yes; upload reuses an existing index. | [Nine recorded steps](#nine-recorded-steps) and [cleanup](CLEANUP.md). |
-| Upload preflight, confirmed chunk progress, stop/reindex | No. | [Upload and processing](INGESTION.md). |
-| Query progress/stop, PDF search/zoom/text selection, copy/Markdown | No. | [Reading and query controls](USABILITY.md). |
-| Temperature / Top-P / output limits, Context/Token usage, bounded recovery | No. | [Context and model workflows](WORKFLOWS.md). |
-| Whole-document three-point summary and per-node sources | No. | [Long-document summary](WORKFLOWS.md#long-document-summary). |
-| Vector/BM25/hybrid modes and candidate rankings | No. | [Retrieval modes](RETRIEVAL.md). |
-| 12-case baseline, 16-case retrieval lab and controlled comparisons | No; use the CLI. | [Retrieval evaluation](RETRIEVAL.md#evaluate-one-treatment). |
+| Fresh upload/progress, questions, citations, parsing, refusal, history and independent cleanup | Yes; neither PDF reuses an index. | [Twenty recorded steps](#twenty-recorded-steps) and [cleanup](CLEANUP.md). |
+| Stop processing / reindex | Controls may be visible; these operations are not performed. | [Upload and processing](INGESTION.md). |
+| Query progress/stop, PDF search/zoom, copy/Markdown | Yes; a running summary is cancelled. Native text selection and run-JSON download are not demonstrated. | [Reading and query controls](USABILITY.md). |
+| Temperature / Top-P / output limits, Context/Token usage and attempts | Yes; no forced failure, retry or JSON repair is recorded. | [Context and model workflows](WORKFLOWS.md). |
+| Whole-document three-point summary and per-node sources | Yes; the small sample uses map/final nodes and needs no reduce layer. | [Long-document summary](WORKFLOWS.md#long-document-summary). |
+| Vector/BM25/hybrid modes, both candidate lists and Chinese source/search | Yes. | [Retrieval modes](RETRIEVAL.md). |
+| Persistent language switch | Yes; switch to Traditional Chinese and reload, then return to English. | [Illustrated usage](USAGE.md). |
+| 12-case baseline, 16-case retrieval lab and controlled comparisons | Not filmed; use the CLI linked in the closing scene. | [Retrieval evaluation](RETRIEVAL.md#evaluate-one-treatment). |
 
-## Nine recorded steps
+## Twenty recorded steps
 
-The recording shows the English UI. The times below are approximate scene starts. Use the player to pause or seek while following the [illustrated usage guide](USAGE.md).
+The recording primarily uses the English UI, with one Traditional Chinese language-persistence scene. Times are rounded scene starts. Pause or seek while following the [illustrated usage guide](USAGE.md).
 
-| Time | Step | What to do |
+| Time | Step | What to do and inspect |
 | --- | --- | --- |
-| 00:00 | Start the tour | Compare the original PDF on the left with retrieved evidence and the answer on the right. |
-| 00:04 | 1. Upload a PDF | Click **Upload PDF**, select the CC0 sample, and wait for **Indexed**. The recording reuses its existing index. |
-| 00:09 | 2. Ask a question | Enter “What is the maximum upload size for the Cedar pilot?” and click **Retrieve & answer**. Inspect the retrieved passages and the live answer. |
-| 00:14 | 3. Check the citation | Click the source below the answer. Page 2 opens; verify **30 MB** in the original table. |
-| 00:21 | 4. Inspect parsing | Open **Parsed content**. Compare the parsed table, chunk ID, and source page with the PDF. Source boxes identify content items, not exact text spans. |
-| 00:26 | 5. Review the run | Expand **Run settings & prompt**. Inspect the prompt, model, retrieval configuration, and measured timings. |
-| 00:31 | 6. Check an unsupported question | Ask “What is the pilot's annual electricity cost in dollars?” The document cannot confirm this; the saved answer refuses and has no citations. |
-| 00:37 | 7. Reopen history | Open **Run history**, choose a saved question, and revisit its answer, evidence, and settings. |
-| 00:42 | 8. Clean up PDFs | Open **Document library**, search/select the fixture, and **Delete selected**. Read and confirm the permanent removal. History remains; unavailable original-page links are disabled. |
-| 00:53 | 9. Clear history | Open **Run history → Clear all → Delete permanently**. Read the count and scope. This removes records independently from PDFs. |
-| 01:02 | Try it yourself | Follow the [quick start](../README.md#quick-start) and run the public sample's [six questions](../examples/questions.json) with your own model service. |
+| 00:00 | RAGGlass. See inside your RAG | Follow a PDF from upload to evidence and a grounded answer. Fresh footage, real local inference, fictional CC0 documents. |
+| 00:04 | 1. Upload and track processing | Click Upload PDF; watch inspection, parsing and indexing. This empty workspace creates a fresh index; OCR is disabled. |
+| 00:18 | 2. Set generation options | Open Generation options; set Temperature, Top-P and output limit. These options are saved per run, not applied to the shared model server. |
+| 00:24 | 3. Ask with vector retrieval | Ask the upload-limit question; click Retrieve & answer. Query progress follows real E5, Qdrant and model inference. |
+| 00:30 | 4. Follow a source citation | Click the page-2 source and verify 30 MB in the original table. Valid source IDs do not prove every claim is semantically supported. |
+| 00:36 | 5. Search and zoom the PDF | Search for 30 MB and change PDF zoom to 125%. Native text remains searchable and selectable; this is not OCR. |
+| 00:43 | 6. Inspect parsed chunks | Open Parsed content and locate the upload-limit table. Compare text, chunk IDs and retained source pages. |
+| 00:48 | 7. Try Chinese keyword retrieval | Upload the retrieval lab; choose Keyword and ask about retention. BM25 skips query embedding; the cosine threshold is disabled. |
+| 01:00 | 8. Check the Chinese original | Follow page 6 and search the PDF for 九十天. Local PDF.js character maps preserve native Chinese text. |
+| 01:07 | 9. Combine vector and keyword retrieval | Choose Hybrid: Top K 3, 20 candidates; ask about CEDAR-X17. RRF merges ranks; cosine filters only the vector branch. |
+| 01:14 | 10. Inspect both candidate lists | Expand Retrieval rankings; compare raw scores and selected IDs. Cosine, BM25 and RRF use different scales; none is confidence. |
+| 01:22 | 11. Compare estimates and actual tokens | Inspect Context & model calls: input budget and reported usage. UTF-8 preflight estimates differ from model-native token counts. |
+| 01:29 | 12. Copy and export evidence | Copy answer & sources, then download the Markdown report. The actual export includes saved hybrid settings and branch scores. |
+| 01:34 | 13. Summarize the whole document | Select the field guide; click Summarize document in 3 points. The live summary covers stored chunks and requires cited sources. |
+| 01:48 | 14. Inspect summary nodes | Expand a Document summary step to inspect its sources and prompt. Map/final nodes run live; reduce is needed only when notes exceed budget. |
+| 01:54 | 15. Stop a running summary | Start another summary, then click Stop query during generation. The cancelled record retains evidence and shows no final answer. |
+| 02:01 | 16. Test an unsupported question | Ask about annual electricity cost and inspect the uncited refusal. This fictional document does not provide the requested cost. |
+| 02:09 | 17. Restore a hybrid run | Open Run history and reopen the CEDAR-X17 question. The original PDF, retrieval mode and candidate depth are restored. |
+| 02:17 | 18. Switch language persistently | Choose 繁體中文; reload and verify the language is retained. UI language does not translate an existing model answer. |
+| 02:22 | 19. Delete a PDF independently | Select the retrieval lab in Document library; confirm Delete selected. History remains; links to the removed original become disabled. |
+| 02:34 | 20. Clear saved runs | Open Run history, choose Clear all and confirm the scope. The remaining field-guide PDF and index are preserved. |
+| 02:42 | Your turn. Reproduce and evaluate | Try both CC0 PDFs; use the CLI for controlled mode comparisons. See the bilingual guide for limitations and the 16-case evaluation. |
 
 ## Try the current controls
 
@@ -53,13 +65,13 @@ For a project-based interview explanation, use the [question-to-implementation t
 
 ## Recording and subtitles
 
-The published tutorial was recorded from application commit `7e16f9b` with cleanup controls. It includes **two live model queries** and actual PDF/history deletion in a disposable workspace, at normal speed. Both language videos are 84.7 seconds. Rendering captions over this footage adds no further model queries and cannot demonstrate controls absent from the original frames. The recording does not measure GPU performance; the CC0 Cedar pilot is fictional. Your normal workspace is separate. See the [cleanup guide](CLEANUP.md) for the effects of deletion.
+The tutorial records application commit `7855a83` at normal speed in an owned disposable workspace. It includes **four real-model questions**, **one completed three-point summary** (map/final), and **one summary cancelled during generation**. Both language videos are 168.4 seconds. The two public PDFs are freshly parsed, embedded and indexed; the lab is then deleted independently of its saved runs, and clearing history preserves the remaining field-guide PDF. Rendering subtitles adds zero model queries. The small sample needs no reduce layer; forced recovery failures and full CLI evaluation are not filmed. The recording does not measure GPU performance. Both CC0 documents are fictional and separate from the owner's normal workspace. See the [cleanup guide](CLEANUP.md) for deletion effects.
 
 - [Published recording receipt](media/demo-recording.json): source document hash, live model answers, citations, and measured query timings.
 - [Tutorial source](media/demo-tutorial.json): complete English and Traditional Chinese step text.
 - [Render receipt](media/demo-tutorial-render.json): source/renderer hashes and measured output duration, dimensions, and file hashes.
 - [English subtitle text](media/ragglass-demo.vtt): the same title, action, and note shown inside the video.
 
-To revise the captions or make a fresh recording, use the [media reproduction instructions](LAUNCH.md#reproduce-the-media). GitHub hosts the inline player; other Markdown viewers may display its URL. The current Chinese tutorial uses the same English UI with Traditional Chinese instructional captions. The application itself offers a persistent language switch.
+To revise the captions or make a fresh recording, use the [media reproduction instructions](LAUNCH.md#reproduce-the-media). GitHub hosts the inline player; other Markdown viewers may display its URL. Both language tutorials share the actual footage, primarily English UI with a Traditional Chinese switch/reload scene, and their own instructional captions.
 
 When functionality changes, update both READMEs, this guide's coverage/current controls and the relevant feature guides together. Subtitle instructions must match recorded frames. A new feature shown in video requires fresh footage, matching bilingual captions/receipts and published embed metadata; keep the recorded version and uncovered controls explicit until that happens.

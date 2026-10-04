@@ -72,6 +72,39 @@ tutorial = json.loads((ROOT / "docs/media/demo-tutorial.json").read_text())
 recording_bytes = (ROOT / "docs/media/demo-recording.json").read_bytes()
 recording = json.loads(recording_bytes)
 assert re.fullmatch(r"[0-9a-f]{40}", recording["source_commit"])
+assert (
+    recording["capture_sha256"]
+    == hashlib.sha256((ROOT / "scripts/capture_demo.mjs").read_bytes()).hexdigest()
+), "Capture receipt does not match its recording tool"
+assert recording["mock"] is False and recording["upload_reused_index"] is False
+assert recording["playback_speed"] == 1 and 0 < recording["duration_seconds"] <= 360
+scene_ids = [scene["id"] for scene in recording["scenes"]]
+assert len(scene_ids) == len(set(scene_ids)) and set(scene_ids) == set(tutorial["scenes"])
+starts = [scene["start_seconds"] for scene in recording["scenes"]]
+assert all(0 <= value < recording["duration_seconds"] for value in starts)
+assert all(left < right for left, right in zip(starts, starts[1:], strict=False))
+for document in recording["documents"]:
+    fixture = ROOT / "examples" / document["filename"]
+    assert document["filename"] in {"ragglass-field-guide.pdf", "ragglass-retrieval-lab.pdf"}
+    assert document["hash"] == hashlib.sha256(fixture.read_bytes()).hexdigest()
+    assert document["pages"] > 0 and document["chunks"] > 0
+    for stage in ["parsing", "chunking", "embedding", "indexing", "total"]:
+        assert document["timings_ms"][stage] >= 0, "Incomplete indexing receipt"
+public_hashes = {document["hash"] for document in recording["documents"]}
+for run in recording["runs"]:
+    if run["kind"] == "summary":
+        selected = {
+            source_id
+            for node in run["workflow"]["nodes"]
+            if node["phase"] == "final" and node["status"] == "completed"
+            for source_id in node["source_ids"]
+        }
+    else:
+        selected = set(run["context"]["selected_ids"])
+    for citation in run["citations"]:
+        assert citation["id"] in selected and citation["document_hash"] in public_hashes
+    if run["status"] == "cancelled":
+        assert not run["answer"] and not run["citations"]
 assert render["source_recording_sha256"] == hashlib.sha256(recording_bytes).hexdigest()
 assert (
     render["renderer_sha256"]

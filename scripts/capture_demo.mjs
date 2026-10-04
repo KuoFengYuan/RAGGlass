@@ -1,5 +1,6 @@
-/** Record live PDF RAG interaction, then export captioned videos and a real-time GIF. */
-import { mkdir, writeFile } from "node:fs/promises";
+/** Fresh current-UI footage; all answers come from the real configured model. */
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -8,70 +9,190 @@ import {
   publicWorkspace,
   root,
   fixturePath,
+  retrievalFixturePath,
   sampleQuestion,
   unknownQuestion,
+  identifierQuestion,
+  retentionQuestion,
 } from "./public_fixture.mjs";
 
 process.env.PLAYWRIGHT_BROWSERS_PATH ??= fileURLToPath(
   new URL(".cache/playwright", root),
 );
-const require = createRequire(new URL("frontend/package.json", root));
-const { chromium, expect } = require("@playwright/test");
+const { chromium, expect } = createRequire(
+  new URL("frontend/package.json", root),
+)("@playwright/test");
 const baseURL = process.env.RAGGLASS_BASE_URL || "http://127.0.0.1:8000";
 if (process.env.RAGGLASS_DEMO_CLEANUP !== "1")
   throw new Error(
-    "This tutorial deletes its public fixture and history. Use a disposable workspace and set RAGGLASS_DEMO_CLEANUP=1.",
+    "Use an empty disposable workspace with RAGGLASS_DEMO_CLEANUP=1; this recording deletes its public PDF/history.",
   );
 execFileSync("ffmpeg", ["-version"], { stdio: "ignore" });
-const preflight = await publicWorkspace(baseURL);
+const preflight = await publicWorkspace(baseURL, {
+  currentDemo: true,
+  allowEmpty: true,
+});
+for (const path of ["/api/documents", "/api/runs"])
+  if ((await (await fetch(new URL(path, baseURL))).json()).length)
+    throw new Error(
+      "Fresh recording requires empty storage; no existing index is reused.",
+    );
 const output = fileURLToPath(new URL(".data/launch/", root));
 const images = fileURLToPath(new URL("docs/images/", root));
-await mkdir(output, { recursive: true });
-await mkdir(images, { recursive: true });
+await mkdir(`${output}/frames`, { recursive: true });
+const tutorial = JSON.parse(
+  await readFile(new URL("docs/media/demo-tutorial.json", root), "utf8"),
+);
 const browser = await chromium.launch({
   channel: process.env.RAGGLASS_BROWSER === "chromium" ? undefined : "chrome",
 });
 const context = await browser.newContext({
+  baseURL,
   viewport: { width: 1440, height: 900 },
+  permissions: ["clipboard-read", "clipboard-write"],
   recordVideo: { dir: `${output}/raw`, size: { width: 1440, height: 900 } },
 });
-const recordingClock = performance.now();
-const page = await context.newPage();
-const video = page.video();
-page.setDefaultTimeout(180_000);
-const errors = [];
+const clock = performance.now(),
+  page = await context.newPage(),
+  video = page.video();
+page.setDefaultTimeout(30_000);
+const errors = [],
+  scenes = [],
+  runs = [],
+  uploads = [],
+  artifacts = [];
 page.on("pageerror", (error) => errors.push(error.message));
-const scenes = [];
-const runs = [];
-let start;
-let upload;
-let duration;
-const hold = (seconds) => page.waitForTimeout(seconds * 1000);
-function scene(id, en, zh) {
-  const time = (performance.now() - start) / 1000;
-  scenes.push({ id, start_seconds: time, en, "zh-TW": zh });
+let start, duration;
+const hold = (seconds = 5) => page.waitForTimeout(seconds * 1000);
+function scene(id) {
+  const content = tutorial.scenes[id];
+  if (!content) throw new Error(`Missing scene ${id}`);
+  scenes.push({
+    id,
+    start_seconds: (performance.now() - start) / 1000,
+    en: content.en.title,
+    "zh-TW": content["zh-TW"].title,
+  });
   console.log(`Recording: ${id}`);
 }
-async function ask(question) {
-  await page.getByLabel("Question", { exact: true }).fill(question);
-  const response = page.waitForResponse(
-    (r) => r.url().endsWith("/api/query") && r.request().method() === "POST",
-  );
-  await page.getByRole("button", { name: "Retrieve & answer" }).click();
-  const run = await (await response).json();
-  if (run.status !== "completed")
-    throw new Error(`Live model query failed: ${run.error_code || run.status}`);
-  for (const citation of run.citations) {
-    if (
-      !run.evidence.some((e) => e.id === citation.id) ||
-      citation.document_hash !== preflight.documentHash
-    )
-      throw new Error(
-        "Citation did not belong to the retrieved public fixture.",
-      );
+const frame = (id) => page.screenshot({ path: `${output}/frames/${id}.png` });
+async function detail(id) {
+  const response = await page.request.get(`/api/runs/${id}`);
+  if (!response.ok()) throw new Error(`Run detail HTTP ${response.status()}`);
+  return response.json();
+}
+async function waitRun(id) {
+  const deadline = performance.now() + 180_000;
+  while (performance.now() < deadline) {
+    const run = await detail(id);
+    if (run.status !== "running") return run;
+    await hold(0.05);
   }
+  throw new Error("Live run exceeded 180 seconds");
+}
+function retain(run) {
+  if (
+    !run.documents.length ||
+    run.documents.some((d) => preflight.fixtures[d.filename] !== d.hash)
+  )
+    throw new Error("Unexpected run source");
+  const ids = new Set(
+    run.context?.selected_ids ?? run.evidence.map((e) => e.id),
+  );
+  if (
+    run.citations.some(
+      (c) =>
+        !ids.has(c.id) ||
+        !Object.values(preflight.fixtures).includes(c.document_hash),
+    )
+  )
+    throw new Error("Citation outside the current public context");
   runs.push(run);
+}
+async function begin(question, kind = "query") {
+  if (kind === "query")
+    await page.getByLabel("Question", { exact: true }).fill(question);
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url().endsWith(`/api/${kind}/start`) && r.status() === 202,
+    ),
+    page
+      .getByRole("button", {
+        name:
+          kind === "summary"
+            ? "Summarize document in 3 points"
+            : "Retrieve & answer",
+        exact: kind === "summary",
+      })
+      .click(),
+  ]);
+  return response.json();
+}
+async function ask(question, kind = "query") {
+  const run = await waitRun((await begin(question, kind)).id);
+  retain(run);
+  if (run.status !== "completed")
+    throw new Error(`Live ${kind} failed: ${run.error_code || run.status}`);
+  await expect(
+    page.getByRole("button", {
+      name:
+        kind === "summary"
+          ? "Summarize document in 3 points"
+          : "Retrieve & answer",
+    }),
+  ).toBeEnabled();
+  await expect(page.getByTestId("answer")).toBeVisible();
   return run;
+}
+async function upload(path) {
+  const response = page.waitForResponse(
+    (r) =>
+      r.url().endsWith("/api/documents") && r.request().method() === "POST",
+  );
+  await page.locator("input[type=file]").setInputFiles(path);
+  const accepted = await (await response).json();
+  if (
+    accepted.duplicate ||
+    preflight.fixtures[accepted.filename] !== accepted.hash
+  )
+    throw new Error("Recording must ingest a fresh known public PDF");
+  await expect(page.getByLabel("Active document")).toHaveValue(accepted.id);
+  // A previous document's Indexed badge can survive the first upload render.
+  // Wait for this document's persisted completion before retaining its receipt.
+  await expect
+    .poll(
+      async () =>
+        (await (await page.request.get(`/api/documents/${accepted.id}`)).json())
+          .status,
+      { timeout: 180_000 },
+    )
+    .toBe("ready");
+  await expect(page.locator(".document-bar .badge")).toHaveText("Indexed", {
+    timeout: 180_000,
+  });
+  const doc = await (
+    await page.request.get(`/api/documents/${accepted.id}`)
+  ).json();
+  uploads.push(doc);
+  await expect(page.locator(".pdf-loading")).not.toBeVisible();
+  return doc;
+}
+async function source(number) {
+  await page
+    .locator(".citation-button")
+    .filter({ hasText: `p. ${number}` })
+    .first()
+    .click();
+  await expect(page.getByTestId("pdf-viewer")).toHaveAttribute(
+    "data-page",
+    String(number),
+  );
+  await expect(page.locator(".pdf-loading")).not.toBeVisible();
+}
+async function retrievalOptions(open) {
+  const panel = page.locator(".retrieval-options");
+  if ((await panel.evaluate((element) => element.open)) !== open)
+    await panel.locator("summary").click();
 }
 try {
   await page.goto(baseURL);
@@ -80,202 +201,339 @@ try {
     page.getByRole("heading", { name: "Document workbench", exact: true }),
   ).toBeVisible();
   start = performance.now();
-  scene(
-    "intro",
-    "RAGGlass · See inside your RAG. Inspect PDF evidence beside the answer.",
-    "RAGGlass · See inside your RAG. 將 PDF 證據與答案並排檢視。",
-  );
+  scene("intro");
   await hold(4);
-
-  scene(
-    "upload",
-    "Upload the CC0 sample PDF. This workspace reuses its existing index.",
-    "上傳 CC0 範例 PDF；本次工作區重用已建立的索引。",
-  );
-  const uploadResponse = page.waitForResponse(
-    (r) =>
-      r.url().endsWith("/api/documents") && r.request().method() === "POST",
-  );
-  await page.locator("input[type=file]").setInputFiles(fixturePath);
-  upload = await (await uploadResponse).json();
-  if (upload.hash !== preflight.documentHash)
-    throw new Error("Unexpected uploaded PDF.");
-  await expect(page.locator(".document-bar .badge")).toHaveText("Indexed", {
-    timeout: 180_000,
-  });
-  await expect(page.locator(".pdf-loading")).not.toBeVisible();
-  await hold(5);
-
-  scene(
-    "query",
-    "Ask a table question. Embeddings, retrieval, and model inference run live.",
-    "詢問表格內容；embedding、檢索與模型推論都即時執行。",
-  );
-  const supported = await ask(sampleQuestion);
+  scene("upload");
+  const guide = await upload(fixturePath);
+  await frame("upload");
+  await hold(4);
+  scene("generation");
+  await page.getByTestId("generation-controls").locator("summary").click();
+  await page.getByLabel("Temperature", { exact: true }).fill("0.2");
+  await page.getByLabel("Top P", { exact: true }).fill("0.9");
+  await page.getByLabel("Output token limit", { exact: true }).fill("512");
+  await frame("generation");
+  await hold(6);
+  scene("query");
+  const dense = await ask(sampleQuestion);
   if (
-    !supported.answerable ||
-    !supported.citations.some((c) => c.pages.includes(2))
-  ) {
-    throw new Error("Live answer did not cite page 2.");
-  }
+    !dense.answerable ||
+    dense.settings.retrieval.mode !== "dense" ||
+    dense.settings.llm.temperature !== 0.2 ||
+    dense.settings.llm.top_p !== 0.9 ||
+    dense.settings.llm.max_tokens !== 512
+  )
+    throw new Error(
+      "Dense query/generation settings differ from recorded controls",
+    );
   await expect(page.getByTestId("answer")).toContainText("30 MB");
-  await hold(4);
-
-  scene(
-    "citation",
-    "Click the source: 30 MB is in the original table on page 2.",
-    "點擊引用：30 MB 可在原始 PDF 第 2 頁的表格中確認。",
-  );
-  await page
-    .locator(".citation-button")
-    .filter({ hasText: "p. 2" })
-    .first()
-    .hover();
-  await hold(1);
-  await page
-    .locator(".citation-button")
-    .filter({ hasText: "p. 2" })
-    .first()
-    .click();
-  await expect(page.getByTestId("pdf-viewer")).toHaveAttribute(
-    "data-page",
-    "2",
-  );
-  await expect(page.locator(".pdf-loading")).not.toBeVisible();
+  await page.getByTestId("generation-controls").locator("summary").click();
+  await frame("query");
+  await hold(5);
+  scene("citation");
+  await source(2);
   await expect(page.locator(".evidence-box").first()).toBeVisible();
   await page.screenshot({ path: `${images}/demo-poster.png` });
+  await frame("citation");
   await hold(6);
-
-  scene(
-    "parsing",
-    "Compare the parsed table with its original source. Every chunk keeps page IDs.",
-    "對照解析表格與原始文件；每個片段保留來源頁碼與 ID。",
+  scene("reading");
+  await page.getByLabel("Search PDF text", { exact: true }).fill("30 MB");
+  await expect(page.locator(".pdf-search-hit.active").first()).toContainText(
+    "30",
   );
+  await page.getByLabel("PDF zoom", { exact: true }).selectOption("1.25");
+  await frame("reading");
+  await hold(6);
+  await page.getByLabel("PDF zoom", { exact: true }).selectOption("fit");
+  await page.getByLabel("Search PDF text", { exact: true }).fill("");
+  scene("parsing");
   await page.getByRole("tab", { name: "Parsed content", exact: true }).click();
   await page
     .locator(".parsed-chunk")
     .filter({ hasText: "30 MB" })
     .first()
     .scrollIntoViewIfNeeded();
+  await frame("parsing");
   await hold(5);
   await page.getByRole("tab", { name: "Original PDF", exact: true }).click();
-
-  scene(
-    "settings",
-    "Inspect saved prompts, model and retrieval settings, plus measured stage timings.",
-    "查看保存的 prompt、模型與檢索設定，以及各階段的實測耗時。",
+  scene("keyword");
+  const lab = await upload(retrievalFixturePath);
+  await page.locator(".retrieval-options > summary").click();
+  await page
+    .getByLabel("Retrieval mode", { exact: true })
+    .selectOption("keyword");
+  await expect(
+    page.getByLabel("Minimum score", { exact: true }),
+  ).toBeDisabled();
+  await page.getByTestId("generation-controls").locator("summary").click();
+  await page
+    .getByRole("button", { name: "Precise phrasing", exact: true })
+    .click();
+  await page.getByLabel("Output token limit", { exact: true }).fill("768");
+  await page.getByTestId("generation-controls").locator("summary").click();
+  const lexical = await ask(retentionQuestion);
+  if (
+    !lexical.answerable ||
+    lexical.settings.retrieval.mode !== "keyword" ||
+    "embedding" in lexical.timings_ms
+  )
+    throw new Error("Chinese BM25 query did not skip query embedding");
+  await expect(page.getByTestId("answer")).toContainText(/90|九十/);
+  await frame("keyword");
+  await hold(6);
+  scene("chinese_pdf");
+  await source(6);
+  await expect(page.locator(".pdf-text-layer")).toContainText("九十天");
+  await page.getByLabel("Search PDF text", { exact: true }).fill("九十天");
+  await expect(page.locator(".pdf-search-hit.active").first()).toHaveText(
+    "九十天",
   );
-  await page.locator(".run-details > summary").click();
-  await page.locator(".run-details").scrollIntoViewIfNeeded();
+  await frame("chinese_pdf");
+  await hold(6);
+  await page.getByLabel("Search PDF text", { exact: true }).fill("");
+  scene("hybrid");
+  await page
+    .getByLabel("Retrieval mode", { exact: true })
+    .selectOption("hybrid");
+  await page.getByLabel("Top K", { exact: true }).fill("3");
+  await page.getByLabel("Candidates per method", { exact: true }).fill("20");
+  const hybrid = await ask(identifierQuestion);
+  if (
+    !hybrid.answerable ||
+    hybrid.settings.retrieval.mode !== "hybrid" ||
+    !hybrid.retrieval_trace.complete ||
+    !hybrid.retrieval_trace.dense.length ||
+    !hybrid.retrieval_trace.keyword.length
+  )
+    throw new Error("Live hybrid query did not preserve both branches");
+  await expect(page.getByTestId("answer")).toContainText(/checksum/i);
+  await source(1);
+  await frame("hybrid");
+  await hold(6);
+  scene("rankings");
+  await retrievalOptions(false);
+  await page.getByTestId("retrieval-trace").locator("summary").click();
+  await page.getByTestId("retrieval-trace").scrollIntoViewIfNeeded();
+  await expect(page.getByTestId("retrieval-trace")).toContainText(
+    "Equal RRF scores",
+  );
+  await page
+    .getByTestId("retrieval-trace")
+    .locator(".ranking-branch")
+    .first()
+    .locator("h4")
+    .scrollIntoViewIfNeeded();
+  await frame("rankings");
+  await hold(4);
+  await page
+    .getByTestId("retrieval-trace")
+    .locator(".ranking-branch")
+    .nth(1)
+    .locator("h4")
+    .scrollIntoViewIfNeeded();
+  await frame("rankings-keyword");
+  await hold(4);
+  await page.getByTestId("retrieval-trace").locator("summary").click();
+  scene("context");
+  await page.getByTestId("workflow-trace").scrollIntoViewIfNeeded();
+  if (
+    !hybrid.usage?.reported_input_tokens ||
+    !hybrid.usage?.reported_output_tokens
+  )
+    throw new Error("Live model token usage missing");
+  await frame("context");
+  await hold(7);
+  scene("export");
+  await page
+    .getByRole("button", { name: "Copy answer & sources", exact: false })
+    .click();
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  if (
+    !copied.includes(hybrid.answer) ||
+    !copied.includes("ragglass-retrieval-lab.pdf")
+  )
+    throw new Error("Actual clipboard lacked the public answer sources");
+  const downloaded = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Download Markdown", exact: false })
+    .click();
+  await (await downloaded).saveAs(`${output}/hybrid-report.md`);
+  const markdown = await readFile(`${output}/hybrid-report.md`, "utf8");
+  if (
+    !markdown.includes("hybrid-rrf") ||
+    !markdown.includes("keyword #") ||
+    !markdown.includes("dense #")
+  )
+    throw new Error("Actual Markdown lacked hybrid diagnostics");
+  artifacts.push({
+    filename: "hybrid-report.md",
+    sha256: createHash("sha256").update(markdown).digest("hex"),
+  });
+  await frame("export");
   await hold(5);
-  await page.locator(".run-details > summary").click();
-
-  scene(
-    "refusal",
-    "Ask about electricity cost: the sample has no evidence for that answer.",
-    "詢問年度電費：範例文件沒有可支持此答案的證據。",
-  );
-  const unsupported = await ask(unknownQuestion);
-  if (unsupported.answerable || unsupported.citations.length) {
+  scene("summary");
+  await page.getByLabel("Active document").selectOption(guide.id);
+  await page.getByLabel("Question", { exact: true }).fill("");
+  const summary = await ask("", "summary");
+  if (
+    !summary.answerable ||
+    !summary.workflow?.nodes.some((n) => n.phase === "map") ||
+    !summary.workflow.nodes.some((n) => n.phase === "final") ||
+    summary.summary_points?.length !== 3
+  )
     throw new Error(
-      "The unanswerable question was not refused without citations.",
+      "Real document summary did not produce three sourced points",
     );
-  }
-  await expect(page.getByTestId("answer")).toContainText("cannot be confirmed");
   await page.getByTestId("answer").scrollIntoViewIfNeeded();
-  await hold(5);
-
-  scene(
-    "history",
-    "Reopen a saved run with its question, answer, evidence, and configuration.",
-    "重新開啟歷史紀錄，查看該次問題、答案、證據與設定。",
+  await frame("summary");
+  await hold(4);
+  await page
+    .getByTestId("answer")
+    .locator(".citations")
+    .scrollIntoViewIfNeeded();
+  await frame("summary-bottom");
+  await hold(4);
+  scene("summary_trace");
+  await page
+    .getByTestId("workflow-trace")
+    .getByRole("heading", { name: "Document summary steps", exact: true })
+    .scrollIntoViewIfNeeded();
+  await page.locator(".summary-node").first().locator("summary").click();
+  await frame("summary_trace");
+  await hold(6);
+  await page.locator(".summary-node").first().locator("summary").click();
+  scene("cancel");
+  const pending = await begin("", "summary");
+  const deadline = performance.now() + 30_000;
+  let generating = false;
+  while (performance.now() < deadline) {
+    const run = await detail(pending.id);
+    if (run.status !== "running")
+      throw new Error("Summary finished before the stop demonstration");
+    if (run.stage === "generation") {
+      generating = true;
+      break;
+    }
+    await hold(0.02);
+  }
+  if (!generating) throw new Error("Generation was not observed before stop");
+  await page.getByRole("button", { name: "Stop query", exact: false }).click();
+  const cancelled = await waitRun(pending.id);
+  retain(cancelled);
+  if (
+    cancelled.status !== "cancelled" ||
+    !cancelled.evidence.length ||
+    cancelled.answer ||
+    cancelled.citations.length
+  )
+    throw new Error("Stop did not retain evidence without an answer");
+  await expect(page.locator(".missing-source").first()).toContainText(
+    "Query stopped",
   );
+  await frame("cancel");
+  await hold(6);
+  scene("refusal");
+  await retrievalOptions(true);
+  await page
+    .getByLabel("Retrieval mode", { exact: true })
+    .selectOption("dense");
+  const refused = await ask(unknownQuestion);
+  await retrievalOptions(false);
+  if (refused.answerable || refused.citations.length)
+    throw new Error("Unsupported question was not refused");
+  await page.getByTestId("answer").scrollIntoViewIfNeeded();
+  await frame("refusal");
+  await hold(6);
+  scene("history");
   await page.getByTestId("open-history").click();
-  await expect(page.getByRole("dialog", { name: "Run history" })).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: "Run history", exact: true }),
+  ).toBeVisible();
   await hold(3);
   await page
     .locator(".history-item")
-    .filter({ hasText: sampleQuestion })
+    .filter({ hasText: identifierQuestion })
     .first()
     .click();
-  await expect(page.getByTestId("answer")).toContainText("30 MB");
+  await expect(page.getByLabel("Active document")).toHaveValue(lab.id);
+  await expect(page.getByLabel("Retrieval mode", { exact: true })).toHaveValue(
+    "hybrid",
+  );
+  await expect(
+    page.getByLabel("Candidates per method", { exact: true }),
+  ).toHaveValue("20");
+  await source(1);
+  await retrievalOptions(true);
+  await frame("history");
+  await hold(5);
+  scene("language");
+  await page.getByLabel("Language").selectOption("zh-TW");
+  await expect(
+    page.getByRole("heading", { name: "文件診斷工作台", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("Language")).toHaveValue("zh-TW");
+  await frame("language");
+  await hold(5);
+  await page.getByLabel("Language").selectOption("en");
+  await page.getByTestId("open-history").click();
   await page
-    .locator(".citation-button")
-    .filter({ hasText: "p. 2" })
+    .locator(".history-item")
+    .filter({ hasText: identifierQuestion })
     .first()
     .click();
-  await expect(page.getByTestId("pdf-viewer")).toHaveAttribute(
-    "data-page",
-    "2",
-  );
-  await page.getByLabel("Question", { exact: true }).scrollIntoViewIfNeeded();
-  await hold(2);
-
-  scene(
-    "document_cleanup",
-    "Search/select the PDF in Document library; confirm Delete selected.",
-    "在文件庫搜尋並勾選 PDF，確認刪除所選文件。",
-  );
+  await publicWorkspace(baseURL, { currentDemo: true });
+  scene("document_cleanup");
   await page.getByTestId("open-library").click();
   const library = page.getByRole("dialog", {
     name: "Document library",
     exact: true,
   });
-  await library.getByLabel("Search filenames").fill("ragglass-field-guide");
+  await library.getByLabel("Search filenames").fill("ragglass-retrieval-lab");
   await library
-    .getByLabel("Select ragglass-field-guide.pdf", { exact: true })
+    .getByLabel("Select ragglass-retrieval-lab.pdf", { exact: true })
     .check();
   await hold(3);
   await library.getByTestId("delete-selected").click();
   await expect(
-    page.getByRole("dialog", { name: "Confirm cleanup" }),
+    page.getByRole("dialog", { name: "Confirm cleanup", exact: true }),
   ).toContainText("Saved run history remains");
   await hold(3);
   await page.getByTestId("confirm-cleanup").click();
   await expect(library.locator(".document-item")).toHaveCount(0);
   await library.getByRole("button", { name: "Close", exact: true }).click();
-  await expect(page.locator(".pdf-paper > canvas")).not.toBeVisible();
-  await expect(page.getByTestId("answer")).toContainText("30 MB");
   await expect(page.locator(".citation-button").first()).toBeDisabled();
   await page.getByTestId("answer").scrollIntoViewIfNeeded();
-  await hold(4);
-
-  scene(
-    "history_cleanup",
-    "Clear all run history separately; PDFs and indexes are independent.",
-    "獨立清空全部執行紀錄；PDF 與索引是另外的清理範圍。",
-  );
+  await frame("document_cleanup");
+  await hold(5);
+  scene("history_cleanup");
   await page.getByTestId("open-history").click();
   const history = page.getByRole("dialog", {
     name: "Run history",
     exact: true,
   });
-  await expect(history.locator(".history-item").first()).toContainText(
-    "Original PDF deleted",
-  );
-  await hold(3);
+  await expect(
+    history.locator(".history-item").filter({ hasText: identifierQuestion }),
+  ).toContainText("Original PDF deleted");
   await history.getByTestId("clear-all").click();
   await expect(
-    page.getByRole("dialog", { name: "Confirm cleanup" }),
+    page.getByRole("dialog", { name: "Confirm cleanup", exact: true }),
   ).toContainText("PDFs and their indexes remain");
   await hold(3);
   await page.getByTestId("confirm-cleanup").click();
   await expect(history.locator(".history-item")).toHaveCount(0);
   await history.getByRole("button", { name: "Close", exact: true }).click();
-  await expect(page.getByTestId("answer")).not.toBeVisible();
-  await hold(3);
-
-  scene(
-    "closing",
-    "Try RAGGlass on GitHub. Share a reproducible issue; star it if it helps your work.",
-    "到 GitHub 試用 RAGGlass，回報可重現的問題；有幫助也歡迎 Star。",
-  );
-  await hold(Math.max(4, 85 - (performance.now() - start) / 1000));
+  if ((await (await page.request.get("/api/documents")).json()).length !== 1)
+    throw new Error("History cleanup removed the remaining public PDF");
+  await frame("history_cleanup");
+  await hold(5);
+  scene("closing");
+  await hold(6);
   duration = (performance.now() - start) / 1000;
   if (errors.length) throw new Error(errors.join("\n"));
-  if (duration > 95)
+  if (duration > 360)
     throw new Error(
-      `Recording took ${duration.toFixed(2)}s; rerun in a fresh disposable workspace with the model warm to stay under 95s.`,
+      "Recording exceeded six minutes; inspect the live run without changing playback speed",
     );
 } finally {
   await context.close();
@@ -285,43 +543,87 @@ try {
     await browser.close();
   }
 }
-const rawStart = (start - recordingClock) / 1000;
 const report = {
   recorded_at: new Date().toISOString(),
   source_commit: execFileSync("git", ["rev-parse", "HEAD"], {
     cwd: fileURLToPath(root),
     encoding: "utf8",
   }).trim(),
+  capture_sha256: createHash("sha256")
+    .update(await readFile(new URL("scripts/capture_demo.mjs", root)))
+    .digest("hex"),
   document_hash: preflight.documentHash,
-  upload_reused_index: Boolean(upload.duplicate),
+  documents: uploads.map((d) => ({
+    filename: d.filename,
+    hash: d.hash,
+    pages: d.page_count,
+    chunks: d.chunk_count,
+    parser: d.parser,
+    chunking: d.chunking,
+    embedding: d.embedding,
+    timings_ms: d.timings_ms,
+  })),
+  upload_reused_index: false,
   mock: false,
   playback_speed: 1,
-  trimmed_initial_navigation_seconds: rawStart,
+  trimmed_initial_navigation_seconds: (start - clock) / 1000,
   duration_seconds: duration,
   scenes,
+  artifacts,
   runs: runs.map((r) => ({
     id: r.id,
+    kind: r.kind,
+    status: r.status,
     question: r.question,
     model: r.settings.llm.model,
+    settings: r.settings,
     answer: r.answer,
+    summary_points: r.summary_points,
     answerable: r.answerable,
-    citations: r.citations.map((c) => ({ id: c.id, pages: c.pages })),
+    citations: r.citations.map((c) => ({
+      id: c.id,
+      pages: c.pages,
+      document_hash: c.document_hash,
+    })),
     timings_ms: r.timings_ms,
     model_metrics: r.model_metrics,
+    usage: r.usage,
+    context: r.context,
+    retrieval_trace: r.retrieval_trace,
+    workflow: r.workflow && {
+      source_chunk_count: r.workflow.source_chunk_count,
+      map_batches: r.workflow.map_batches,
+      nodes: r.workflow.nodes.map((n) => ({
+        id: n.id,
+        phase: n.phase,
+        status: n.status,
+        source_ids: n.source_ids,
+        elapsed_ms: n.elapsed_ms,
+      })),
+    },
+    attempts: r.attempts.map((a) => ({
+      node: a.node,
+      number: a.number,
+      status: a.status,
+      reason: a.reason,
+      error_code: a.error_code,
+    })),
   })),
 };
+await writeFile(
+  `${output}/live-runs.json`,
+  JSON.stringify(runs, null, 2) + "\n",
+);
 report.media = await exportDemoMedia(report, output, images);
 report.tutorial_source = "demo-tutorial.json";
 await writeFile(
   `${output}/recording.json`,
   JSON.stringify(report, null, 2) + "\n",
 );
-const publicMedia = fileURLToPath(new URL("docs/media/", root));
-await mkdir(publicMedia, { recursive: true });
 await writeFile(
-  `${publicMedia}/demo-recording.json`,
+  new URL("docs/media/demo-recording.json", root),
   JSON.stringify(report, null, 2) + "\n",
 );
 console.log(
-  `Exported English and Traditional Chinese captioned videos (${duration.toFixed(2)}s), step-by-step VTT/SRT, and a 10s real-time GIF.`,
+  `Exported fresh ${scenes.length}-scene bilingual tutorial (${duration.toFixed(2)}s, normal speed).`,
 );
