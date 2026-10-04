@@ -16,6 +16,7 @@ RAGGlass 是給 PDF RAG 工程師的地端開源工作台。從實際「文件 �
 - **檢查解析與檢索：**將 Docling 產物、片段分數與原文對照。
 - **重現執行：**保存 prompt、設定、證據、答案與實測耗時，重啟後仍可查看。
 - **管理工作空間：**搜尋文件與歷史紀錄，確認範圍後可刪除所選或全部清空。
+- **掌握文件處理：**傳送前檢查上傳限制、查看實際片段進度，並停止排隊或處理中的文件。
 - **連接自己的模型服務：**使用真實 embedding 與即時 Ollama／相容 HTTP 推論。
 
 [快速啟動](#快速啟動) · [觀看操作示範](#觀看操作示範) · [圖解操作](docs/USAGE.zh-TW.md) · [部署指南](docs/DEPLOYMENT.zh-TW.md) · [模型建議](#建議的-ollama-模型)
@@ -43,6 +44,7 @@ https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017
 | [圖解操作](docs/USAGE.zh-TW.md) | 上傳、狀態、問答、引用、解析、歷史及五種實際介面。 |
 | [清理指南](docs/CLEANUP.zh-TW.md) | 搜尋與篩選、刪除 PDF 或執行紀錄、來源缺失標示與清理驗證。 |
 | [閱讀與查詢控制](docs/USABILITY.zh-TW.md) | 查詢進度／取消、PDF 搜尋／縮放／選字、答案複製、Markdown 與獨立驗證。 |
+| [上傳與文件處理](docs/INGESTION.zh-TW.md) | 本機 PDF 檢查、文件進度／停止、有界向量批次、重試行為與隔離驗證。 |
 | [影片教學](docs/DEMO.zh-TW.md) | 九個編號步驟、場景時間與已嵌入影片的操作字幕。 |
 | [安裝與部署](docs/DEPLOYMENT.zh-TW.md) | 環境、模型、Qdrant、開發／正式模式、選用 user service、SSH、備份、更新與排錯。 |
 | [實測里程碑](docs/MILESTONE.zh-TW.md) | 真實模型／瀏覽器／重啟結果、硬體、耗時與限制。 |
@@ -172,7 +174,7 @@ Ollama tag 可能在重新 pull 後改變。評測前使用 `curl -fsS http://12
 
 ## 完整操作流程
 
-1. 從文件工具列下載範例，或選擇 `examples/ragglass-field-guide.pdf` 上傳。狀態依序顯示等待、解析、切塊、向量化、索引、完成。首次處理含模型下載時間，處理中也能查看原始 PDF。
+1. 從文件工具列下載範例，或選擇 `examples/ragglass-field-guide.pdf` 上傳。瀏覽器先檢查原生文字、加密與目前容量／頁數限制，再傳送文件。查看等待 → 解析 → 切塊，接著逐批向量化／索引 → 已索引，並顯示耗時與取得確認的片段數。需要時可停止；處理中仍可看原始 PDF。首次處理包含模型下載時間。
 2. 詢問 **What is the maximum upload size for the Cedar pilot?**，預期事實為 **30 MB**，來自**第 2 頁**表格。答案由模型即時產生。
 3. 點擊回答下的引用按鈕，PDF.js 會跳到對應頁面並標示可用來源內容區塊座標。點選檢索片段可展開全文、完整 chunk ID、cosine 分數、頁碼與座標可用性；也可直接點選頁碼列瀏覽原始頁面。
 4. 開啟**解析內容**查看 chunks，或下載原始 Markdown／Docling JSON。文件詳情包含 SHA-256、解析／切塊／embedding 設定與處理耗時。
@@ -220,7 +222,7 @@ Vue + PDF.js → FastAPI → Docling → 逐頁 token 切塊 → 本機 E5 → Q
 SQLite：文件 metadata、chunks、runs     本機檔案：PDF、Markdown、Docling JSON
 ```
 
-Adapter 分別是 `parser.py`、`embedding.py`、`retrieval.py`、`llm.py`，由 `pipeline.py` 協調。背景文件處理依序執行，控制 CPU 記憶體使用；查詢工作與 UI 請求迴圈分開。SQLite 為 metadata 的主要來源，可透過重新索引文件重建 Qdrant。每個 chunk 保存全部來源頁碼，包含跨頁內容。座標源自 Docling 原始內容區塊，可能大於個別 token 視窗，並非虛構的精確句子邊界；缺失座標則明確標示。
+Adapter 分別是 `parser.py`、`embedding.py`、`retrieval.py`、`llm.py`，由 `pipeline.py` 協調。單一文件工作執行緒管理排隊與協作式停止；每個有界向量批次寫入、釋放後才處理下一批，解析與文字 metadata 仍使用整份文件的記憶體。查詢工作與 UI 請求迴圈分開。SQLite 為 metadata 的主要來源，可透過重新索引文件重建 Qdrant。每個 chunk 保存全部來源頁碼，包含跨頁內容。座標源自 Docling 原始內容區塊，可能大於個別 token 視窗，並非虛構的精確句子邊界；缺失座標則明確標示。
 
 `.data/documents/<document-id>/` 保存 `original.pdf`、`parsed.md`、`docling.json`；`.data/ragglass.sqlite3` 保存 metadata／chunks／runs。請一起備份 `.data` 及 Qdrant volume。`docker compose down` 保留 volume，**`docker compose down -v` 會刪除向量儲存**。Git 忽略 `.env`、資料、快取、依賴、建置產物及本機報告；只有範例 PDF 預期公開。
 

@@ -21,6 +21,7 @@ for name in [
     "docs/DEMO",
     "docs/CLEANUP",
     "docs/USABILITY",
+    "docs/INGESTION",
     "docs/RELEASE-v0.1.0",
     "examples/README",
 ]:

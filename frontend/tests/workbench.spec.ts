@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
+import { uploadPdf } from './upload'
 
 test('real PDF upload, live model answer, page citation, history, and language persistence', async ({
   page,
@@ -9,11 +10,10 @@ test('real PDF upload, live model answer, page citation, history, and language p
   await page.goto('/')
   await page.getByLabel('Language').selectOption('en')
   await expect(page.getByRole('heading', { name: 'Document workbench', exact: true })).toBeVisible()
-  await page
-    .locator('input[type=file]')
-    .setInputFiles(
-      fileURLToPath(new URL('../../examples/ragglass-field-guide.pdf', import.meta.url)),
-    )
+  await uploadPdf(
+    page,
+    fileURLToPath(new URL('../../examples/ragglass-field-guide.pdf', import.meta.url)),
+  )
   await expect(page.locator('.document-bar .badge')).toHaveText('Indexed', { timeout: 180_000 })
   await expect(page.getByTestId('pdf-viewer')).toHaveAttribute('data-page', '1')
   await expect(page.locator('.pdf-paper > canvas')).toBeVisible()

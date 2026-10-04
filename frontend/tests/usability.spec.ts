@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { findTextMatches } from '../src/pdfSearch'
 import { runMarkdown } from '../src/report'
 import type { Run } from '../src/types'
+import { uploadPdf } from './upload'
 
 test('PDF text matching handles split phrases, width variants, and original offsets', () => {
   expect(findTextMatches(['Maximum: ３０', ' MB'], '30 mb')).toEqual([
@@ -30,12 +31,12 @@ test('real PDF search, selection, zoom, live answer, clipboard, Markdown, and mo
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   await page.goto('/')
   await page.getByLabel('Language').selectOption('en')
-  await page
-    .locator('input[type=file]')
-    .setInputFiles(
-      fileURLToPath(new URL('../../examples/ragglass-field-guide.pdf', import.meta.url)),
-    )
+  await uploadPdf(
+    page,
+    fileURLToPath(new URL('../../examples/ragglass-field-guide.pdf', import.meta.url)),
+  )
   await expect(page.locator('.document-bar .badge')).toHaveText('Indexed', { timeout: 180_000 })
+  await expect(page.locator('.pdf-loading')).not.toBeVisible()
   await page.getByLabel('Search PDF text', { exact: true }).fill('30 MB')
   await expect(page.locator('.pdf-search-count')).toHaveText(/1 \/ [1-9]/)
   await expect(page.getByTestId('pdf-viewer')).toHaveAttribute('data-page', '2')
@@ -174,6 +175,7 @@ test('synthetic query UI reconnects, resumes on reload, and stops without a new 
   })
   await page.goto('/')
   await page.getByLabel('Language').selectOption('en')
+  await page.getByLabel('Active document').selectOption(doc.id)
   await page.getByLabel('Question', { exact: true }).fill(run.question)
   await page.getByRole('button', { name: 'Retrieve & answer' }).click()
   await expect(page.getByTestId('query-progress')).toContainText('Reconnecting')

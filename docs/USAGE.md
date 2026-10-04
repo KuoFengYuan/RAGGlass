@@ -28,9 +28,11 @@ The UI starts in Traditional Chinese. Select **English** at the top right; this 
 
 1. Open `http://127.0.0.1:5173` in development or `http://127.0.0.1:8000` for the built interface. These addresses refer to the machine running the app; use an SSH tunnel for another host.
 2. Download the sample from the document toolbar, or use `examples/ragglass-field-guide.pdf` from your checkout.
-3. Click **Upload PDF** and select the file. The default limits are **30 MB** and **200 pages**. This release accepts PDFs with selectable native text; image-only/scanned PDFs require future OCR support.
-4. Watch the document badge: **Queued → Parsing → Chunking → Embedding → Indexing → Indexed**. Updates are polled every four seconds. First-time Docling/E5 downloads and initialization can take longer than subsequent uploads. The original PDF is viewable during processing.
+3. Click **Upload PDF** and select the file. The default limits are **30 MB** and **200 pages**, displayed before selection. Local inspection checks size, pages, encryption and selectable text before transfer; the backend validates independently. Image-only/scanned PDFs require future OCR support.
+4. Watch **Queued → Parsing → Chunking**, then **Embedding / Indexing** batches → **Indexed**. Processing progress refreshes approximately every 750 ms, with elapsed time and embedded/indexed chunk counts. **Stop processing** cancels queued jobs or stops after the running operation; the original PDF remains viewable. First-time Docling/E5 downloads and initialization can take longer than subsequent uploads.
 5. Wait for **Indexed** before asking. If processing fails, read the visible error, correct the cause, and use **Reindex**. An identical PDF hash reuses its existing document record.
+
+[Upload checks, stopping and bounded batches](INGESTION.md) explains what progress measures, retained partial artifacts, and full retry behavior.
 
 ![Document library with the uploaded original sample](images/document-library.png)
 

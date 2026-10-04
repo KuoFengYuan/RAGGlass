@@ -145,8 +145,13 @@ class Store:
             if doc["status"] == "deleting":
                 doc.update(status="delete_failed", error="清理被服務重啟中斷，請重試刪除文件。")
                 self.save_document(doc)
-            elif doc["status"] not in {"ready", "failed", "delete_failed"}:
-                doc.update(status="failed", error="處理被服務重啟中斷，請按重新索引。")
+            elif doc["status"] not in {"ready", "failed", "cancelled", "delete_failed"}:
+                doc.update(
+                    status="failed",
+                    error="處理被服務重啟中斷，請按重新索引。",
+                    error_code="interrupted",
+                    finished_at=now(),
+                )
                 self.save_document(doc)
         for run_id, status in self.run_states().items():
             if status == "running":

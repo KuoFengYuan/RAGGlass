@@ -20,14 +20,15 @@ class VectorIndex:
         self.collection = f"ragglass_{fingerprint}"
         self._lock = threading.Lock()
 
-    def index(self, chunks, vectors):
+    def begin_document(self, doc_id, dimension):
+        """Prepare once per full reindex; successive batch writes never delete earlier batches."""
         try:
             with self._lock:
                 if not self.client.collection_exists(self.collection):
                     self.client.create_collection(
                         self.collection,
                         vectors_config=models.VectorParams(
-                            size=len(vectors[0]), distance=models.Distance.COSINE
+                            size=dimension, distance=models.Distance.COSINE
                         ),
                     )
                     self.client.create_payload_index(
@@ -41,29 +42,42 @@ class VectorIndex:
                             must=[
                                 models.FieldCondition(
                                     key="document_id",
-                                    match=models.MatchValue(value=chunks[0]["document_id"]),
+                                    match=models.MatchValue(value=doc_id),
                                 )
                             ]
                         )
                     ),
                     wait=True,
                 )
-                for start in range(0, len(chunks), 64):
-                    self.client.upsert(
-                        self.collection,
-                        points=[
-                            models.PointStruct(id=c["id"], vector=v, payload=c)
-                            for c, v in zip(
-                                chunks[start : start + 64], vectors[start : start + 64], strict=True
-                            )
-                        ],
-                        wait=True,
-                    )
         except Exception as exc:
-            raise PipelineError(
-                "qdrant_unavailable",
-                "無法寫入 Qdrant。請執行 docker compose up -d qdrant，確認 QDRANT_URL 後重新索引。",
-            ) from exc
+            raise self._write_error() from exc
+
+    def upsert_batch(self, chunks, vectors):
+        try:
+            with self._lock:
+                self.client.upsert(
+                    self.collection,
+                    points=[
+                        models.PointStruct(id=c["id"], vector=v, payload=c)
+                        for c, v in zip(chunks, vectors, strict=True)
+                    ],
+                    wait=True,
+                )
+        except Exception as exc:
+            raise self._write_error() from exc
+
+    def index(self, chunks, vectors):
+        # Compatibility helper; ingestion uses begin_document + bounded upsert_batch.
+        self.begin_document(chunks[0]["document_id"], len(vectors[0]))
+        for start in range(0, len(chunks), 64):
+            self.upsert_batch(chunks[start : start + 64], vectors[start : start + 64])
+
+    @staticmethod
+    def _write_error():
+        return PipelineError(
+            "qdrant_unavailable",
+            "無法寫入 Qdrant。請執行 docker compose up -d qdrant，確認 QDRANT_URL 後重新索引。",
+        )
 
     def search(self, vector, document_ids, top_k, threshold):
         try:

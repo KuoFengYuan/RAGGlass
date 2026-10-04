@@ -34,8 +34,9 @@ class Settings(BaseSettings):
     chunk_overlap_tokens: int = Field(default=32, ge=0)
     retrieval_top_k: int = Field(default=5, ge=1, le=12)
     retrieval_score_threshold: float = Field(default=0.70, ge=0, le=1)
-    max_upload_mb: int = 30
-    max_pdf_pages: int = 200
+    max_upload_mb: int = Field(default=30, ge=1)
+    max_pdf_pages: int = Field(default=200, ge=1)
+    ingest_batch_size: int = Field(default=32, ge=1, le=256)
 
     def configure_paths(self):
         if not self.ragglass_data_dir.is_absolute():

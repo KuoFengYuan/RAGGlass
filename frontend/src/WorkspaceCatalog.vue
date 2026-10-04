@@ -13,6 +13,7 @@ const props = defineProps<{
   uploading: boolean
   querying: boolean
   maxUpload: number
+  maxPages: number
 }>()
 const emit = defineEmits<{
   select: [id: string]
@@ -178,7 +179,8 @@ const plan = ref<{
 let requestNumber = 0
 let debounce: ReturnType<typeof setTimeout>
 
-const terminal = (doc: Document) => ['ready', 'failed', 'delete_failed'].includes(doc.status)
+const terminal = (doc: Document) =>
+  ['ready', 'failed', 'cancelled', 'delete_failed'].includes(doc.status)
 const visibleDocs = computed(() =>
   props.documents.filter(
     (doc) =>
@@ -346,7 +348,7 @@ onBeforeUnmount(() => {
         <button class="icon-button" :aria-label="t('close')" @click="close">×</button>
       </header>
       <div v-if="mode === 'documents'" class="catalog-actions">
-        <p>{{ t('hint') }} {{ maxUpload }} MB</p>
+        <p>{{ t('hint') }} {{ maxUpload }} MB · {{ maxPages }} {{ t('pages') }}</p>
         <button class="primary" :disabled="uploading || clearing" @click="emit('upload')">
           ＋ {{ t('upload') }}
         </button>
@@ -364,6 +366,7 @@ onBeforeUnmount(() => {
           <template v-if="mode === 'documents'">
             <option value="ready">{{ t('ready') }}</option>
             <option value="failed">{{ t('failed') }}</option>
+            <option value="cancelled">{{ t('cancelled') }}</option>
             <option value="delete_failed">{{ t('delete_failed') }}</option>
             <option value="processing">{{ t('processing') }}</option>
           </template>
@@ -427,7 +430,10 @@ onBeforeUnmount(() => {
               ><strong>{{ doc.filename }}</strong>
               <small
                 >{{ doc.page_count }} {{ t('pages') }} · {{ doc.chunk_count }} {{ t('chunks') }} ·
-                {{ formatDate(doc.created_at) }}</small
+                {{ formatDate(doc.created_at) }}
+                <template v-if="!terminal(doc) && doc.progress?.total_chunks">
+                  · {{ doc.progress.indexed_chunks }} / {{ doc.progress.total_chunks }}
+                </template></small
               ></span
             >
             <span class="badge" :class="doc.status">{{ stateLabel(doc.status) }}</span
