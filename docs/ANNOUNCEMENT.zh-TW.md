@@ -31,7 +31,7 @@ PDF RAG 能回傳看似合理的答案，卻常讓人難以確認模型看到了
 
 技術使用 Vue 3／PDF.js、FastAPI、Docling、Qdrant、SQLite、本機 E5 embedding，以及獨立 Ollama／相容 HTTP 模型服務，附完整英文與繁體中文操作／部署文件。
 
-目前支援原生文字 PDF。OCR、混合檢索、reranking、自動診斷與正式修改前後評測仍待後續實作。來源 ID 驗證能檢查引用來自哪裡，無法直接證明每一句答案都有語意支持。
+目前支援原生文字 PDF。向量／BM25／混合模式及小型固定條件中英文評測已實作，詳見[檢索指南](RETRIEVAL.zh-TW.md)。OCR、reranking、自動診斷與大規模正式評測仍待後續實作。來源 ID 驗證能檢查引用來自哪裡，無法直接證明每一句答案都有語意支持。
 
 歡迎用公開範例試用，或回報去識別的解析／檢索重現問題：
 https://github.com/KuoFengYuan/RAGGlass

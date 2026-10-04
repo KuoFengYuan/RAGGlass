@@ -1,0 +1,213 @@
+{
+  "version": "retrieval-lab-bilingual-v1",
+  "license": "CC0-1.0; fictional fixture and annotations",
+  "document_sha256": "9140d0d953991f5084b4582c5a2fad3d2e253a0e348060ee3b3a79bdaa24afaf",
+  "cases": [
+    {
+      "id": "en-1",
+      "category": "identifier",
+      "question": "What does error E-4097 mean for CEDAR-X17?",
+      "answerable": true,
+      "expected_pages": [
+        1
+      ],
+      "expected_any": [
+        "checksum",
+        "校驗",
+        "檢查碼",
+        "檢查和"
+      ]
+    },
+    {
+      "id": "zh-1",
+      "category": "identifier",
+      "question": "CEDAR-X17 的 E-4097 是什麼錯誤？",
+      "answerable": true,
+      "expected_pages": [
+        1
+      ],
+      "expected_any": [
+        "checksum",
+        "校驗",
+        "檢查碼",
+        "檢查和"
+      ]
+    },
+    {
+      "id": "en-2",
+      "category": "identifier",
+      "question": "Which firmware does CEDAR-X71 run?",
+      "answerable": true,
+      "expected_pages": [
+        2
+      ],
+      "expected_any": [
+        "FW-7.2-B"
+      ]
+    },
+    {
+      "id": "zh-2",
+      "category": "identifier",
+      "question": "CEDAR-X71 使用哪個韌體版本？",
+      "answerable": true,
+      "expected_pages": [
+        2
+      ],
+      "expected_any": [
+        "FW-7.2-B"
+      ]
+    },
+    {
+      "id": "en-3",
+      "category": "numeric",
+      "question": "What is the retry delay for CEDAR-X17 in milliseconds?",
+      "answerable": true,
+      "expected_pages": [
+        1
+      ],
+      "expected_any": [
+        "180"
+      ]
+    },
+    {
+      "id": "zh-3",
+      "category": "numeric",
+      "question": "CEDAR-X17 的重試延遲是多少毫秒？",
+      "answerable": true,
+      "expected_pages": [
+        1
+      ],
+      "expected_any": [
+        "180"
+      ]
+    },
+    {
+      "id": "en-4",
+      "category": "numeric",
+      "question": "What is the delivery deadline for order CDR-2026-017?",
+      "answerable": true,
+      "expected_pages": [
+        4
+      ],
+      "expected_any": [
+        "2026-10-08",
+        "October 8",
+        "10 月 8",
+        "10月8"
+      ]
+    },
+    {
+      "id": "zh-4",
+      "category": "numeric",
+      "question": "訂單 CDR-2026-017 的交貨截止日期是哪天？",
+      "answerable": true,
+      "expected_pages": [
+        4
+      ],
+      "expected_any": [
+        "2026-10-08",
+        "October 8",
+        "10 月 8",
+        "10月8"
+      ]
+    },
+    {
+      "id": "en-5",
+      "category": "similar-records",
+      "question": "What amount is due for CDR-2026-071, rather than CDR-2026-017?",
+      "answerable": true,
+      "expected_pages": [
+        5
+      ],
+      "expected_any": [
+        "18200",
+        "18,200"
+      ]
+    },
+    {
+      "id": "zh-5",
+      "category": "similar-records",
+      "question": "CDR-2026-071 的金額是多少？請勿混用 CDR-2026-017 的金額。",
+      "answerable": true,
+      "expected_pages": [
+        5
+      ],
+      "expected_any": [
+        "18200",
+        "18,200"
+      ]
+    },
+    {
+      "id": "en-6",
+      "category": "similar-records",
+      "question": "How many days are query records kept in the document library?",
+      "answerable": true,
+      "expected_pages": [
+        6
+      ],
+      "expected_any": [
+        "90",
+        "ninety",
+        "九十"
+      ]
+    },
+    {
+      "id": "zh-6",
+      "category": "similar-records",
+      "question": "文件庫會保留查詢紀錄幾天？",
+      "answerable": true,
+      "expected_pages": [
+        6
+      ],
+      "expected_any": [
+        "90",
+        "ninety",
+        "九十"
+      ]
+    },
+    {
+      "id": "en-7",
+      "category": "paraphrase",
+      "question": "How long does a free replacement of broken equipment take after support receives it?",
+      "answerable": true,
+      "expected_pages": [
+        7
+      ],
+      "expected_any": [
+        "fourteen",
+        "14",
+        "十四"
+      ]
+    },
+    {
+      "id": "zh-7",
+      "category": "paraphrase",
+      "question": "客服收到故障設備後，免費換新要等多久？",
+      "answerable": true,
+      "expected_pages": [
+        7
+      ],
+      "expected_any": [
+        "fourteen",
+        "14",
+        "十四"
+      ]
+    },
+    {
+      "id": "en-8",
+      "category": "unanswerable",
+      "question": "What is the administrator password for CEDAR-X17?",
+      "answerable": false,
+      "expected_pages": [],
+      "expected_any": []
+    },
+    {
+      "id": "zh-8",
+      "category": "unanswerable",
+      "question": "CEDAR-X17 的管理員密碼是什麼？",
+      "answerable": false,
+      "expected_pages": [],
+      "expected_any": []
+    }
+  ]
+}

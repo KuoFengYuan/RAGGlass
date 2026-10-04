@@ -6,6 +6,7 @@ import DocumentProgress from './DocumentProgress.vue'
 import WorkspaceCatalog from './WorkspaceCatalog.vue'
 import GenerationControls from './GenerationControls.vue'
 import WorkflowTrace from './WorkflowTrace.vue'
+import RetrievalTrace from './RetrievalTrace.vue'
 import { answerText, runMarkdown } from './report'
 import { inspectUpload, UploadProblem } from './uploadInspection'
 import type {
@@ -17,6 +18,7 @@ import type {
   GenerationOptions,
   Run,
   RunCatalog,
+  RetrievalMode,
 } from './types'
 
 const locale = ref(localStorage.getItem('ragglass-language') || 'zh-TW')
@@ -48,6 +50,16 @@ const labels = {
     model: 'Model',
     topk: 'Top K',
     threshold: 'Minimum score',
+    mode: 'Retrieval mode',
+    dense: 'Vector',
+    keyword: 'Keyword · BM25',
+    hybrid: 'Hybrid · RRF',
+    candidateK: 'Candidates per method',
+    retrievalHint:
+      'Vector finds related meanings; BM25 matches terms and identifiers. Hybrid combines rankings. The threshold applies only to cosine scores.',
+    dense_retrieval: 'Vector retrieval',
+    keyword_retrieval: 'Keyword retrieval',
+    rank_fusion: 'Ranking evidence',
     settings: 'Run settings & prompt',
     history: 'Run history',
     noHistory: 'Your queries and settings will appear here.',
@@ -71,7 +83,8 @@ const labels = {
     demoQuestion: 'Example question',
     allChunks: 'Parsed chunks',
     close: 'Close',
-    noEvidence: 'No evidence passed the score threshold. Try rephrasing or lowering the threshold.',
+    noEvidence:
+      'No usable evidence found. Try rephrasing, another retrieval mode, or a lower cosine threshold.',
     documentDetails: 'Document settings & timings',
     apiError: 'Cannot reach the backend. Start the API on port 8000 and try again.',
     modelMissing: 'Model not available. Check LLM_MODEL and your model service.',
@@ -157,6 +170,16 @@ const labels = {
     model: '模型',
     topk: 'Top K',
     threshold: '最低分數',
+    mode: '檢索模式',
+    dense: '向量',
+    keyword: '關鍵字 · BM25',
+    hybrid: '混合 · RRF',
+    candidateK: '各方法候選片段數',
+    retrievalHint:
+      '向量找相近語意；BM25 比對關鍵字與型號；混合模式合併排名。最低分數只套用於 cosine 向量分數。',
+    dense_retrieval: '向量檢索',
+    keyword_retrieval: '關鍵字檢索',
+    rank_fusion: '整理證據排名',
     settings: '執行設定與 Prompt',
     history: '執行紀錄',
     noHistory: '查詢與設定將保存於此。',
@@ -180,7 +203,7 @@ const labels = {
     demoQuestion: '範例問題',
     allChunks: '解析片段',
     close: '關閉',
-    noEvidence: '沒有片段通過分數門檻。請改寫問題或調低最低分數。',
+    noEvidence: '沒有可用證據。請改寫問題、切換檢索模式，或調低 cosine 分數門檻。',
     documentDetails: '文件設定與耗時',
     apiError: '無法連線後端。請啟動 port 8000 的 API 後重試。',
     modelMissing: '模型尚未提供。請檢查 LLM_MODEL 與模型服務。',
@@ -253,6 +276,8 @@ const page = ref(1)
 const question = ref('')
 const topK = ref(5)
 const threshold = ref(0.7)
+const retrievalMode = ref<RetrievalMode>('dense')
+const candidateK = ref(20)
 const generation = ref<GenerationOptions>({ temperature: 0, top_p: 1, max_tokens: 768 })
 const config = ref<Config | null>(null)
 const health = ref<Record<string, string>>({})
@@ -294,9 +319,12 @@ const retrievalValid = computed(
     Number.isInteger(topK.value) &&
     topK.value >= 1 &&
     topK.value <= 12 &&
-    Number.isFinite(threshold.value) &&
-    threshold.value >= 0 &&
-    threshold.value <= 1,
+    (retrievalMode.value === 'keyword' ||
+      (Number.isFinite(threshold.value) && threshold.value >= 0 && threshold.value <= 1)) &&
+    (retrievalMode.value !== 'hybrid' ||
+      (Number.isInteger(candidateK.value) &&
+        candidateK.value >= topK.value &&
+        candidateK.value <= 100)),
 )
 const thresholdLabel = computed(() =>
   Number.isFinite(threshold.value) ? threshold.value.toFixed(2) : '—',
@@ -483,7 +511,18 @@ async function ask(kind: 'query' | 'summary' = 'query') {
               question: question.value,
               document_ids: [selectedId.value],
               top_k: topK.value,
-              score_threshold: threshold.value,
+              score_threshold:
+                retrievalMode.value === 'keyword' &&
+                (!Number.isFinite(threshold.value) || threshold.value < 0 || threshold.value > 1)
+                  ? 0.7
+                  : threshold.value,
+              retrieval_mode: retrievalMode.value,
+              candidate_k:
+                Number.isInteger(candidateK.value) &&
+                candidateK.value >= 1 &&
+                candidateK.value <= 100
+                  ? candidateK.value
+                  : 20,
               generation: generation.value,
             },
       ),
@@ -556,9 +595,11 @@ async function openRun(id: string) {
   try {
     run.value = await api<Run>(`/runs/${id}`)
     question.value = run.value.question
-    const retrieval = run.value.settings.retrieval as { top_k: number; score_threshold: number }
-    topK.value = retrieval.top_k
-    threshold.value = retrieval.score_threshold
+    const retrieval = run.value.settings.retrieval
+    topK.value = retrieval?.top_k ?? config.value?.retrieval.top_k ?? 5
+    threshold.value = retrieval?.score_threshold ?? config.value?.retrieval.score_threshold ?? 0.7
+    retrievalMode.value = retrieval?.mode ?? 'dense'
+    candidateK.value = retrieval?.candidate_k ?? 20
     const saved = run.value.settings.llm
     generation.value = {
       temperature: saved.temperature ?? config.value?.llm.temperature ?? 0,
@@ -945,8 +986,22 @@ onBeforeUnmount(() => {
             <details class="retrieval-options">
               <summary>
                 {{ t('retrievalOptions')
-                }}<span class="mono">K {{ topK }} · ≥ {{ thresholdLabel }}</span>
+                }}<span class="mono"
+                  >{{ t(retrievalMode) }} · K {{ topK
+                  }}<template v-if="retrievalMode !== 'keyword'">
+                    · ≥ {{ thresholdLabel }}</template
+                  ></span
+                >
               </summary>
+              <label class="retrieval-mode"
+                >{{ t('mode') }}
+                <select v-model="retrievalMode" :disabled="querying" aria-label="Retrieval mode">
+                  <option value="dense">{{ t('dense') }}</option>
+                  <option value="keyword">{{ t('keyword') }}</option>
+                  <option value="hybrid">{{ t('hybrid') }}</option>
+                </select>
+              </label>
+              <p class="trace-hint">{{ t('retrievalHint') }}</p>
               <div class="query-options">
                 <label
                   >{{ t('topk')
@@ -955,6 +1010,7 @@ onBeforeUnmount(() => {
                     type="number"
                     min="1"
                     max="12"
+                    :disabled="querying"
                     aria-label="Top K" /></label
                 ><label
                   >{{ t('threshold')
@@ -965,7 +1021,19 @@ onBeforeUnmount(() => {
                     max="1"
                     step="0.01"
                     aria-label="Minimum score"
+                    :disabled="querying || retrievalMode === 'keyword'"
                 /></label>
+                <label v-if="retrievalMode === 'hybrid'"
+                  >{{ t('candidateK') }}
+                  <input
+                    v-model.number="candidateK"
+                    type="number"
+                    :min="topK"
+                    max="100"
+                    :disabled="querying"
+                    aria-label="Candidates per method"
+                  />
+                </label>
               </div>
             </details>
             <GenerationControls
@@ -1055,6 +1123,7 @@ onBeforeUnmount(() => {
               </button>
             </article>
             <WorkflowTrace :run="run" :locale="locale" />
+            <RetrievalTrace :run="run" :locale="locale" />
             <div class="evidence-heading">
               <h3>{{ t('evidence') }}</h3>
               <span class="mono">{{ String(run.evidence.length).padStart(2, '0') }}</span>
@@ -1074,9 +1143,29 @@ onBeforeUnmount(() => {
                   <div class="evidence-card-top">
                     <span class="rank">{{ String(chunk.rank).padStart(2, '0') }}</span
                     ><strong>{{ chunk.filename }}</strong
-                    ><span v-if="run.kind !== 'summary'" class="score" :title="t('score')">{{
-                      chunk.score.toFixed(3)
-                    }}</span>
+                    ><span
+                      v-if="run.kind !== 'summary'"
+                      class="score"
+                      :title="chunk.score_kind || t('score')"
+                      >{{
+                        chunk.score_kind === 'rrf'
+                          ? 'RRF'
+                          : chunk.score_kind === 'bm25'
+                            ? 'BM25'
+                            : 'cos'
+                      }}
+                      {{ chunk.score.toFixed(chunk.score_kind === 'rrf' ? 5 : 3) }}</span
+                    >
+                  </div>
+                  <div v-if="chunk.retrieval_scores" class="evidence-ranks mono">
+                    <span v-if="chunk.retrieval_scores.dense"
+                      >cos #{{ chunk.retrieval_scores.dense.rank }} ·
+                      {{ chunk.retrieval_scores.dense.score.toFixed(3) }}</span
+                    >
+                    <span v-if="chunk.retrieval_scores.keyword"
+                      >BM25 #{{ chunk.retrieval_scores.keyword.rank }} ·
+                      {{ chunk.retrieval_scores.keyword.score.toFixed(3) }}</span
+                    >
                   </div>
                   <small v-if="run.context?.omitted_ids?.includes(chunk.id)">{{
                     t('omitted')
@@ -1106,6 +1195,7 @@ onBeforeUnmount(() => {
                     usage: run.usage,
                     attempts: run.attempts,
                     workflow: run.workflow,
+                    retrieval_trace: run.retrieval_trace,
                   },
                   null,
                   2,

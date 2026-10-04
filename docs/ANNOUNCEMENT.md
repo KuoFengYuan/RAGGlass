@@ -31,7 +31,7 @@ The demo asks about a fictional pilot's upload limit, follows the 30 MB answer t
 
 Stack: Vue 3/PDF.js, FastAPI, Docling, Qdrant, SQLite, local E5 embeddings, and a separate Ollama or compatible model HTTP service. English and Traditional Chinese setup/usage guides are included.
 
-Native-text PDFs are the current scope. OCR, hybrid retrieval, reranking, automatic diagnosis, and formal before/after evaluations are future work. Source-ID validation checks where a citation came from; it does not prove that every answer claim is supported.
+Native-text PDFs are the current scope. Vector/BM25/hybrid modes and small controlled bilingual evaluations are implemented; see the [retrieval guide](RETRIEVAL.md). OCR, reranking, automatic diagnosis and broad production evaluations remain future work. Source-ID validation checks where a citation came from; it does not prove that every answer claim is supported.
 
 Try the public sample or share a sanitized reproduction of a parsing/retrieval problem:
 https://github.com/KuoFengYuan/RAGGlass

@@ -13,12 +13,12 @@ RAGGlass 是給 PDF RAG 工程師的地端開源工作台。從實際「文件 �
 
 - **追查引用：**點擊已驗證來源連結，跳回原始 PDF 頁面。
 - **閱讀與運用結果：**搜尋／縮放／選取 PDF 文字、追蹤或停止查詢，以及複製答案或匯出 Markdown 報告。
-- **檢查解析與檢索：**將 Docling 產物、片段分數與原文對照。
+- **檢查解析與檢索：**切換向量／BM25／RRF 混合檢索，對照 Docling 產物、各路排名與原文。
 - **重現執行：**保存 prompt、設定、證據、答案與實測耗時，重啟後仍可查看。
 - **管理工作空間：**搜尋文件與歷史紀錄，確認範圍後可刪除所選或全部清空。
 - **掌握文件處理：**傳送前檢查上傳限制、查看實際片段進度，並停止排隊或處理中的文件。
 - **檢查模型流程：**每次執行可調整 Temperature／Top-P／輸出上限，對照 context 估算與實際回報 token、檢查有限次重試，並將全文整理為三點有引用的摘要。
-- **比較修改效果：**以 12 題中英文評測保存設定，檢查來源頁檢索／引用、拒答、耗時與 token 用量。
+- **比較修改效果：**保留 12 題基準，加入 16 題檢索實驗，固定條件比較來源頁召回／MRR、引用、拒答、耗時與 token 用量。
 - **連接自己的模型服務：**使用真實 embedding 與即時 Ollama／相容 HTTP 推論。
 
 [快速啟動](#快速啟動) · [觀看操作示範](#觀看操作示範) · [圖解操作](docs/USAGE.zh-TW.md) · [部署指南](docs/DEPLOYMENT.zh-TW.md) · [模型建議](#建議的-ollama-模型)
@@ -31,13 +31,13 @@ https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017
 
 **直接按上方播放，觀看 84.7 秒基本流程教學；繁體中文操作字幕已嵌入影片。** 每個步驟都說明要點哪個按鈕、檢查什麼，可暫停或拖曳進度跟著操作。學習上傳、提問、引用跳頁、解析與設定、無證據拒答、重新查看歷史，以及獨立清理 PDF／執行紀錄。[查看影片九步教學與目前功能](docs/DEMO.zh-TW.md)。
 
-**影片版本：**應用提交 `7e16f9b`，早於閱讀工具、上傳進度與模型流程更新。PDF 搜尋／縮放、停止控制、匯出、生成參數、Context／Token 紀錄、三點摘要與評測，請依[目前功能操作說明](docs/DEMO.zh-TW.md#操作目前的功能)練習。這些功能已在目前應用實作，但尚未出現在這段錄影中。
+**影片版本：**應用提交 `7e16f9b`，早於閱讀工具、上傳進度、模型流程與混合檢索更新。PDF 搜尋／縮放、停止控制、匯出、生成參數、Context／Token 紀錄、三點摘要、檢索模式／排名與評測，請依[目前功能操作說明](docs/DEMO.zh-TW.md#操作目前的功能)練習。這些功能已在目前應用實作，但尚未出現在這段錄影中。
 
 *正常速度的真實模型錄影，英文介面、繁體中文字幕；使用虛構 CC0 範例，重用工作區已有的索引。[追查表格答案](docs/CASE_STUDY.zh-TW.md) · [錄製來源紀錄](docs/media/demo-recording.json)*
 
 [v0.1.0 預覽版](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0)提供版本說明與公開範例。靜態畫面見[實際工作台截圖](docs/images/workbench.zh-TW.png)及下方圖解指南。
 
-**目前工作台：**原生文字 PDF、多語 dense retrieval、引用 ID 驗證、持久追溯紀錄、context／錯誤恢復控制及文件摘要。[原創範例 PDF](examples/ragglass-field-guide.pdf) 含表格與[六個問題](examples/questions.json)，包含無法回答的問題。[中英文標註評測](examples/evaluation-cases.json) 支援固定條件下的生成比較；自主診斷、混合檢索、reranking 與 Fine-tuning 仍屬後續規劃。
+**目前工作台：**原生文字 PDF、向量／BM25／混合檢索、引用 ID 驗證、持久追溯紀錄、context／錯誤恢復控制及文件摘要。[原創範例 PDF](examples/ragglass-field-guide.pdf) 含表格與[六個問題](examples/questions.json)，包含無法回答的問題。[12 題基準](examples/evaluation-cases.json)與 [16 題檢索實驗](examples/retrieval-cases.json)支援固定條件下的生成或檢索模式比較；自主診斷、reranking 與 Fine-tuning 仍屬後續規劃。
 
 **技術：**Vue 3／TypeScript／PDF.js · FastAPI · Docling · Qdrant · SQLite · 獨立模型 HTTP API。
 
@@ -50,7 +50,8 @@ https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017
 | [閱讀與查詢控制](docs/USABILITY.zh-TW.md) | 查詢進度／取消、PDF 搜尋／縮放／選字、答案複製、Markdown 與獨立驗證。 |
 | [上傳與文件處理](docs/INGESTION.zh-TW.md) | 本機 PDF 檢查、文件進度／停止、有界向量批次、重試行為與隔離驗證。 |
 | [Context 與模型流程](docs/WORKFLOWS.zh-TW.md) | Token 估算／實際用量、生成參數、有限次錯誤恢復、三點摘要、評測與面試案例。 |
-| [影片教學與目前功能](docs/DEMO.zh-TW.md) | 錄製版本／涵蓋範圍、影片九步時間，以及目前上傳、閱讀、context、摘要與評測操作。 |
+| [檢索模式與比較](docs/RETRIEVAL.zh-TW.md) | 向量／BM25／RRF 控制、候選追蹤、分數定義、中英文進階題型與固定條件評測。 |
+| [影片教學與目前功能](docs/DEMO.zh-TW.md) | 錄製版本／涵蓋範圍、影片九步時間，以及目前上傳、閱讀、context、摘要、檢索模式與評測操作。 |
 | [安裝與部署](docs/DEPLOYMENT.zh-TW.md) | 環境、模型、Qdrant、開發／正式模式、選用 user service、SSH、備份、更新與排錯。 |
 | [實測里程碑](docs/MILESTONE.zh-TW.md) | 真實模型／瀏覽器／重啟結果、硬體、耗時與限制。 |
 | [表格與來源案例](docs/CASE_STUDY.zh-TW.md) | 從真實答案回到第 2 頁，並檢查文件無法回答的問題。 |
@@ -181,7 +182,7 @@ Ollama tag 可能在重新 pull 後改變。評測前使用 `curl -fsS http://12
 
 1. 從文件工具列下載範例，或選擇 `examples/ragglass-field-guide.pdf` 上傳。瀏覽器先檢查原生文字、加密與目前容量／頁數限制，再傳送文件。查看等待 → 解析 → 切塊，接著逐批向量化／索引 → 已索引，並顯示耗時與取得確認的片段數。需要時可停止；處理中仍可看原始 PDF。首次處理包含模型下載時間。
 2. 展開**模型生成參數**，設定本次 Temperature、Top-P 與輸出 token 上限。詢問 **What is the maximum upload size for the Cedar pilot?**，預期事實為 **30 MB**，來自**第 2 頁**表格。追蹤目前階段與耗時；**停止查詢**會取消執行並保留紀錄。
-3. 點擊回答下的引用按鈕，PDF.js 會跳到對應頁面並標示可用來源內容區塊座標。搜尋原生 PDF 文字、調整縮放或選取文字閱讀；點選檢索片段可展開全文、完整 chunk ID、cosine 分數、頁碼與座標可用性。
+3. 點擊回答下的引用按鈕，PDF.js 會跳到對應頁面並標示可用來源內容區塊座標。搜尋原生 PDF 文字、調整縮放或選取文字閱讀；點選檢索片段可展開全文、完整 chunk ID、標示種類的分數、頁碼與座標可用性。於**檢索選項**切換向量、關鍵字或混合模式，展開**檢索排名追蹤**查看各路原始分數與候選。最低分數只用於 cosine；混合候選數與最終 Top K 分開。
 4. 開啟**解析內容**查看 chunks，或下載原始 Markdown／Docling JSON。文件詳情包含 SHA-256、解析／切塊／embedding 設定與處理耗時。
 5. 查看 **Context 與模型呼叫** 的估算輸入、輸出保留、納入／排除片段、實際回報輸入／輸出 token 與呼叫嘗試。展開設定與 prompt、複製答案與來源，或下載 Markdown／執行 JSON。每次保存 prompt、證據、實際生成／檢索設定與實測耗時，不保存 API key；未取得的模型用量標示未知，不當成零。
 6. 詢問 **What is the pilot's annual electricity cost in dollars?**，應明確表示無法從文件確認，且不顯示引用。
@@ -214,6 +215,8 @@ npm --prefix frontend run test:e2e
 RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e
 # 隔離的真實流程與正式建置 Chrome 檢查，只重用模型服務：
 .venv/bin/python scripts/verify_workflows.py
+# 隔離檢索比較、真正重啟及建置版 Chrome 檢查：
+.venv/bin/python scripts/verify_retrieval.py
 ```
 
 契約測試包含有效／無效引用、錯誤模型格式、實際 TCP 拒絕連線、SQLite 持久化、中斷作業復原及敏感資訊排除。這些採小型、明確標示的合成輸入，不冒充真實推論。
@@ -224,21 +227,22 @@ RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e
 
 ```text
 Vue + PDF.js → FastAPI → Docling → 逐頁 token 切塊 → 本機 E5 → Qdrant
-                   ├─ 查詢 → E5 → 檢索證據 → 完整片段 context 預算
+                   ├─ 查詢 → E5/Qdrant cosine + SQLite BM25 → 模式／RRF 排名
+                   │         → 檢索證據 → 完整片段 context 預算
                    └─ 摘要 → 全部已保存片段 → 有預算限制的 map / reduce / final
                          → 有限次模型 HTTP 呼叫 → 格式／引用驗證 → 保存執行紀錄
 SQLite：文件 metadata、chunks、runs     本機檔案：PDF、Markdown、Docling JSON
 ```
 
-Adapter 分別是 `parser.py`、`embedding.py`、`retrieval.py`、`llm.py`，由 `pipeline.py` 協調。`context.py` 規劃完整輸入預算，`generation.py` 記錄有限次呼叫／錯誤恢復，`summary.py` 執行固定摘要流程。單一文件工作執行緒管理排隊與協作式停止；每個有界向量批次寫入、釋放後才處理下一批，解析與文字 metadata 仍使用整份文件的記憶體。問答／摘要工作與 UI 請求迴圈分開。SQLite 為 metadata 的主要來源，可透過重新索引文件重建 Qdrant。每個 chunk 保存全部來源頁碼，包含跨頁內容。座標源自 Docling 原始內容區塊，可能大於個別 token 視窗，並非虛構的精確句子邊界；缺失座標則明確標示。
+Adapter 分別是 `parser.py`、`embedding.py`、`retrieval.py`、`keyword.py`、`llm.py`，由 `pipeline.py` 協調。`context.py` 規劃完整輸入預算，`generation.py` 記錄有限次呼叫／錯誤恢復，`summary.py` 執行固定摘要流程。單一文件工作執行緒管理排隊與協作式停止；每個有界向量批次寫入、釋放後才處理下一批，解析與文字 metadata 仍使用整份文件的記憶體。問答／摘要工作與 UI 請求迴圈分開。SQLite 為 metadata 的主要來源，可透過重新索引文件重建 Qdrant。每個 chunk 保存全部來源頁碼，包含跨頁內容。座標源自 Docling 原始內容區塊，可能大於個別 token 視窗，並非虛構的精確句子邊界；缺失座標則明確標示。
 
-`.data/documents/<document-id>/` 保存 `original.pdf`、`parsed.md`、`docling.json`；`.data/ragglass.sqlite3` 保存 metadata／chunks／runs。請一起備份 `.data` 及 Qdrant volume。`docker compose down` 保留 volume，**`docker compose down -v` 會刪除向量儲存**。Git 忽略 `.env`、資料、快取、依賴、建置產物及本機報告；只有範例 PDF 預期公開。
+`.data/documents/<document-id>/` 保存 `original.pdf`、`parsed.md`、`docling.json`；`.data/ragglass.sqlite3` 保存 metadata／chunks／runs。請一起備份 `.data` 及 Qdrant volume。`docker compose down` 保留 volume，**`docker compose down -v` 會刪除向量儲存**。Git 忽略 `.env`、資料、快取、依賴、建置產物及本機報告；只有原創 CC0 測試 PDF 預期公開。
 
 ## 限制與下一里程碑
 
-目前只支援原生文字 PDF，尚未加入 OCR/VLM、混合檢索、reranker、通用診斷 Agent、Fine-tuning 或 embedding 微調。引用驗證檢查允許的來源 ID 與文件／頁碼映射，不保證每句答案都受到語意支持。推論前的 context 是估算；只有模型回報時才能取得實際 token 數。摘要涵蓋所有輸入不代表保留每個事實。12 題評測量測標註來源頁／關鍵字／拒答結果，不是正式環境準確率或語意正確性保證。這是單人、loopback 工作台，沒有登入、分散式工作佇列、多租戶隔離或正式部署強化。重啟時進行中的作業標為失敗，供重試，不會悄悄續跑。本次未驗證遠端 vLLM、SSH 用戶端網路、掃描文件與大規模 corpus。
+目前只支援原生文字 PDF，尚未加入 OCR/VLM、reranker、通用診斷 Agent、Fine-tuning 或 embedding 微調。引用驗證檢查允許的來源 ID 與文件／頁碼映射，不保證每句答案都受到語意支持。推論前的 context 是估算；只有模型回報時才能取得實際 token 數。摘要涵蓋所有輸入不代表保留每個事實。12 題基準與 16 題檢索實驗量測標註來源頁／排名／文字／拒答結果，不是正式環境準確率或語意正確性保證。這是單人、loopback 工作台，沒有登入、分散式工作佇列、多租戶隔離或正式部署強化。重啟時進行中的作業標為失敗，供重試，不會悄悄續跑。本次未驗證遠端 vLLM、SSH 用戶端網路、掃描文件與大規模 corpus。
 
-可重複評測 CLI 已實作。下一里程碑可擴大真實文件與摘要標註集、加入語意審查，並將可替換的混合檢索／reranker 與 dense baseline 比較。詳見[里程碑紀錄](docs/MILESTONE.zh-TW.md)、[貢獻流程](CONTRIBUTING.zh-TW.md)與 [Agent 規則](AGENTS.zh-TW.md)。功能變更需同步更新中英文 README 與影片／目前功能說明；重新錄製前，已發布影片保留明確的錄製版本。
+可重複評測 CLI 已實作。下一里程碑可擴大真實文件與摘要標註集、加入語意審查，並將 reranker 與已量測的向量／BM25／混合基準比較。BM25 目前每次掃描所選文件片段，大型 corpus 文字索引留待後續；詳見[檢索限制與比較](docs/RETRIEVAL.zh-TW.md)。詳見[里程碑紀錄](docs/MILESTONE.zh-TW.md)、[貢獻流程](CONTRIBUTING.zh-TW.md)與 [Agent 規則](AGENTS.zh-TW.md)。功能變更需同步更新中英文 README 與影片／目前功能說明；重新錄製前，已發布影片保留明確的錄製版本。
 
 ## 授權與貢獻
 

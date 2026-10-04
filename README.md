@@ -13,12 +13,12 @@ RAGGlass is a local, open-source workbench for engineers building PDF RAG. Inspe
 
 - **Trace citations:** click a validated source link to its original PDF page.
 - **Read and reuse results:** search/zoom/select PDF text, follow or stop queries, and copy answers or export Markdown reports.
-- **Inspect parsing and retrieval:** compare Docling output and scored passages with the document.
+- **Inspect parsing and retrieval:** switch vector / BM25 / hybrid RRF retrieval, compare branch rankings and labeled scores with the document.
 - **Reproduce a run:** retain prompts, settings, evidence, answers, and measured timings after restarts.
 - **Manage your workspace:** search documents/history and remove selected items or clear all with explicit confirmation.
 - **Process PDFs with feedback:** check upload limits before transfer, follow confirmed chunk progress, and stop queued or running processing.
 - **Inspect model workflows:** set Temperature / Top-P / output limits per run, compare estimated context with reported token usage, inspect bounded retries, and summarize a whole document into three cited points.
-- **Compare changes:** run the 12-case English/Chinese evaluation with recorded settings, page-retrieval/citation checks, refusals, latency, and token usage.
+- **Compare changes:** retain the 12-case bilingual baseline and evaluate a 16-case retrieval lab with controlled mode comparisons, page recall/MRR, citations, refusals, latency and token usage.
 - **Use your model service:** real embeddings and live Ollama or compatible HTTP inference.
 
 [Quick start](#quick-start) · [Watch the demo](#watch-the-demo) · [Illustrated usage](docs/USAGE.md) · [Deployment](docs/DEPLOYMENT.md) · [Model choices](#recommended-ollama-models)
@@ -31,13 +31,13 @@ https://github.com/user-attachments/assets/5ebfca43-fd95-4244-a178-7e5f174f51a6
 
 **Press Play above for the 84.7-second core-workflow tutorial with English instructions inside the video.** Each step names what to click and what to check; pause or seek to follow along. Learn to upload a PDF, ask a question, follow a citation, inspect parsing/settings, check a refusal, reopen history, and clean up PDFs/records independently. [Follow the nine recorded steps and current controls](docs/DEMO.md).
 
-**Video version:** application commit `7e16f9b`, before the reading, upload-progress and model-workflow updates. Follow the [current-controls walkthrough](docs/DEMO.md#try-the-current-controls) for PDF search/zoom, stop controls, exports, generation options, Context/Token traces, three-point summaries and evaluation. These controls are implemented in the current application; they are not shown in this footage.
+**Video version:** application commit `7e16f9b`, before the reading, upload-progress, model-workflow and hybrid-retrieval updates. Follow the [current-controls walkthrough](docs/DEMO.md#try-the-current-controls) for PDF search/zoom, stop controls, exports, generation options, Context/Token traces, three-point summaries, retrieval modes/rankings and evaluation. These controls are implemented in the current application; they are not shown in this footage.
 
 *Actual recorded inference at normal speed, using the fictional CC0 sample and its existing index. [Trace the table answer](docs/CASE_STUDY.md) · [Recording receipt](docs/media/demo-recording.json)*
 
 See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0) for release notes and the public sample. For still images, see the [actual workbench screenshot](docs/images/workbench.png) and the illustrated guide below.
 
-**Current workbench:** native-text PDF ingestion, multilingual dense retrieval, validated source IDs, persistent traces, context/recovery controls and document summaries. The [original sample PDF](examples/ragglass-field-guide.pdf) includes a table and [six test questions](examples/questions.json), including one it cannot answer. A [bilingual annotated evaluation](examples/evaluation-cases.json) supports controlled generation comparisons. Autonomous diagnosis, hybrid search, reranking and fine-tuning remain planned.
+**Current workbench:** native-text PDF ingestion, vector/BM25/hybrid retrieval, validated source IDs, persistent traces, context/recovery controls and document summaries. The [original sample PDF](examples/ragglass-field-guide.pdf) includes a table and [six test questions](examples/questions.json), including one it cannot answer. The [12-case baseline](examples/evaluation-cases.json) and [16-case retrieval lab](examples/retrieval-cases.json) support controlled generation or retrieval comparisons. Autonomous diagnosis, reranking and fine-tuning remain planned.
 
 **Stack:** Vue 3 / TypeScript / PDF.js · FastAPI · Docling · Qdrant · SQLite · independent model HTTP API.
 
@@ -50,7 +50,8 @@ See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0
 | [Reading and query controls](docs/USABILITY.md) | Query progress/cancellation, PDF search/zoom/selection, answer copying, Markdown reports, and isolated verification. |
 | [Upload and processing](docs/INGESTION.md) | Local PDF checks, document progress/stop, bounded vector batches, retry behavior, and isolated validation. |
 | [Context and model workflows](docs/WORKFLOWS.md) | Token estimates/native usage, per-run generation, bounded recovery, three-point summaries, evaluation and interview examples. |
-| [Video tutorial and current controls](docs/DEMO.md) | Recorded version/coverage, nine timed video steps, and current upload, reading, context, summary and evaluation instructions. |
+| [Retrieval modes and comparisons](docs/RETRIEVAL.md) | Vector/BM25/RRF controls, candidate traces, score meanings, bilingual hard cases and controlled evaluation. |
+| [Video tutorial and current controls](docs/DEMO.md) | Recorded version/coverage, nine timed video steps, and current upload, reading, context, summary, retrieval modes and evaluation instructions. |
 | [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
 | [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |
 | [Table/source case study](docs/CASE_STUDY.md) | Follow a real answer to page 2 and inspect a question the document cannot answer. |
@@ -181,7 +182,7 @@ Ollama tags can change after a pull. Save the installed metadata/digests with `c
 
 1. Download the sample from the document toolbar or use `examples/ragglass-field-guide.pdf`, then upload it. The browser checks native text, encryption, and configured size/page limits before transfer. Watch queued → parsing → chunking, then embedding/indexing batches → indexed, with elapsed time and confirmed chunk counts. Stop processing if needed; the original PDF can be viewed during processing. The first ingestion includes model downloads.
 2. Open **Generation options** to set Temperature, Top-P and output-token limit for this run. Ask **What is the maximum upload size for the Cedar pilot?** The expected fact is **30 MB**, from the table on **page 2**. Follow the current stage and elapsed time; **Stop query** cancels the run while retaining its trace.
-3. Click a source button under the answer. PDF.js jumps to the corresponding original page; available source item boxes are highlighted. Search native PDF text, change zoom or select text to read it closely. Select a retrieved passage to expand its full text, chunk ID, cosine score, page numbers, and coordinate availability.
+3. Click a source button under the answer. PDF.js jumps to the corresponding original page; available source item boxes are highlighted. Search native PDF text, change zoom or select text to read it closely. Select a retrieved passage to expand its full text, chunk ID, labeled score, page numbers, and coordinate availability. In **Retrieval options**, choose vector, keyword or hybrid mode; inspect **Retrieval rankings** for original branch scores/candidates. The threshold applies only to cosine; hybrid candidate depth is separate from final Top K.
 4. Open **Parsed content** to inspect chunks or raw Markdown/Docling JSON. Open document details for SHA-256, parser/chunk/embedding settings, and ingestion timings.
 5. Inspect **Context & model calls** for estimated input, reserved output, included/excluded chunks, reported input/output tokens and attempts. Expand **Run settings & prompt**, copy the answer with sources, or download Markdown/run JSON. The run retains prompts, evidence, effective generation/retrieval settings and measured times, excluding API keys. Unknown model usage is labelled rather than counted as zero.
 6. Ask **What is the pilot's annual electricity cost in dollars?** It must state that the document cannot confirm the answer and show no citations.
@@ -214,6 +215,8 @@ npm --prefix frontend run test:e2e
 RAGGLASS_BASE_URL=http://127.0.0.1:8000 npm --prefix frontend run test:e2e
 # Isolated real workflows and built Chrome checks; reuses only the model service:
 .venv/bin/python scripts/verify_workflows.py
+# Isolated retrieval comparisons, actual restart and built Chrome checks:
+.venv/bin/python scripts/verify_retrieval.py
 ```
 
 Contract tests cover valid/invalid citations, malformed model output, actual TCP connection refusal, SQLite persistence, interrupted-work recovery, and secret exclusion. They use small explicitly synthetic inputs; they do not pretend to be live inference.
@@ -224,21 +227,22 @@ Contract tests cover valid/invalid citations, malformed model output, actual TCP
 
 ```text
 Vue + PDF.js → FastAPI → Docling → page-aware token chunks → local E5 → Qdrant
-                   ├─ query → E5 → retrieved evidence → whole-chunk context budget
+                   ├─ query → E5/Qdrant cosine + SQLite BM25 → mode / RRF ranks
+                   │         → retrieved evidence → whole-chunk context budget
                    └─ summary → all stored chunks → budgeted map / reduce / final
                          → bounded model HTTP calls → schema/citation validation → saved run
 SQLite: document metadata, chunks, runs        Local files: PDFs, Markdown, Docling JSON
 ```
 
-The adapters are `parser.py`, `embedding.py`, `retrieval.py`, and `llm.py`; `pipeline.py` orchestrates them. `context.py` budgets complete inputs, `generation.py` records bounded calls/recovery, and `summary.py` runs the fixed summary workflow. A single document worker manages queued jobs and cooperative stops. Each bounded vector batch is written and released before the next one; parsing and text metadata still use memory for the whole document. Query/summary jobs remain separate from the UI request loop. SQLite is the metadata source of truth; Qdrant can be rebuilt from documents by reindexing. Each chunk retains all source pages, including multi-page items. Coordinates refer to original Docling source items, which can be larger than an individual token window; they are not fabricated exact phrase bounds. Missing coordinates are explicitly marked.
+The adapters are `parser.py`, `embedding.py`, `retrieval.py`, `keyword.py`, and `llm.py`; `pipeline.py` orchestrates them. `context.py` budgets complete inputs, `generation.py` records bounded calls/recovery, and `summary.py` runs the fixed summary workflow. A single document worker manages queued jobs and cooperative stops. Each bounded vector batch is written and released before the next one; parsing and text metadata still use memory for the whole document. Query/summary jobs remain separate from the UI request loop. SQLite is the metadata source of truth; Qdrant can be rebuilt from documents by reindexing. Each chunk retains all source pages, including multi-page items. Coordinates refer to original Docling source items, which can be larger than an individual token window; they are not fabricated exact phrase bounds. Missing coordinates are explicitly marked.
 
-`.data/documents/<document-id>/` contains `original.pdf`, `parsed.md`, and `docling.json`; `.data/ragglass.sqlite3` stores metadata/chunks/runs. Back up `.data` together with the Qdrant Docker volume. `docker compose down` keeps the volume; **`docker compose down -v` deletes the vector storage**. `.env`, data, caches, dependencies, build output, and local reports are ignored by Git. The sample fixture is the only PDF intended for publication.
+`.data/documents/<document-id>/` contains `original.pdf`, `parsed.md`, and `docling.json`; `.data/ragglass.sqlite3` stores metadata/chunks/runs. Back up `.data` together with the Qdrant Docker volume. `docker compose down` keeps the volume; **`docker compose down -v` deletes the vector storage**. `.env`, data, caches, dependencies, build output, and local reports are ignored by Git. Only the original CC0 sample fixtures are intended for publication.
 
 ## Limits and next milestone
 
-Native-text PDFs only; OCR/VLM, hybrid retrieval, reranking, a general diagnostic agent, fine-tuning and embedding tuning are not implemented. Citation validation checks permitted source IDs and document/page mapping; it does not establish semantic entailment of every answer. Context is estimated before inference; native token counts are available only when the model reports them. Summary input coverage does not guarantee retention of every fact. The 12-case evaluation measures annotated page/keyword/refusal outcomes, not production accuracy or semantic correctness. This is a single-user, loopback workbench, with no authentication, distributed job queue, multi-user isolation, or production hardening. Restarted in-flight work is marked failed and can be retried rather than silently resumed. Remote vLLM, SSH client networking, scanned documents, and large corpora have not been validated on this installation.
+Native-text PDFs only; OCR/VLM, reranking, a general diagnostic agent, fine-tuning and embedding tuning are not implemented. Citation validation checks permitted source IDs and document/page mapping; it does not establish semantic entailment of every answer. Context is estimated before inference; native token counts are available only when the model reports them. Summary input coverage does not guarantee retention of every fact. The 12-case baseline and 16-case retrieval lab measure annotated page/rank/keyword/refusal outcomes, not production accuracy or semantic correctness. This is a single-user, loopback workbench, with no authentication, distributed job queue, multi-user isolation, or production hardening. Restarted in-flight work is marked failed and can be retried rather than silently resumed. Remote vLLM, SSH client networking, scanned documents, and large corpora have not been validated on this installation.
 
-The repeatable evaluation CLI is implemented. The next milestone can expand annotated real-document and summary datasets, add semantic review, and compare a replaceable hybrid retriever/reranker against the dense baseline. See [milestone details](docs/MILESTONE.md), [contributing](CONTRIBUTING.md), and [agent rules](AGENTS.md). Feature changes update both READMEs and the video/current-controls guide together; published footage retains an explicit recorded version until re-recorded.
+The repeatable evaluation CLI is implemented. The next milestone can expand annotated real-document and summary datasets, add semantic review, and add a reranker against the measured vector/BM25/hybrid baselines. BM25 currently scans selected stored chunks per query; large-corpus lexical indexing remains future work. See [retrieval limits and comparisons](docs/RETRIEVAL.md). See [milestone details](docs/MILESTONE.md), [contributing](CONTRIBUTING.md), and [agent rules](AGENTS.md). Feature changes update both READMEs and the video/current-controls guide together; published footage retains an explicit recorded version until re-recorded.
 
 ## License and contributions
 

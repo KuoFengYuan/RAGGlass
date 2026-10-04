@@ -46,6 +46,26 @@ export interface Evidence {
   coordinates_available: boolean
   coordinate_scope: string
   source_available?: boolean
+  score_kind?: 'cosine' | 'bm25' | 'rrf'
+  retrieval_scores?: Partial<Record<'dense' | 'keyword', { rank: number; score: number }>>
+  matched_terms?: string[]
+}
+export type RetrievalMode = 'dense' | 'keyword' | 'hybrid'
+export interface RetrievalSettings {
+  mode?: RetrievalMode
+  strategy?: string
+  top_k?: number
+  score_threshold?: number
+  candidate_k?: number
+}
+export interface RetrievalCandidate {
+  id: string
+  document_id: string
+  filename: string
+  pages: number[]
+  rank: number
+  score: number
+  matched_terms?: string[]
 }
 export interface Citation extends Omit<Evidence, 'text' | 'score' | 'rank' | 'token_count'> {}
 export interface GenerationOptions {
@@ -108,6 +128,7 @@ export interface Run {
   timings_ms: Record<string, number>
   settings: {
     llm: { model: string; provider: string } & Partial<GenerationOptions>
+    retrieval?: RetrievalSettings
     [key: string]: unknown
   }
   context?: ContextReport
@@ -125,6 +146,14 @@ export interface Run {
   raw_response?: string
   model_metrics?: unknown
   missing_document_ids?: string[]
+  retrieval_trace?: {
+    mode: RetrievalMode
+    dense: RetrievalCandidate[]
+    keyword: RetrievalCandidate[]
+    selected_ids: string[]
+    complete?: boolean
+    keyword_corpus?: { query_terms: string[]; corpus_chunks: number; average_chunk_terms: number }
+  }
 }
 export interface RunCatalog {
   items: Run[]
@@ -141,7 +170,7 @@ export interface CleanupResult {
 export interface Config {
   llm: { model: string; provider: string; context_tokens?: number } & Partial<GenerationOptions>
   embedding: { model: string }
-  retrieval: { top_k: number; score_threshold: number }
+  retrieval: { top_k: number; score_threshold: number; mode?: RetrievalMode; candidate_k?: number }
   max_upload_mb: number
   max_pdf_pages: number
   workflow?: { context_margin_tokens: number; max_calls: number; timeout_seconds: number }

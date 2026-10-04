@@ -162,8 +162,37 @@ Eight built Chrome checks passed in **38.1 s**, covering five real UI/PDF/model 
 
 Owner SQLite/document hashes were unchanged and owned API/container services were removed; the owner's application/Qdrant remained stopped. Shared GPU snapshots before/after were GPU 0 **897 MiB / 0% → 897 MiB / 0%**, GPU 1 **5,204 MiB / 0% → 5,204 MiB / 0%**. They include other workloads and are neither peak nor application-only measurements. No model service, model weights or system GPU configuration was changed.
 
+## Hybrid retrieval and controlled comparisons (2026-10-05)
+
+The workbench now offers vector, local BM25 and hybrid retrieval, with separate branch scores/ranks, retained candidate traces and equal-weight RRF. The cosine threshold applies only to the dense branch; only final, context-included evidence can be cited. Equal RRF scores use the recorded BM25-score/dense-rank/chunk-ID tie policy. Explicit retrieval comparisons hold the dataset, stored chunks, model/generation, context/recovery and other retrieval controls fixed. See [retrieval and evaluation](RETRIEVAL.md).
+
+`.venv/bin/python scripts/verify_retrieval.py` passed using owned temporary loopback API/Qdrant storage, real Docling 2.60.1, CPU multilingual E5 and the existing `gemma4:e4b` service. The original three-page fixture indexed in **8,661.85 ms**; the unchanged 12-case dense smoke baseline completed with all answerability expectations met, recall/citation coverage **1.0** and MRR@5 **0.9**. The new original CC0 English/Chinese lab produced **8 pages / 8 chunks in 4,111.31 ms**. Its PDF SHA-256 is `9140d0d953991f5084b4582c5a2fad3d2e253a0e348060ee3b3a79bdaa24afaf`.
+
+The 16-case lab has 14 answerable and two missing-answer cases. The following sequential measurements keep **Top K 3, candidate depth 20, cosine threshold 0.70, Temperature 0, Top-P 1 and output limit 768** fixed. Both mode comparisons passed the provenance guard.
+
+| Metric | Vector | BM25 | Hybrid |
+| --- | ---: | ---: | ---: |
+| Completed cases | 16 | 16 | 16 |
+| Gold-page Recall@3 | 0.9286 | 0.8571 | 0.9286 |
+| Gold-page MRR@3 | 0.7500 | 0.8214 | 0.8929 |
+| Gold-page citation coverage | 0.9286 | 0.8571 | 0.9286 |
+| Literal expected-text match rate | 0.9286 | 0.8571 | 0.9286 |
+| Answerability matches | 15/16 | 14/16 | 15/16 |
+| Missing-answer refusals | 2/2 | 2/2 | 2/2 |
+| Answerable cases refused | 1 | 2 | 1 |
+| Query median / nearest-rank p95 (ms) | 834.22 / 1,120.01 | 796.91 / 852.94 | 824.45 / 1,101.43 |
+| Mean retrieval stage (ms, excluding query embedding) | 5.3825 | 3.2625 | 7.3381 |
+| Model-reported input / output tokens | 10,565 / 1,173 | 9,502 / 1,066 | 10,424 / 1,162 |
+| Calls with unknown usage | 0 | 0 | 0 |
+
+Hybrid improved the first-gold-page ranking in this run without improving overall recall over vector search. All methods missed the English question about the Chinese retention policy; BM25 also missed the Chinese paraphrase of the English replacement policy. These regressions remain in the reports. This is a small fictional fixture, not semantic correctness, statistical significance or a production speed benchmark. Model output and tied rankings may vary; Temperature 0 does not guarantee deterministic inference.
+
+Real checks also passed for legacy API behavior, keyword queries without query embedding, a cosine threshold of 1 preserving lexical/RRF evidence, no-candidate refusal before inference, asynchronous progress, retained evidence on cancellation, actual model TCP refusal and actual API restart with saved hybrid traces. The cancelled record took **58.42 ms total**, which is not a cancellation-latency measurement. Eight built Chrome checks passed in **26.0 s**: five real UI/PDF/model flows, one explicitly synthetic lifecycle flow and two pure text/export contracts. The additional real cleanup flow passed in **13.0 s**, for **nine browser checks**. They include all three retrieval modes, candidate limits, scores/exports/history, Chinese PDF text search and a 390-pixel viewport. The pinned PDF.js CMap/font bytes were also checked through the development server; the fictional PDF generator reproduced byte-identical output. `bash scripts/check.sh` passes **81 Python contracts**, frontend format/type/build, seven synthetic Node publication guards and bilingual/media checks.
+
+Ignored `.data/retrieval-verification.json` retains application source SHA-256s matching the tested files and confirms owner SQLite/documents unchanged. Owned API/Qdrant services were stopped and removed. GPU snapshots before/after were GPU 0 **891 MiB / 0% → 891 MiB / 0%**, GPU 1 **5,204 MiB / 0% → 5,204 MiB / 0%**, including shared workloads rather than measuring peaks or application-only use. Both READMEs and the video/current-controls guides are synchronized; the published recording still shows application commit `7e16f9b` and was not re-recorded for these controls.
+
 ## Limits and next milestone
 
-The evaluated native PDFs are the three-page public fixture, its 24-page repeated variant and the six-page fictional complaint, alongside explicit contract inputs; these do not represent a diverse corpus or a maximum-size benchmark. Live vLLM/OpenAI service integration, an SSH client on another machine, scanned/image-only PDFs, large corpora, concurrent multi-user traffic, adversarial claim entailment, and production hardening remain unverified or outside scope. Source boxes are Docling item bounds rather than exact phrase spans. Citation membership cannot establish semantic correctness by itself. There is no distributed job queue or resumable parsing; interrupted jobs become actionable failures.
+The evaluated native PDFs are the three-page public fixture, its 24-page repeated variant, the six-page fictional complaint and the eight-page retrieval lab, alongside explicit contract inputs; these do not represent a diverse corpus or a maximum-size benchmark. Live vLLM/OpenAI service integration, an SSH client on another machine, scanned/image-only PDFs, large corpora, concurrent multi-user traffic, adversarial claim entailment, and production hardening remain unverified or outside scope. Local BM25 scans the selected chunks per query rather than maintaining a scalable inverted index. Source boxes are Docling item bounds rather than exact phrase spans. Citation membership cannot establish semantic correctness by itself. There is no distributed job queue or resumable parsing; interrupted jobs become actionable failures.
 
-Suggested next milestone: expand the annotated evaluation corpus and add claim entailment/summary fact retention measures, plus replaceable hybrid retrieval and reranking. Keep OCR/VLM, a diagnostic agent, and embedding tuning as later independent adapters.
+Suggested next milestone: expand the annotated evaluation corpus, investigate the recorded cross-language misses and measure a replaceable reranker against the current hybrid baseline. Add claim entailment/summary fact retention measures. Keep OCR/VLM, a diagnostic agent, and embedding tuning as later independent adapters.

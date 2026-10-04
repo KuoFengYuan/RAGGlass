@@ -2,7 +2,7 @@
 
 **English** | [繁體中文](LAUNCH.zh-TW.md)
 
-Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved evidence and original source page.** Lead with the question an engineer is trying to debug, then show the actual workflow. Current main also supports context/recovery traces, document summaries and a controlled [bilingual evaluation CLI](WORKFLOWS.md#repeatable-evaluation). Autonomous diagnosis, hybrid retrieval and reranking remain future work; [v0.1.0 notes](RELEASE-v0.1.0.md) describe the historical first preview.
+Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved evidence and original source page.** Lead with the question an engineer is trying to debug, then show the actual workflow. Current main also supports context/recovery traces, document summaries and a controlled [bilingual evaluation CLI](WORKFLOWS.md#repeatable-evaluation). Current main adds [vector/BM25/hybrid mode comparisons](RETRIEVAL.md). Autonomous diagnosis and reranking remain future work; [v0.1.0 notes](RELEASE-v0.1.0.md) describe the historical first preview.
 
 ## Ready-to-use materials
 
@@ -23,7 +23,7 @@ Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved ev
 
 The video is a **recorded demonstration of live inference**, not a hosted interactive service. It uses the original fictional CC0 fixture and reuses the index already present in the recorded workspace. Captions are added below the UI, initial navigation is trimmed, and the interaction plays at normal speed. Public answers in the receipt document that recording; the application still performs real queries when you run it.
 
-The published footage uses application commit `7e16f9b` and does not show the later reading, upload-progress or model-workflow controls. When sharing it with current main, include the [coverage and current-controls guide](DEMO.md#what-the-video-covers). Re-rendering old footage changes captions, not the controls captured on screen; a claim that the video demonstrates new features requires new footage and verified embeds.
+The published footage uses application commit `7e16f9b` and does not show the later reading, upload-progress, model-workflow or hybrid-retrieval controls. When sharing it with current main, include the [coverage and current-controls guide](DEMO.md#what-the-video-covers). Re-rendering old footage changes captions, not the controls captured on screen; a claim that the video demonstrates new features requires new footage and verified embeds.
 
 ## Configure GitHub sharing
 
