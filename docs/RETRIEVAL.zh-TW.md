@@ -53,6 +53,6 @@ bash scripts/check.sh
 
 後者使用自己的暫存 loopback API／Qdrant 與儲存空間，重用已設定的模型服務。會執行原有真實流程檢查、先記錄 dense baseline、比較三種模式、檢查門檻／無證據、真正重啟自己的 API，並執行建置版 Chrome 流程。確認原有資料未改變後移除自己的服務。完整報告保存在忽略版控的 `.data/retrieval-verification.json` 與 `.data/retrieval-evaluation-{dense,keyword,hybrid}.json`；合成契約與真實證據分開，實測結果見[里程碑紀錄](MILESTONE.zh-TW.md)。
 
-示範 `CEDAR-X17`／`CEDAR-X71` 或中文保存期限題，展開兩路候選、點最終引用，再比較評測報告。可口述：「向量檢索找相近語意，BM25 保留型號與關鍵詞。我用 RRF 合併排名，分開保存分數，評測時只改檢索模式。Trace 可以區分檢索遺漏、context 排除與生成錯誤；有退步的結果也如實報告。」[已發布影片](DEMO.zh-TW.md)早於此功能，尚未重新錄製。
+示範 `CEDAR-X17`／`CEDAR-X71` 或中文保存期限題，展開兩路候選、點最終引用，再比較評測報告。可口述：「向量檢索找相近語意，BM25 保留型號與關鍵詞。我用 RRF 合併排名，分開保存分數，評測時只改檢索模式。Trace 可以區分檢索遺漏、context 排除與生成錯誤；有退步的結果也如實報告。」[重新錄製的影片](DEMO.zh-TW.md#影片中的二十個步驟)展示中文 BM25、混合控制、兩路候選及來源查證；完整固定條件比較仍由獨立 CLI 執行。
 
 演算法參考：[Introduction to Information Retrieval 的 BM25](https://nlp.stanford.edu/IR-book/html/htmledition/okapi-bm25-a-non-binary-model-1.html)、[RRF 原始論文](https://cormack.uwaterloo.ca/cormacksigir09-rrf.pdf)。上述正值 IDF 是此實作明確選擇的變體，不代表所有 BM25 套件產生相同分數。

@@ -1,140 +1,269 @@
 {
-  "version": 1,
-  "languages": [
-    "en",
-    "zh-TW"
-  ],
+  "version": "current-workbench-v2",
+  "languages": ["en", "zh-TW"],
   "scenes": {
     "intro": {
       "en": {
-        "title": "RAGGlass · See inside your RAG.",
-        "action": "A practical tour: upload → ask → check the PDF source.",
-        "note": "Real local inference · PDF + retrieved evidence + answer."
+        "title": "RAGGlass / See inside your RAG",
+        "action": "Follow a PDF from upload to evidence and a grounded answer.",
+        "note": "Fresh footage, real local inference, fictional CC0 documents."
       },
       "zh-TW": {
-        "title": "RAGGlass · 看見 RAG 的每個環節",
-        "action": "跟著操作：上傳 PDF → 提問 → 回到原始文件查證。",
-        "note": "真實本機推論，並排查看 PDF、檢索證據與答案。"
+        "title": "RAGGlass／看見 RAG 的內部",
+        "action": "從上傳、檢索證據到回答，一起對照原始 PDF。",
+        "note": "最新介面實錄，真實本機推論；文件皆為虛構 CC0 範例。"
       }
     },
     "upload": {
       "en": {
-        "title": "Step 1 / Upload a PDF",
-        "action": "Click Upload PDF, choose the sample, and wait for Indexed.",
-        "note": "This recording reuses the sample's existing index."
+        "title": "Step 1 / Upload and track processing",
+        "action": "Click Upload PDF; watch inspection, parsing and indexing.",
+        "note": "This empty workspace creates a fresh index; OCR is disabled."
       },
       "zh-TW": {
-        "title": "步驟 1／上傳文件",
-        "action": "點「Upload PDF」選擇範例，等待「Indexed」狀態。",
-        "note": "這次錄影重用範例已有的索引。"
+        "title": "步驟 1／上傳與處理進度",
+        "action": "點 Upload PDF，查看檢查、解析與索引進度。",
+        "note": "空白工作區實際建立新索引；只處理原生文字，未啟用 OCR。"
+      }
+    },
+    "generation": {
+      "en": {
+        "title": "Step 2 / Set generation options",
+        "action": "Open Generation options; set Temperature, Top-P and output limit.",
+        "note": "These options are saved per run, not applied to the shared model server."
+      },
+      "zh-TW": {
+        "title": "步驟 2／設定生成參數",
+        "action": "展開 Generation options，調整溫度、Top-P 與輸出上限。",
+        "note": "每次執行保存設定；低溫度仍不保證事實或 JSON 正確。"
       }
     },
     "query": {
       "en": {
-        "title": "Step 2 / Ask a document question",
-        "action": "Type your question, then click Retrieve & answer.",
-        "note": "Inspect the retrieved passages beside the live model's answer."
+        "title": "Step 3 / Ask with vector retrieval",
+        "action": "Ask the upload-limit question; click Retrieve & answer.",
+        "note": "Query progress follows real E5, Qdrant and model inference."
       },
       "zh-TW": {
-        "title": "步驟 2／詢問文件內容",
-        "action": "輸入問題，點「Retrieve & answer」取得檢索與回答。",
-        "note": "將檢索片段與真實模型答案放在一起檢查。"
+        "title": "步驟 3／以向量檢索提問",
+        "action": "詢問上傳容量，點 Retrieve & answer，追蹤查詢進度。",
+        "note": "實際執行 E5、Qdrant 與模型推論，沒有預先寫好的答案。"
       }
     },
     "citation": {
       "en": {
-        "title": "Step 3 / Follow the citation",
-        "action": "Click the source link → page 2. Verify 30 MB in the table.",
-        "note": "The backend maps the retrieved chunk ID to the original PDF page."
+        "title": "Step 4 / Follow a source citation",
+        "action": "Click the page-2 source and verify 30 MB in the original table.",
+        "note": "Valid source IDs do not prove every claim is semantically supported."
       },
       "zh-TW": {
-        "title": "步驟 3／點擊引用查證",
-        "action": "點答案下方來源，跳到第 2 頁，核對表格中的 30 MB。",
-        "note": "後端將本次檢索的片段 ID 映射回原始 PDF 頁碼。"
+        "title": "步驟 4／點引用核對原文",
+        "action": "點第 2 頁來源，在原始表格核對 30 MB。",
+        "note": "引用 ID 有效不代表每一句語意都正確，仍需查證原文。"
+      }
+    },
+    "reading": {
+      "en": {
+        "title": "Step 5 / Search and zoom the PDF",
+        "action": "Search for 30 MB and change PDF zoom to 125%.",
+        "note": "Native text remains searchable and selectable; this is not OCR."
+      },
+      "zh-TW": {
+        "title": "步驟 5／搜尋與縮放 PDF",
+        "action": "搜尋 30 MB，將 PDF zoom 調整為 125%。",
+        "note": "原生文字可搜尋與選取；來源框線不是精確文字邊界。"
       }
     },
     "parsing": {
       "en": {
-        "title": "Step 4 / Inspect parsed evidence",
-        "action": "Open Parsed content; compare the table, chunk ID, and page.",
-        "note": "Source boxes are item bounds, not exact text spans."
+        "title": "Step 6 / Inspect parsed chunks",
+        "action": "Open Parsed content and locate the upload-limit table.",
+        "note": "Compare text, chunk IDs and retained source pages."
       },
       "zh-TW": {
-        "title": "步驟 4／檢查解析證據",
-        "action": "切到「Parsed content」，對照表格、片段 ID 與來源頁碼。",
-        "note": "來源框線是內容區塊範圍，不是精確文字位置。"
+        "title": "步驟 6／檢查解析片段",
+        "action": "開啟 Parsed content，找到容量上限的解析表格。",
+        "note": "對照文字、片段 ID 與來源頁碼，追查答案的資料來源。"
       }
     },
-    "settings": {
+    "keyword": {
       "en": {
-        "title": "Step 5 / Review the run settings",
-        "action": "Expand Run settings & prompt to inspect the saved configuration.",
-        "note": "Check the prompt, model, retrieval settings, and stage timings."
+        "title": "Step 7 / Try Chinese keyword retrieval",
+        "action": "Upload the retrieval lab; choose Keyword and ask about retention.",
+        "note": "BM25 skips query embedding; the cosine threshold is disabled."
       },
       "zh-TW": {
-        "title": "步驟 5／查看執行設定",
-        "action": "展開「Run settings & prompt」，檢查本次保存的設定。",
-        "note": "查看 prompt、模型、檢索設定與各階段實測耗時。"
+        "title": "步驟 7／中文關鍵字檢索",
+        "action": "上傳檢索範例，選 Keyword，詢問紀錄保存期限。",
+        "note": "BM25 不產生查詢 embedding；cosine 門檻停用。"
+      }
+    },
+    "chinese_pdf": {
+      "en": {
+        "title": "Step 8 / Check the Chinese original",
+        "action": "Follow page 6 and search the PDF for 九十天.",
+        "note": "Local PDF.js character maps preserve native Chinese text."
+      },
+      "zh-TW": {
+        "title": "步驟 8／查證中文原文",
+        "action": "點第 6 頁引用，在 PDF 搜尋「九十天」。",
+        "note": "PDF.js 使用本機字元映射，顯示與搜尋原生中文字。"
+      }
+    },
+    "hybrid": {
+      "en": {
+        "title": "Step 9 / Combine vector and keyword retrieval",
+        "action": "Choose Hybrid: Top K 3, 20 candidates; ask about CEDAR-X17.",
+        "note": "RRF merges ranks; cosine filters only the vector branch."
+      },
+      "zh-TW": {
+        "title": "步驟 9／混合向量與關鍵字檢索",
+        "action": "選 Hybrid，Top K 3、候選 20，詢問 CEDAR-X17。",
+        "note": "RRF 合併排名；cosine 門檻只過濾向量分支。"
+      }
+    },
+    "rankings": {
+      "en": {
+        "title": "Step 10 / Inspect both candidate lists",
+        "action": "Expand Retrieval rankings; compare raw scores and selected IDs.",
+        "note": "Cosine, BM25 and RRF use different scales; none is confidence."
+      },
+      "zh-TW": {
+        "title": "步驟 10／檢查兩路候選排名",
+        "action": "展開 Retrieval rankings，對照分數與納入的來源。",
+        "note": "cosine、BM25、RRF 尺度不同，分數不是答案正確機率。"
+      }
+    },
+    "context": {
+      "en": {
+        "title": "Step 11 / Compare estimates and actual tokens",
+        "action": "Inspect Context & model calls: input budget and reported usage.",
+        "note": "UTF-8 preflight estimates differ from model-native token counts."
+      },
+      "zh-TW": {
+        "title": "步驟 11／估算與實際 Token 用量",
+        "action": "查看 Context & model calls 的預算與模型實際用量。",
+        "note": "UTF-8 事前估算不等於模型分詞；未知用量也不是零。"
+      }
+    },
+    "export": {
+      "en": {
+        "title": "Step 12 / Copy and export evidence",
+        "action": "Copy answer & sources, then download the Markdown report.",
+        "note": "The actual export includes saved hybrid settings and branch scores."
+      },
+      "zh-TW": {
+        "title": "步驟 12／複製與匯出證據",
+        "action": "複製答案與來源，再下載 Markdown 報告。",
+        "note": "實際匯出保留混合設定與各路分數，方便分享和重現。"
+      }
+    },
+    "summary": {
+      "en": {
+        "title": "Step 13 / Summarize the whole document",
+        "action": "Select the field guide; click Summarize document in 3 points.",
+        "note": "The live summary covers stored chunks and requires cited sources."
+      },
+      "zh-TW": {
+        "title": "步驟 13／全文三點摘要",
+        "action": "選回 field guide，點 Summarize document in 3 points。",
+        "note": "真實摘要涵蓋保存的片段，每個重點必須附有效來源。"
+      }
+    },
+    "summary_trace": {
+      "en": {
+        "title": "Step 14 / Inspect summary nodes",
+        "action": "Expand a Document summary step to inspect its sources and prompt.",
+        "note": "Map/final nodes run live; reduce is needed only when notes exceed budget."
+      },
+      "zh-TW": {
+        "title": "步驟 14／檢查摘要節點",
+        "action": "展開 Document summary steps，查看來源與 prompt。",
+        "note": "實際執行 map／final；筆記超過預算時才需要 reduce。"
+      }
+    },
+    "cancel": {
+      "en": {
+        "title": "Step 15 / Stop a running summary",
+        "action": "Start another summary, then click Stop query during generation.",
+        "note": "The cancelled record retains evidence and shows no final answer."
+      },
+      "zh-TW": {
+        "title": "步驟 15／停止執行中的摘要",
+        "action": "再次啟動摘要，在生成期間點 Stop query。",
+        "note": "取消紀錄保留已取得的證據，不顯示最終答案。"
       }
     },
     "refusal": {
       "en": {
-        "title": "Step 6 / Test an unsupported question",
-        "action": "Ask about annual electricity cost; check the refusal.",
-        "note": "The document cannot confirm it; this run has no citations."
+        "title": "Step 16 / Test an unsupported question",
+        "action": "Ask about annual electricity cost and inspect the uncited refusal.",
+        "note": "This fictional document does not provide the requested cost."
       },
       "zh-TW": {
-        "title": "步驟 6／測試文件無法回答的問題",
-        "action": "詢問年度電費，檢查系統如何表示無法從文件確認。",
-        "note": "文件沒有支持此答案的證據，本次不提供引用。"
+        "title": "步驟 16／測試文件無法回答的題目",
+        "action": "詢問年度電費，查看不帶引用的拒答結果。",
+        "note": "範例文件沒有這項費用，不能以其他知識補出答案。"
       }
     },
     "history": {
       "en": {
-        "title": "Step 7 / Reopen a saved run",
-        "action": "Open Run history, select a past query, and revisit its evidence.",
-        "note": "The question, answer, evidence, and settings remain saved locally."
+        "title": "Step 17 / Restore a hybrid run",
+        "action": "Open Run history and reopen the CEDAR-X17 question.",
+        "note": "The original PDF, retrieval mode and candidate depth are restored."
       },
       "zh-TW": {
-        "title": "步驟 7／重新查看歷史紀錄",
-        "action": "開啟「Run history」選擇問題，重新查看答案與證據。",
-        "note": "問題、答案、證據與設定保存在本機，重啟後仍可查看。"
+        "title": "步驟 17／還原混合檢索紀錄",
+        "action": "開啟 Run history，重開 CEDAR-X17 的問題。",
+        "note": "還原原文件、混合模式與候選深度，重新檢查來源。"
+      }
+    },
+    "language": {
+      "en": {
+        "title": "Step 18 / Switch language persistently",
+        "action": "Choose 繁體中文; reload and verify the language is retained.",
+        "note": "UI language does not translate an existing model answer."
+      },
+      "zh-TW": {
+        "title": "步驟 18／持久保存語言選擇",
+        "action": "切換繁體中文，重新整理後確認語言仍保留。",
+        "note": "介面語言不會自動翻譯已保存的模型答案。"
       }
     },
     "document_cleanup": {
       "en": {
-        "title": "Step 8 / Clean up PDFs",
-        "action": "Open Document library → select the PDF → Delete selected.",
-        "note": "Confirm removal; saved history remains with disabled source links."
+        "title": "Step 19 / Delete a PDF independently",
+        "action": "Select the retrieval lab in Document library; confirm Delete selected.",
+        "note": "History remains; links to the removed original become disabled."
       },
       "zh-TW": {
-        "title": "步驟 8／清理 PDF",
-        "action": "開啟「Document library」勾選文件，點「Delete selected」。",
-        "note": "確認後移除 PDF；歷史保留，已刪除原檔的來源連結停用。"
+        "title": "步驟 19／獨立刪除 PDF",
+        "action": "在 Document library 勾選檢索範例，確認刪除所選。",
+        "note": "歷史與證據文字保留，已移除原檔的頁面連結停用。"
       }
     },
     "history_cleanup": {
       "en": {
-        "title": "Step 9 / Clear run history",
-        "action": "Open Run history → Clear all → Delete permanently.",
-        "note": "PDF and history cleanup are independent; neither can be undone."
+        "title": "Step 20 / Clear saved runs",
+        "action": "Open Run history, choose Clear all and confirm the scope.",
+        "note": "The remaining field-guide PDF and index are preserved."
       },
       "zh-TW": {
-        "title": "步驟 9／清空執行紀錄",
-        "action": "開啟「Run history」，點「Clear all」，確認「Delete permanently」。",
-        "note": "PDF 與歷史可獨立清理，永久刪除後無法復原。"
+        "title": "步驟 20／清空執行紀錄",
+        "action": "開啟 Run history，選 Clear all，確認清理範圍。",
+        "note": "保留另一份 field guide 與索引；PDF 和歷史分開管理。"
       }
     },
     "closing": {
       "en": {
-        "title": "Your turn / Reproduce the workflow",
-        "action": "Try the CC0 PDF and six questions with your own model service.",
-        "note": "Share a reproducible issue; star RAGGlass if it helps your work."
+        "title": "Your turn / Reproduce and evaluate",
+        "action": "Try both CC0 PDFs; use the CLI for controlled mode comparisons.",
+        "note": "See the bilingual guide for limitations and the 16-case evaluation."
       },
       "zh-TW": {
-        "title": "換你試試／重現這個流程",
-        "action": "用 CC0 範例 PDF 與六個問題，連接自己的模型服務試用。",
-        "note": "回報可重現的問題；有幫助也歡迎 Star 支持 RAGGlass。"
+        "title": "換你試試／重現與評測",
+        "action": "試用兩份 CC0 文件，再用 CLI 比較固定條件的檢索。",
+        "note": "雙語指南另有系統限制與 16 題評測；影片未展示完整評測。"
       }
     }
   }

@@ -27,13 +27,13 @@ If RAGGlass is useful for your RAG work, **[⭐ give it a star](https://github.c
 
 ## Watch the demo
 
-https://github.com/user-attachments/assets/5ebfca43-fd95-4244-a178-7e5f174f51a6
+https://github.com/user-attachments/assets/bed14a76-eda6-4061-8d74-53b4126cd359
 
-**Press Play above for the 84.7-second core-workflow tutorial with English instructions inside the video.** Each step names what to click and what to check; pause or seek to follow along. Learn to upload a PDF, ask a question, follow a citation, inspect parsing/settings, check a refusal, reopen history, and clean up PDFs/records independently. [Follow the nine recorded steps and current controls](docs/DEMO.md).
+**Press Play above for the 168.4-second current-workbench tutorial with English instructions inside the video.** Follow 20 steps: fresh upload/progress, PDF citations/search/zoom, vector/BM25/hybrid retrieval and rankings, generation settings, Context/Token usage, copy/Markdown, three-point summaries, stopping a run, refusal, history, language persistence and independent cleanup. [Follow the timed steps and current controls](docs/DEMO.md).
 
-**Video version:** application commit `7e16f9b`, before the reading, upload-progress, model-workflow and hybrid-retrieval updates. Follow the [current-controls walkthrough](docs/DEMO.md#try-the-current-controls) for PDF search/zoom, stop controls, exports, generation options, Context/Token traces, three-point summaries, retrieval modes/rankings and evaluation. These controls are implemented in the current application; they are not shown in this footage.
+**Video version:** application commit `7855a83`, including the latest hybrid-retrieval update. The [coverage/current-controls guide](docs/DEMO.md#what-the-video-covers) identifies what is filmed and gives instructions for upload stop/reindex, conditional recovery/reduce and full CLI evaluation outside the recording.
 
-*Actual recorded inference at normal speed, using the fictional CC0 sample and its existing index. [Trace the table answer](docs/CASE_STUDY.md) · [Recording receipt](docs/media/demo-recording.json)*
+*Fresh footage and real inference at normal speed: two fictional CC0 PDFs indexed in empty disposable storage, four questions, one completed summary and one cancelled summary. [Trace the table answer](docs/CASE_STUDY.md) · [Recording receipt](docs/media/demo-recording.json)*
 
 See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0.1.0) for release notes and the public sample. For still images, see the [actual workbench screenshot](docs/images/workbench.png) and the illustrated guide below.
 
@@ -51,7 +51,7 @@ See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0
 | [Upload and processing](docs/INGESTION.md) | Local PDF checks, document progress/stop, bounded vector batches, retry behavior, and isolated validation. |
 | [Context and model workflows](docs/WORKFLOWS.md) | Token estimates/native usage, per-run generation, bounded recovery, three-point summaries, evaluation and interview examples. |
 | [Retrieval modes and comparisons](docs/RETRIEVAL.md) | Vector/BM25/RRF controls, candidate traces, score meanings, bilingual hard cases and controlled evaluation. |
-| [Video tutorial and current controls](docs/DEMO.md) | Recorded version/coverage, nine timed video steps, and current upload, reading, context, summary, retrieval modes and evaluation instructions. |
+| [Video tutorial and current controls](docs/DEMO.md) | Recorded version/coverage, 20 timed video steps, and further upload, reading, context, summary, retrieval and evaluation instructions. |
 | [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
 | [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |
 | [Table/source case study](docs/CASE_STUDY.md) | Follow a real answer to page 2 and inspect a question the document cannot answer. |

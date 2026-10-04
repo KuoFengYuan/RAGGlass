@@ -1,159 +1,1378 @@
 {
-  "recorded_at": "2026-10-03T17:02:24.057Z",
-  "source_commit": "7e16f9b14d9dd52e741cebe8ecf44ec0770a9616",
+  "recorded_at": "2026-10-04T16:52:01.545Z",
+  "source_commit": "7855a83fc2e68837fc1844717acae1c61b32d1e2",
+  "capture_sha256": "fb855673df4e7159262bbf84bea6ba5069087d64002331ab079e8f6cb2ee29a9",
   "document_hash": "878bfa94da33d16c947f174d12560e3f7b4efa807cbd0b189f0841af7db58d8a",
-  "upload_reused_index": true,
+  "documents": [
+    {
+      "filename": "ragglass-field-guide.pdf",
+      "hash": "878bfa94da33d16c947f174d12560e3f7b4efa807cbd0b189f0841af7db58d8a",
+      "pages": 3,
+      "chunks": 6,
+      "parser": {
+        "engine": "docling",
+        "version": "2.60.1",
+        "ocr": false,
+        "table_structure": true,
+        "table_mode": "accurate",
+        "device": "cpu",
+        "cpu_threads": 4,
+        "max_pages": 200
+      },
+      "chunking": {
+        "strategy": "page-aware-token-window-v1",
+        "tokens": 240,
+        "overlap_tokens": 32,
+        "tokenizer_model": "intfloat/multilingual-e5-small",
+        "tokenizer_revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+        "multi_page_items": "retain_all_source_pages"
+      },
+      "embedding": {
+        "model": "intfloat/multilingual-e5-small",
+        "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+        "device": "cpu",
+        "normalize": true,
+        "query_prefix": "query: ",
+        "passage_prefix": "passage: "
+      },
+      "timings_ms": {
+        "queue_wait": 3.86,
+        "parsing": 6680.69,
+        "chunking": 1910.5,
+        "embedding": 140.95,
+        "indexing": 125.67,
+        "total": 8873.88
+      }
+    },
+    {
+      "filename": "ragglass-retrieval-lab.pdf",
+      "hash": "9140d0d953991f5084b4582c5a2fad3d2e253a0e348060ee3b3a79bdaa24afaf",
+      "pages": 8,
+      "chunks": 8,
+      "parser": {
+        "engine": "docling",
+        "version": "2.60.1",
+        "ocr": false,
+        "table_structure": true,
+        "table_mode": "accurate",
+        "device": "cpu",
+        "cpu_threads": 4,
+        "max_pages": 200
+      },
+      "chunking": {
+        "strategy": "page-aware-token-window-v1",
+        "tokens": 240,
+        "overlap_tokens": 32,
+        "tokenizer_model": "intfloat/multilingual-e5-small",
+        "tokenizer_revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+        "multi_page_items": "retain_all_source_pages"
+      },
+      "embedding": {
+        "model": "intfloat/multilingual-e5-small",
+        "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+        "device": "cpu",
+        "normalize": true,
+        "query_prefix": "query: ",
+        "passage_prefix": "passage: "
+      },
+      "timings_ms": {
+        "queue_wait": 2.99,
+        "parsing": 3771.35,
+        "chunking": 3.29,
+        "embedding": 98.2,
+        "indexing": 14.13,
+        "total": 3901.67
+      }
+    }
+  ],
+  "upload_reused_index": false,
   "mock": false,
   "playback_speed": 1,
-  "trimmed_initial_navigation_seconds": 0.22723645099999992,
-  "duration_seconds": 84.99993108199999,
+  "trimmed_initial_navigation_seconds": 0.23311100200000004,
+  "duration_seconds": 168.39349204100003,
   "scenes": [
     {
       "id": "intro",
-      "start_seconds": 0.000023572000000058324,
-      "en": "RAGGlass · See inside your RAG. Inspect PDF evidence beside the answer.",
-      "zh-TW": "RAGGlass · See inside your RAG. 將 PDF 證據與答案並排檢視。"
+      "start_seconds": 0.000033726999999998954,
+      "en": "RAGGlass / See inside your RAG",
+      "zh-TW": "RAGGlass／看見 RAG 的內部"
     },
     {
       "id": "upload",
-      "start_seconds": 4.000739193999999,
-      "en": "Upload the CC0 sample PDF. This workspace reuses its existing index.",
-      "zh-TW": "上傳 CC0 範例 PDF；本次工作區重用已建立的索引。"
+      "start_seconds": 4.001695637,
+      "en": "Step 1 / Upload and track processing",
+      "zh-TW": "步驟 1／上傳與處理進度"
+    },
+    {
+      "id": "generation",
+      "start_seconds": 17.796560489,
+      "en": "Step 2 / Set generation options",
+      "zh-TW": "步驟 2／設定生成參數"
     },
     {
       "id": "query",
-      "start_seconds": 9.029415424000002,
-      "en": "Ask a table question. Embeddings, retrieval, and model inference run live.",
-      "zh-TW": "詢問表格內容；embedding、檢索與模型推論都即時執行。"
+      "start_seconds": 23.898255483,
+      "en": "Step 3 / Ask with vector retrieval",
+      "zh-TW": "步驟 3／以向量檢索提問"
     },
     {
       "id": "citation",
-      "start_seconds": 14.013219009,
-      "en": "Click the source: 30 MB is in the original table on page 2.",
-      "zh-TW": "點擊引用：30 MB 可在原始 PDF 第 2 頁的表格中確認。"
+      "start_seconds": 30.116788398,
+      "en": "Step 4 / Follow a source citation",
+      "zh-TW": "步驟 4／點引用核對原文"
+    },
+    {
+      "id": "reading",
+      "start_seconds": 36.351460969,
+      "en": "Step 5 / Search and zoom the PDF",
+      "zh-TW": "步驟 5／搜尋與縮放 PDF"
     },
     {
       "id": "parsing",
-      "start_seconds": 21.285010942,
-      "en": "Compare the parsed table with its original source. Every chunk keeps page IDs.",
-      "zh-TW": "對照解析表格與原始文件；每個片段保留來源頁碼與 ID。"
+      "start_seconds": 42.84779014,
+      "en": "Step 6 / Inspect parsed chunks",
+      "zh-TW": "步驟 6／檢查解析片段"
     },
     {
-      "id": "settings",
-      "start_seconds": 26.40880369,
-      "en": "Inspect saved prompts, model and retrieval settings, plus measured stage timings.",
-      "zh-TW": "查看保存的 prompt、模型與檢索設定，以及各階段的實測耗時。"
+      "id": "keyword",
+      "start_seconds": 48.051528562,
+      "en": "Step 7 / Try Chinese keyword retrieval",
+      "zh-TW": "步驟 7／中文關鍵字檢索"
+    },
+    {
+      "id": "chinese_pdf",
+      "start_seconds": 59.955841824000004,
+      "en": "Step 8 / Check the Chinese original",
+      "zh-TW": "步驟 8／查證中文原文"
+    },
+    {
+      "id": "hybrid",
+      "start_seconds": 66.53304592999999,
+      "en": "Step 9 / Combine vector and keyword retrieval",
+      "zh-TW": "步驟 9／混合向量與關鍵字檢索"
+    },
+    {
+      "id": "rankings",
+      "start_seconds": 73.83983418400001,
+      "en": "Step 10 / Inspect both candidate lists",
+      "zh-TW": "步驟 10／檢查兩路候選排名"
+    },
+    {
+      "id": "context",
+      "start_seconds": 82.146075977,
+      "en": "Step 11 / Compare estimates and actual tokens",
+      "zh-TW": "步驟 11／估算與實際 Token 用量"
+    },
+    {
+      "id": "export",
+      "start_seconds": 89.239940416,
+      "en": "Step 12 / Copy and export evidence",
+      "zh-TW": "步驟 12／複製與匯出證據"
+    },
+    {
+      "id": "summary",
+      "start_seconds": 94.409123452,
+      "en": "Step 13 / Summarize the whole document",
+      "zh-TW": "步驟 13／全文三點摘要"
+    },
+    {
+      "id": "summary_trace",
+      "start_seconds": 108.04830225900001,
+      "en": "Step 14 / Inspect summary nodes",
+      "zh-TW": "步驟 14／檢查摘要節點"
+    },
+    {
+      "id": "cancel",
+      "start_seconds": 114.23547997499999,
+      "en": "Step 15 / Stop a running summary",
+      "zh-TW": "步驟 15／停止執行中的摘要"
     },
     {
       "id": "refusal",
-      "start_seconds": 31.489047233,
-      "en": "Ask about electricity cost: the sample has no evidence for that answer.",
-      "zh-TW": "詢問年度電費：範例文件沒有可支持此答案的證據。"
+      "start_seconds": 121.350539316,
+      "en": "Step 16 / Test an unsupported question",
+      "zh-TW": "步驟 16／測試文件無法回答的題目"
     },
     {
       "id": "history",
-      "start_seconds": 37.407689035000004,
-      "en": "Reopen a saved run with its question, answer, evidence, and configuration.",
-      "zh-TW": "重新開啟歷史紀錄，查看該次問題、答案、證據與設定。"
+      "start_seconds": 128.677128227,
+      "en": "Step 17 / Restore a hybrid run",
+      "zh-TW": "步驟 17／還原混合檢索紀錄"
+    },
+    {
+      "id": "language",
+      "start_seconds": 137.043333654,
+      "en": "Step 18 / Switch language persistently",
+      "zh-TW": "步驟 18／持久保存語言選擇"
     },
     {
       "id": "document_cleanup",
-      "start_seconds": 42.657929767,
-      "en": "Search/select the PDF in Document library; confirm Delete selected.",
-      "zh-TW": "在文件庫搜尋並勾選 PDF，確認刪除所選文件。"
+      "start_seconds": 142.434778469,
+      "en": "Step 19 / Delete a PDF independently",
+      "zh-TW": "步驟 19／獨立刪除 PDF"
     },
     {
       "id": "history_cleanup",
-      "start_seconds": 53.055468607,
-      "en": "Clear all run history separately; PDFs and indexes are independent.",
-      "zh-TW": "獨立清空全部執行紀錄；PDF 與索引是另外的清理範圍。"
+      "start_seconds": 153.93481650100003,
+      "en": "Step 20 / Clear saved runs",
+      "zh-TW": "步驟 20／清空執行紀錄"
     },
     {
       "id": "closing",
-      "start_seconds": 62.375182381,
-      "en": "Try RAGGlass on GitHub. Share a reproducible issue; star it if it helps your work.",
-      "zh-TW": "到 GitHub 試用 RAGGlass，回報可重現的問題；有幫助也歡迎 Star。"
+      "start_seconds": 162.392348851,
+      "en": "Your turn / Reproduce and evaluate",
+      "zh-TW": "換你試試／重現與評測"
+    }
+  ],
+  "artifacts": [
+    {
+      "filename": "hybrid-report.md",
+      "sha256": "f6f40612cf813a44fbdec38adba08df79e72df5c1e5416a7251109b59193910b"
     }
   ],
   "runs": [
     {
-      "id": "a2446352-28fb-4251-9ba3-e4ef8b908f62",
+      "id": "a17baa8d-dea6-4a7f-be47-ba135866b6df",
+      "kind": "query",
+      "status": "completed",
       "question": "What is the maximum upload size for the Cedar pilot?",
       "model": "gemma4:e4b",
+      "settings": {
+        "llm": {
+          "provider": "ollama",
+          "base_url": "http://127.0.0.1:11434",
+          "model": "gemma4:e4b",
+          "temperature": 0.2,
+          "top_p": 0.9,
+          "max_tokens": 512,
+          "timeout_seconds": 180,
+          "context_tokens": 8192,
+          "think": false,
+          "keep_alive": "5m",
+          "json_mode": true
+        },
+        "embedding": {
+          "model": "intfloat/multilingual-e5-small",
+          "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+          "device": "cpu",
+          "normalize": true,
+          "query_prefix": "query: ",
+          "passage_prefix": "passage: "
+        },
+        "retrieval": {
+          "mode": "dense",
+          "strategy": "dense-cosine",
+          "top_k": 5,
+          "score_threshold": 0.7,
+          "threshold_scope": "dense-cosine-only",
+          "candidate_k": 20,
+          "candidate_scope": "hybrid-branches-only",
+          "collection": "ragglass_3ed956aa1dcacf32",
+          "keyword": {
+            "algorithm": "bm25-positive-idf-v1",
+            "tokenizer": "nfkc-latin-identifiers-han-1-2grams-v1",
+            "k1": 1.2,
+            "b": 0.75,
+            "corpus": "selected-document-chunks"
+          },
+          "fusion": {
+            "algorithm": "reciprocal-rank-fusion",
+            "k": 60,
+            "weights": [
+              1,
+              1
+            ],
+            "tie_break": "keyword-score-desc,dense-rank-asc,chunk-id-asc"
+          }
+        },
+        "prompt_version": "grounded-json-v2",
+        "summary_language": "zh-TW",
+        "context": {
+          "estimator": "utf8-bytes-plus-framing-v1",
+          "safety_margin_tokens": 256
+        },
+        "resilience": {
+          "max_attempts_per_node": 3,
+          "max_repairs_per_node": 1,
+          "retry_delay_seconds": 0.25,
+          "workflow_timeout_seconds": 600,
+          "workflow_max_calls": 32
+        }
+      },
       "answer": "The maximum upload size for a single PDF document is 30 MB.",
       "answerable": true,
       "citations": [
         {
-          "id": "d61eb2f4-fc00-5135-b4a7-7f164bc96fa2",
+          "id": "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d",
           "pages": [
             2
-          ]
+          ],
+          "document_hash": "878bfa94da33d16c947f174d12560e3f7b4efa807cbd0b189f0841af7db58d8a"
         }
       ],
       "timings_ms": {
-        "embedding": 18.33,
-        "retrieval": 7.48,
-        "generation": 858.67,
-        "citation_validation": 0.12,
-        "total": 889.23
+        "embedding": 19.67,
+        "dense_retrieval": 7.5,
+        "rank_fusion": 0.02,
+        "retrieval": 7.52,
+        "context_budget": 1.85,
+        "citation_validation": 0.18,
+        "generation": 885.48,
+        "total": 940.58
       },
       "model_metrics": {
         "model": "gemma4:e4b",
-        "eval_count": 65,
-        "prompt_eval_count": 1193,
-        "total_duration": 840391582,
-        "load_duration": 354895927,
-        "eval_duration": 331322000,
-        "prompt_eval_duration": 65656000,
+        "eval_count": 67,
+        "prompt_eval_count": 1196,
+        "total_duration": 852330131,
+        "load_duration": 365535722,
+        "eval_duration": 332001000,
+        "prompt_eval_duration": 116011000,
         "done_reason": "stop"
-      }
+      },
+      "usage": {
+        "reported_input_tokens": 1196,
+        "reported_output_tokens": 67,
+        "reported_calls": 1,
+        "unreported_calls": 0
+      },
+      "context": {
+        "estimator": "utf8-bytes-plus-framing-v1",
+        "is_estimate": true,
+        "input_characters": 5316,
+        "input_utf8_bytes": 5316,
+        "estimated_input_tokens": 5444,
+        "context_tokens": 8192,
+        "reserved_output_tokens": 512,
+        "safety_margin_tokens": 256,
+        "repair_reserve_tokens": 256,
+        "input_budget_tokens": 7168,
+        "fits": true,
+        "selected_ids": [
+          "bc5e8450-ac96-5000-b8bf-582acb5bc47c",
+          "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d",
+          "a8aaeb85-73f7-554d-b49e-59e5f469b836",
+          "601f667e-4486-5990-8a0d-1bf7c8205238",
+          "fb164014-5484-52fb-9c6c-b5d33f771ffa"
+        ],
+        "omitted_ids": []
+      },
+      "retrieval_trace": {
+        "mode": "dense",
+        "dense": [
+          {
+            "id": "bc5e8450-ac96-5000-b8bf-582acb5bc47c",
+            "document_id": "484725f2-1ffb-4bee-8179-cb6ca2262ff6",
+            "filename": "ragglass-field-guide.pdf",
+            "pages": [
+              1
+            ],
+            "rank": 1,
+            "score": 0.8702067
+          },
+          {
+            "id": "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d",
+            "document_id": "484725f2-1ffb-4bee-8179-cb6ca2262ff6",
+            "filename": "ragglass-field-guide.pdf",
+            "pages": [
+              2
+            ],
+            "rank": 2,
+            "score": 0.86666167
+          },
+          {
+            "id": "a8aaeb85-73f7-554d-b49e-59e5f469b836",
+            "document_id": "484725f2-1ffb-4bee-8179-cb6ca2262ff6",
+            "filename": "ragglass-field-guide.pdf",
+            "pages": [
+              3
+            ],
+            "rank": 3,
+            "score": 0.80805975
+          },
+          {
+            "id": "601f667e-4486-5990-8a0d-1bf7c8205238",
+            "document_id": "484725f2-1ffb-4bee-8179-cb6ca2262ff6",
+            "filename": "ragglass-field-guide.pdf",
+            "pages": [
+              2
+            ],
+            "rank": 4,
+            "score": 0.7749388
+          },
+          {
+            "id": "fb164014-5484-52fb-9c6c-b5d33f771ffa",
+            "document_id": "484725f2-1ffb-4bee-8179-cb6ca2262ff6",
+            "filename": "ragglass-field-guide.pdf",
+            "pages": [
+              3
+            ],
+            "rank": 5,
+            "score": 0.76191896
+          }
+        ],
+        "keyword": [],
+        "selected_ids": [
+          "bc5e8450-ac96-5000-b8bf-582acb5bc47c",
+          "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d",
+          "a8aaeb85-73f7-554d-b49e-59e5f469b836",
+          "601f667e-4486-5990-8a0d-1bf7c8205238",
+          "fb164014-5484-52fb-9c6c-b5d33f771ffa"
+        ],
+        "complete": true
+      },
+      "attempts": [
+        {
+          "node": "answer",
+          "number": 1,
+          "status": "completed",
+          "reason": "initial"
+        }
+      ]
     },
     {
-      "id": "c8d23f18-f70e-45db-82a5-2892a56193ff",
+      "id": "9ff8483a-980b-42ca-bd97-cb6d4bd114ef",
+      "kind": "query",
+      "status": "completed",
+      "question": "文件庫會保留查詢紀錄幾天？",
+      "model": "gemma4:e4b",
+      "settings": {
+        "llm": {
+          "provider": "ollama",
+          "base_url": "http://127.0.0.1:11434",
+          "model": "gemma4:e4b",
+          "temperature": 0,
+          "top_p": 1,
+          "max_tokens": 768,
+          "timeout_seconds": 180,
+          "context_tokens": 8192,
+          "think": false,
+          "keep_alive": "5m",
+          "json_mode": true
+        },
+        "embedding": {
+          "model": "intfloat/multilingual-e5-small",
+          "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+          "device": "cpu",
+          "normalize": true,
+          "query_prefix": "query: ",
+          "passage_prefix": "passage: "
+        },
+        "retrieval": {
+          "mode": "keyword",
+          "strategy": "bm25-local",
+          "top_k": 5,
+          "score_threshold": 0.7,
+          "threshold_scope": "dense-cosine-only",
+          "candidate_k": 20,
+          "candidate_scope": "hybrid-branches-only",
+          "collection": "ragglass_3ed956aa1dcacf32",
+          "keyword": {
+            "algorithm": "bm25-positive-idf-v1",
+            "tokenizer": "nfkc-latin-identifiers-han-1-2grams-v1",
+            "k1": 1.2,
+            "b": 0.75,
+            "corpus": "selected-document-chunks"
+          },
+          "fusion": {
+            "algorithm": "reciprocal-rank-fusion",
+            "k": 60,
+            "weights": [
+              1,
+              1
+            ],
+            "tie_break": "keyword-score-desc,dense-rank-asc,chunk-id-asc"
+          }
+        },
+        "prompt_version": "grounded-json-v2",
+        "summary_language": "zh-TW",
+        "context": {
+          "estimator": "utf8-bytes-plus-framing-v1",
+          "safety_margin_tokens": 256
+        },
+        "resilience": {
+          "max_attempts_per_node": 3,
+          "max_repairs_per_node": 1,
+          "retry_delay_seconds": 0.25,
+          "workflow_timeout_seconds": 600,
+          "workflow_max_calls": 32
+        }
+      },
+      "answer": "文件庫保留查詢紀錄九十天。",
+      "answerable": true,
+      "citations": [
+        {
+          "id": "b572abc1-24e1-5232-abae-fafed1108d6a",
+          "pages": [
+            6
+          ],
+          "document_hash": "9140d0d953991f5084b4582c5a2fad3d2e253a0e348060ee3b3a79bdaa24afaf"
+        }
+      ],
+      "timings_ms": {
+        "keyword_retrieval": 2.42,
+        "rank_fusion": 0.01,
+        "retrieval": 2.43,
+        "context_budget": 0.56,
+        "citation_validation": 0.05,
+        "generation": 780.12,
+        "total": 788.71
+      },
+      "model_metrics": {
+        "model": "gemma4:e4b",
+        "eval_count": 56,
+        "prompt_eval_count": 330,
+        "total_duration": 749340858,
+        "load_duration": 383349991,
+        "eval_duration": 260290000,
+        "prompt_eval_duration": 57288000,
+        "done_reason": "stop"
+      },
+      "usage": {
+        "reported_input_tokens": 330,
+        "reported_output_tokens": 56,
+        "reported_calls": 1,
+        "unreported_calls": 0
+      },
+      "context": {
+        "estimator": "utf8-bytes-plus-framing-v1",
+        "is_estimate": true,
+        "input_characters": 1492,
+        "input_utf8_bytes": 1732,
+        "estimated_input_tokens": 1860,
+        "context_tokens": 8192,
+        "reserved_output_tokens": 768,
+        "safety_margin_tokens": 256,
+        "repair_reserve_tokens": 256,
+        "input_budget_tokens": 6912,
+        "fits": true,
+        "selected_ids": [
+          "b572abc1-24e1-5232-abae-fafed1108d6a"
+        ],
+        "omitted_ids": []
+      },
+      "retrieval_trace": {
+        "mode": "keyword",
+        "dense": [],
+        "keyword": [
+          {
+            "id": "b572abc1-24e1-5232-abae-fafed1108d6a",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              6
+            ],
+            "rank": 1,
+            "score": 35.71426411285831,
+            "matched_terms": [
+              "件",
+              "件庫",
+              "保",
+              "保留",
+              "天",
+              "庫",
+              "文",
+              "文件",
+              "會",
+              "會保",
+              "查",
+              "查詢",
+              "留",
+              "留查",
+              "紀",
+              "紀錄",
+              "詢",
+              "詢紀",
+              "錄"
+            ]
+          }
+        ],
+        "selected_ids": [
+          "b572abc1-24e1-5232-abae-fafed1108d6a"
+        ],
+        "complete": true,
+        "keyword_corpus": {
+          "query_terms": [
+            "件",
+            "件庫",
+            "保",
+            "保留",
+            "天",
+            "幾",
+            "幾天",
+            "庫",
+            "庫會",
+            "文",
+            "文件",
+            "會",
+            "會保",
+            "查",
+            "查詢",
+            "留",
+            "留查",
+            "紀",
+            "紀錄",
+            "詢",
+            "詢紀",
+            "錄",
+            "錄幾"
+          ],
+          "corpus_chunks": 8,
+          "average_chunk_terms": 69.125
+        }
+      },
+      "attempts": [
+        {
+          "node": "answer",
+          "number": 1,
+          "status": "completed",
+          "reason": "initial"
+        }
+      ]
+    },
+    {
+      "id": "7b148d40-7bbf-4bcd-86e8-92de6e56a64f",
+      "kind": "query",
+      "status": "completed",
+      "question": "What does error E-4097 mean for CEDAR-X17?",
+      "model": "gemma4:e4b",
+      "settings": {
+        "llm": {
+          "provider": "ollama",
+          "base_url": "http://127.0.0.1:11434",
+          "model": "gemma4:e4b",
+          "temperature": 0,
+          "top_p": 1,
+          "max_tokens": 768,
+          "timeout_seconds": 180,
+          "context_tokens": 8192,
+          "think": false,
+          "keep_alive": "5m",
+          "json_mode": true
+        },
+        "embedding": {
+          "model": "intfloat/multilingual-e5-small",
+          "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+          "device": "cpu",
+          "normalize": true,
+          "query_prefix": "query: ",
+          "passage_prefix": "passage: "
+        },
+        "retrieval": {
+          "mode": "hybrid",
+          "strategy": "hybrid-rrf",
+          "top_k": 3,
+          "score_threshold": 0.7,
+          "threshold_scope": "dense-cosine-only",
+          "candidate_k": 20,
+          "candidate_scope": "hybrid-branches-only",
+          "collection": "ragglass_3ed956aa1dcacf32",
+          "keyword": {
+            "algorithm": "bm25-positive-idf-v1",
+            "tokenizer": "nfkc-latin-identifiers-han-1-2grams-v1",
+            "k1": 1.2,
+            "b": 0.75,
+            "corpus": "selected-document-chunks"
+          },
+          "fusion": {
+            "algorithm": "reciprocal-rank-fusion",
+            "k": 60,
+            "weights": [
+              1,
+              1
+            ],
+            "tie_break": "keyword-score-desc,dense-rank-asc,chunk-id-asc"
+          }
+        },
+        "prompt_version": "grounded-json-v2",
+        "summary_language": "zh-TW",
+        "context": {
+          "estimator": "utf8-bytes-plus-framing-v1",
+          "safety_margin_tokens": 256
+        },
+        "resilience": {
+          "max_attempts_per_node": 3,
+          "max_repairs_per_node": 1,
+          "retry_delay_seconds": 0.25,
+          "workflow_timeout_seconds": 600,
+          "workflow_max_calls": 32
+        }
+      },
+      "answer": "For the CEDAR-X17, error E-4097 means cache checksum mismatch, and the documented retry delay is 180 milliseconds.",
+      "answerable": true,
+      "citations": [
+        {
+          "id": "f941fe47-70ff-5227-b2bb-11a944b721bb",
+          "pages": [
+            1
+          ],
+          "document_hash": "9140d0d953991f5084b4582c5a2fad3d2e253a0e348060ee3b3a79bdaa24afaf"
+        }
+      ],
+      "timings_ms": {
+        "embedding": 19.51,
+        "dense_retrieval": 6.8,
+        "rank_fusion": 0.08,
+        "keyword_retrieval": 1.25,
+        "retrieval": 8.13,
+        "context_budget": 0.66,
+        "citation_validation": 0.04,
+        "generation": 863.36,
+        "total": 903.2
+      },
+      "model_metrics": {
+        "model": "gemma4:e4b",
+        "eval_count": 83,
+        "prompt_eval_count": 685,
+        "total_duration": 840235334,
+        "load_duration": 352491421,
+        "eval_duration": 386976000,
+        "prompt_eval_duration": 78388000,
+        "done_reason": "stop"
+      },
+      "usage": {
+        "reported_input_tokens": 685,
+        "reported_output_tokens": 83,
+        "reported_calls": 1,
+        "unreported_calls": 0
+      },
+      "context": {
+        "estimator": "utf8-bytes-plus-framing-v1",
+        "is_estimate": true,
+        "input_characters": 2802,
+        "input_utf8_bytes": 2802,
+        "estimated_input_tokens": 2930,
+        "context_tokens": 8192,
+        "reserved_output_tokens": 768,
+        "safety_margin_tokens": 256,
+        "repair_reserve_tokens": 256,
+        "input_budget_tokens": 6912,
+        "fits": true,
+        "selected_ids": [
+          "f941fe47-70ff-5227-b2bb-11a944b721bb",
+          "c1800318-0633-5da1-84ea-ecb33bb93393",
+          "4ba7084b-6292-5ae1-a952-4f1ac7c40870"
+        ],
+        "omitted_ids": []
+      },
+      "retrieval_trace": {
+        "mode": "hybrid",
+        "dense": [
+          {
+            "id": "c1800318-0633-5da1-84ea-ecb33bb93393",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              3
+            ],
+            "rank": 1,
+            "score": 0.9085251
+          },
+          {
+            "id": "f941fe47-70ff-5227-b2bb-11a944b721bb",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              1
+            ],
+            "rank": 2,
+            "score": 0.90389055
+          },
+          {
+            "id": "4ba7084b-6292-5ae1-a952-4f1ac7c40870",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              2
+            ],
+            "rank": 3,
+            "score": 0.884012
+          },
+          {
+            "id": "596a300c-9c7a-58c9-9f2e-bcb98d75f7e8",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              4
+            ],
+            "rank": 4,
+            "score": 0.81098616
+          },
+          {
+            "id": "5e3cb3fd-9b40-5362-b41a-ff4a31d61441",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              5
+            ],
+            "rank": 5,
+            "score": 0.8031729
+          },
+          {
+            "id": "e5c03d9c-400b-5a9b-a518-a322f2656be3",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              8
+            ],
+            "rank": 6,
+            "score": 0.768359
+          },
+          {
+            "id": "d508ef01-36c5-5fc2-a984-a6e04266316f",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              7
+            ],
+            "rank": 7,
+            "score": 0.76802605
+          },
+          {
+            "id": "b572abc1-24e1-5232-abae-fafed1108d6a",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              6
+            ],
+            "rank": 8,
+            "score": 0.72109056
+          }
+        ],
+        "keyword": [
+          {
+            "id": "f941fe47-70ff-5227-b2bb-11a944b721bb",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              1
+            ],
+            "rank": 1,
+            "score": 10.817000615050231,
+            "matched_terms": [
+              "4097",
+              "cedar",
+              "cedar-x17",
+              "e",
+              "e-4097",
+              "error",
+              "x17"
+            ]
+          },
+          {
+            "id": "c1800318-0633-5da1-84ea-ecb33bb93393",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              3
+            ],
+            "rank": 2,
+            "score": 6.481385040701229,
+            "matched_terms": [
+              "cedar",
+              "cedar-x17",
+              "e",
+              "error",
+              "x17"
+            ]
+          },
+          {
+            "id": "4ba7084b-6292-5ae1-a952-4f1ac7c40870",
+            "document_id": "fab56851-e9b5-4b35-bce9-bd6077bbf60c",
+            "filename": "ragglass-retrieval-lab.pdf",
+            "pages": [
+              2
+            ],
+            "rank": 3,
+            "score": 6.21607101824799,
+            "matched_terms": [
+              "cedar",
+              "cedar-x17",
+              "e",
+              "error",
+              "x17"
+            ]
+          }
+        ],
+        "selected_ids": [
+          "f941fe47-70ff-5227-b2bb-11a944b721bb",
+          "c1800318-0633-5da1-84ea-ecb33bb93393",
+          "4ba7084b-6292-5ae1-a952-4f1ac7c40870"
+        ],
+        "complete": true,
+        "keyword_corpus": {
+          "query_terms": [
+            "4097",
+            "cedar",
+            "cedar-x17",
+            "e",
+            "e-4097",
+            "error",
+            "mean",
+            "x17"
+          ],
+          "corpus_chunks": 8,
+          "average_chunk_terms": 69.125
+        }
+      },
+      "attempts": [
+        {
+          "node": "answer",
+          "number": 1,
+          "status": "completed",
+          "reason": "initial"
+        }
+      ]
+    },
+    {
+      "id": "099b4514-c2cb-43e0-b74b-9db90695d3c2",
+      "kind": "summary",
+      "status": "completed",
+      "question": "Three-point document summary",
+      "model": "gemma4:e4b",
+      "settings": {
+        "llm": {
+          "provider": "ollama",
+          "base_url": "http://127.0.0.1:11434",
+          "model": "gemma4:e4b",
+          "temperature": 0,
+          "top_p": 1,
+          "max_tokens": 768,
+          "timeout_seconds": 180,
+          "context_tokens": 8192,
+          "think": false,
+          "keep_alive": "5m",
+          "json_mode": true
+        },
+        "embedding": {
+          "model": "intfloat/multilingual-e5-small",
+          "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+          "device": "cpu",
+          "normalize": true,
+          "query_prefix": "query: ",
+          "passage_prefix": "passage: "
+        },
+        "retrieval": {
+          "strategy": "all-parsed-chunks",
+          "top_k": 5,
+          "score_threshold": 0.7,
+          "collection": "ragglass_3ed956aa1dcacf32"
+        },
+        "prompt_version": "document-three-points-v1",
+        "summary_language": "en",
+        "context": {
+          "estimator": "utf8-bytes-plus-framing-v1",
+          "safety_margin_tokens": 256
+        },
+        "resilience": {
+          "max_attempts_per_node": 3,
+          "max_repairs_per_node": 1,
+          "retry_delay_seconds": 0.25,
+          "workflow_timeout_seconds": 600,
+          "workflow_max_calls": 32
+        }
+      },
+      "answer": "1. The Cedar pilot, managed by Mira Chen, is scheduled to run from September 1 to September 30, 2026, and will utilize 12 native-text PDF documents, with OCR disabled for this release.\n\n2. Configuration limits are set with a maximum upload size of 30 MB and a maximum document length of 200 pages; retrieval defaults to Top K=5 chunks with a minimum cosine score of 0.70.\n\n3. For reproducibility, it is required that the original files, SQLite database, and Qdrant storage remain together, and the model must cite retrieved chunk IDs while confirming answers with evidence from the document.",
+      "summary_points": [
+        {
+          "text": "The Cedar pilot, managed by Mira Chen, is scheduled to run from September 1 to September 30, 2026, and will utilize 12 native-text PDF documents, with OCR disabled for this release.",
+          "citation_ids": [
+            "bc5e8450-ac96-5000-b8bf-582acb5bc47c"
+          ]
+        },
+        {
+          "text": "Configuration limits are set with a maximum upload size of 30 MB and a maximum document length of 200 pages; retrieval defaults to Top K=5 chunks with a minimum cosine score of 0.70.",
+          "citation_ids": [
+            "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d"
+          ]
+        },
+        {
+          "text": "For reproducibility, it is required that the original files, SQLite database, and Qdrant storage remain together, and the model must cite retrieved chunk IDs while confirming answers with evidence from the document.",
+          "citation_ids": [
+            "fb164014-5484-52fb-9c6c-b5d33f771ffa",
+            "a8aaeb85-73f7-554d-b49e-59e5f469b836"
+          ]
+        }
+      ],
+      "answerable": true,
+      "citations": [
+        {
+          "id": "bc5e8450-ac96-5000-b8bf-582acb5bc47c",
+          "pages": [
+            1
+          ],
+          "document_hash": "878bfa94da33d16c947f174d12560e3f7b4efa807cbd0b189f0841af7db58d8a"
+        },
+        {
+          "id": "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d",
+          "pages": [
+            2
+          ],
+          "document_hash": "878bfa94da33d16c947f174d12560e3f7b4efa807cbd0b189f0841af7db58d8a"
+        },
+        {
+          "id": "fb164014-5484-52fb-9c6c-b5d33f771ffa",
+          "pages": [
+            3
+          ],
+          "document_hash": "878bfa94da33d16c947f174d12560e3f7b4efa807cbd0b189f0841af7db58d8a"
+        },
+        {
+          "id": "a8aaeb85-73f7-554d-b49e-59e5f469b836",
+          "pages": [
+            3
+          ],
+          "document_hash": "878bfa94da33d16c947f174d12560e3f7b4efa807cbd0b189f0841af7db58d8a"
+        }
+      ],
+      "timings_ms": {
+        "source_loading": 2.46,
+        "citation_validation": 0.4,
+        "generation": 4962.84,
+        "total": 4971.48
+      },
+      "model_metrics": {
+        "model": "gemma4:e4b",
+        "eval_count": 370,
+        "prompt_eval_count": 669,
+        "total_duration": 2427888878,
+        "load_duration": 348959775,
+        "eval_duration": 1904412000,
+        "prompt_eval_duration": 92100000,
+        "done_reason": "stop"
+      },
+      "usage": {
+        "reported_input_tokens": 2218,
+        "reported_output_tokens": 721,
+        "reported_calls": 2,
+        "unreported_calls": 0
+      },
+      "workflow": {
+        "source_chunk_count": 6,
+        "map_batches": 1,
+        "nodes": [
+          {
+            "id": "map-1",
+            "phase": "map",
+            "status": "completed",
+            "source_ids": [
+              "bc5e8450-ac96-5000-b8bf-582acb5bc47c",
+              "a96a813b-981c-5bcb-95a0-5a517f00ac6a",
+              "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d",
+              "601f667e-4486-5990-8a0d-1bf7c8205238",
+              "fb164014-5484-52fb-9c6c-b5d33f771ffa",
+              "a8aaeb85-73f7-554d-b49e-59e5f469b836"
+            ],
+            "elapsed_ms": 2501.17
+          },
+          {
+            "id": "final-2",
+            "phase": "final",
+            "status": "completed",
+            "source_ids": [
+              "bc5e8450-ac96-5000-b8bf-582acb5bc47c",
+              "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d",
+              "fb164014-5484-52fb-9c6c-b5d33f771ffa",
+              "a8aaeb85-73f7-554d-b49e-59e5f469b836"
+            ],
+            "elapsed_ms": 2450.67
+          }
+        ]
+      },
+      "attempts": [
+        {
+          "node": "map-1",
+          "number": 1,
+          "status": "completed",
+          "reason": "initial"
+        },
+        {
+          "node": "final-2",
+          "number": 1,
+          "status": "completed",
+          "reason": "initial"
+        }
+      ]
+    },
+    {
+      "id": "b58717b6-60fe-4f8a-a60d-f0296fddae1b",
+      "kind": "summary",
+      "status": "cancelled",
+      "question": "Three-point document summary",
+      "model": "gemma4:e4b",
+      "settings": {
+        "llm": {
+          "provider": "ollama",
+          "base_url": "http://127.0.0.1:11434",
+          "model": "gemma4:e4b",
+          "temperature": 0,
+          "top_p": 1,
+          "max_tokens": 768,
+          "timeout_seconds": 180,
+          "context_tokens": 8192,
+          "think": false,
+          "keep_alive": "5m",
+          "json_mode": true
+        },
+        "embedding": {
+          "model": "intfloat/multilingual-e5-small",
+          "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+          "device": "cpu",
+          "normalize": true,
+          "query_prefix": "query: ",
+          "passage_prefix": "passage: "
+        },
+        "retrieval": {
+          "strategy": "all-parsed-chunks",
+          "top_k": 5,
+          "score_threshold": 0.7,
+          "collection": "ragglass_3ed956aa1dcacf32"
+        },
+        "prompt_version": "document-three-points-v1",
+        "summary_language": "en",
+        "context": {
+          "estimator": "utf8-bytes-plus-framing-v1",
+          "safety_margin_tokens": 256
+        },
+        "resilience": {
+          "max_attempts_per_node": 3,
+          "max_repairs_per_node": 1,
+          "retry_delay_seconds": 0.25,
+          "workflow_timeout_seconds": 600,
+          "workflow_max_calls": 32
+        }
+      },
+      "answer": null,
+      "answerable": false,
+      "citations": [],
+      "timings_ms": {
+        "source_loading": 3.05,
+        "generation": 111.04,
+        "total": 121.4
+      },
+      "usage": {
+        "reported_input_tokens": 0,
+        "reported_output_tokens": 0,
+        "reported_calls": 0,
+        "unreported_calls": 1
+      },
+      "workflow": {
+        "source_chunk_count": 6,
+        "map_batches": 1,
+        "nodes": [
+          {
+            "id": "map-1",
+            "phase": "map",
+            "status": "cancelled",
+            "source_ids": [
+              "bc5e8450-ac96-5000-b8bf-582acb5bc47c",
+              "a96a813b-981c-5bcb-95a0-5a517f00ac6a",
+              "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d",
+              "601f667e-4486-5990-8a0d-1bf7c8205238",
+              "fb164014-5484-52fb-9c6c-b5d33f771ffa",
+              "a8aaeb85-73f7-554d-b49e-59e5f469b836"
+            ],
+            "elapsed_ms": 101.3
+          }
+        ]
+      },
+      "attempts": [
+        {
+          "node": "map-1",
+          "number": 1,
+          "status": "cancelled",
+          "reason": "initial"
+        }
+      ]
+    },
+    {
+      "id": "ecd8830e-a521-4b63-bf23-f7e949df4795",
+      "kind": "query",
+      "status": "completed",
       "question": "What is the pilot's annual electricity cost in dollars?",
       "model": "gemma4:e4b",
+      "settings": {
+        "llm": {
+          "provider": "ollama",
+          "base_url": "http://127.0.0.1:11434",
+          "model": "gemma4:e4b",
+          "temperature": 0,
+          "top_p": 1,
+          "max_tokens": 768,
+          "timeout_seconds": 180,
+          "context_tokens": 8192,
+          "think": false,
+          "keep_alive": "5m",
+          "json_mode": true
+        },
+        "embedding": {
+          "model": "intfloat/multilingual-e5-small",
+          "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+          "device": "cpu",
+          "normalize": true,
+          "query_prefix": "query: ",
+          "passage_prefix": "passage: "
+        },
+        "retrieval": {
+          "mode": "dense",
+          "strategy": "dense-cosine",
+          "top_k": 3,
+          "score_threshold": 0.7,
+          "threshold_scope": "dense-cosine-only",
+          "candidate_k": 20,
+          "candidate_scope": "hybrid-branches-only",
+          "collection": "ragglass_3ed956aa1dcacf32",
+          "keyword": {
+            "algorithm": "bm25-positive-idf-v1",
+            "tokenizer": "nfkc-latin-identifiers-han-1-2grams-v1",
+            "k1": 1.2,
+            "b": 0.75,
+            "corpus": "selected-document-chunks"
+          },
+          "fusion": {
+            "algorithm": "reciprocal-rank-fusion",
+            "k": 60,
+            "weights": [
+              1,
+              1
+            ],
+            "tie_break": "keyword-score-desc,dense-rank-asc,chunk-id-asc"
+          }
+        },
+        "prompt_version": "grounded-json-v2",
+        "summary_language": "zh-TW",
+        "context": {
+          "estimator": "utf8-bytes-plus-framing-v1",
+          "safety_margin_tokens": 256
+        },
+        "resilience": {
+          "max_attempts_per_node": 3,
+          "max_repairs_per_node": 1,
+          "retry_delay_seconds": 0.25,
+          "workflow_timeout_seconds": 600,
+          "workflow_max_calls": 32
+        }
+      },
       "answer": "The answer cannot be confirmed from the retrieved document evidence.",
       "answerable": false,
       "citations": [],
       "timings_ms": {
-        "embedding": 12.77,
-        "retrieval": 5.71,
-        "generation": 824.55,
-        "citation_validation": 0.04,
-        "total": 846.33
+        "embedding": 24.68,
+        "dense_retrieval": 8.69,
+        "rank_fusion": 0.02,
+        "retrieval": 8.71,
+        "context_budget": 1,
+        "citation_validation": 1.4,
+        "generation": 918.6,
+        "total": 964.88
       },
       "model_metrics": {
         "model": "gemma4:e4b",
         "eval_count": 68,
-        "prompt_eval_count": 1193,
-        "total_duration": 802992440,
-        "load_duration": 360891606,
-        "eval_duration": 337139000,
-        "prompt_eval_duration": 48106000,
+        "prompt_eval_count": 843,
+        "total_duration": 887593862,
+        "load_duration": 366589335,
+        "eval_duration": 349301000,
+        "prompt_eval_duration": 103000000,
         "done_reason": "stop"
-      }
+      },
+      "usage": {
+        "reported_input_tokens": 843,
+        "reported_output_tokens": 68,
+        "reported_calls": 1,
+        "unreported_calls": 0
+      },
+      "context": {
+        "estimator": "utf8-bytes-plus-framing-v1",
+        "is_estimate": true,
+        "input_characters": 3868,
+        "input_utf8_bytes": 3868,
+        "estimated_input_tokens": 3996,
+        "context_tokens": 8192,
+        "reserved_output_tokens": 768,
+        "safety_margin_tokens": 256,
+        "repair_reserve_tokens": 256,
+        "input_budget_tokens": 6912,
+        "fits": true,
+        "selected_ids": [
+          "a8aaeb85-73f7-554d-b49e-59e5f469b836",
+          "bc5e8450-ac96-5000-b8bf-582acb5bc47c",
+          "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d"
+        ],
+        "omitted_ids": []
+      },
+      "retrieval_trace": {
+        "mode": "dense",
+        "dense": [
+          {
+            "id": "a8aaeb85-73f7-554d-b49e-59e5f469b836",
+            "document_id": "484725f2-1ffb-4bee-8179-cb6ca2262ff6",
+            "filename": "ragglass-field-guide.pdf",
+            "pages": [
+              3
+            ],
+            "rank": 1,
+            "score": 0.8367918
+          },
+          {
+            "id": "bc5e8450-ac96-5000-b8bf-582acb5bc47c",
+            "document_id": "484725f2-1ffb-4bee-8179-cb6ca2262ff6",
+            "filename": "ragglass-field-guide.pdf",
+            "pages": [
+              1
+            ],
+            "rank": 2,
+            "score": 0.7950788
+          },
+          {
+            "id": "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d",
+            "document_id": "484725f2-1ffb-4bee-8179-cb6ca2262ff6",
+            "filename": "ragglass-field-guide.pdf",
+            "pages": [
+              2
+            ],
+            "rank": 3,
+            "score": 0.775542
+          }
+        ],
+        "keyword": [],
+        "selected_ids": [
+          "a8aaeb85-73f7-554d-b49e-59e5f469b836",
+          "bc5e8450-ac96-5000-b8bf-582acb5bc47c",
+          "7981d93f-9b11-5c4c-a7cb-6fbb048e6f2d"
+        ],
+        "complete": true
+      },
+      "attempts": [
+        {
+          "node": "answer",
+          "number": 1,
+          "status": "completed",
+          "reason": "initial"
+        }
+      ]
     }
   ],
   "media": {
     "en": {
       "filename": "ragglass-demo.mp4",
-      "duration_seconds": 84.708333,
+      "duration_seconds": 168.416667,
       "codec_name": "h264",
       "width": 1440,
       "height": 1200,
       "pix_fmt": "yuv420p",
-      "bytes": 2182070,
-      "sha256": "5ec6f28968ff014c2775c042b63687774e008050b3823675676628b13132d9b9"
+      "bytes": 5366099,
+      "sha256": "780eb7cede52cfe6446301f2905fca9479170a6f15d2e9110fb297b5ce87cde5"
     },
     "zh-TW": {
       "filename": "ragglass-demo.zh-TW.mp4",
-      "duration_seconds": 84.708333,
+      "duration_seconds": 168.416667,
       "codec_name": "h264",
       "width": 1440,
       "height": 1200,
       "pix_fmt": "yuv420p",
-      "bytes": 2184486,
-      "sha256": "e4b0767f9e65ac28834381e9292bf7616a2e3a75e1fa8b071251a1d28bff505d"
+      "bytes": 5188979,
+      "sha256": "c733f8b52a096b8f277d107354a9f0a5b5d1b8058939309c7b785790f497a0ee"
     }
   },
   "tutorial_source": "demo-tutorial.json"

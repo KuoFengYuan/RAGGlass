@@ -8,10 +8,10 @@ Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved ev
 
 | Material | Where to find it | How to use it |
 | --- | --- | --- |
-| Core-workflow demo in the README | [Watch here](../README.md#watch-the-demo) | Play, pause, or seek the versioned recording with PDF/history cleanup on GitHub without downloading a file. |
-| Live workflow video, English captions | [MP4](https://github.com/user-attachments/assets/5ebfca43-fd95-4244-a178-7e5f174f51a6) | Attach the video to your technical post. It includes a supported question, source navigation, settings, refusal, history, and independent cleanup. |
+| Current-workbench demo in the README | [Watch here](../README.md#watch-the-demo) | Play, pause, or seek 20 steps of the current workbench on GitHub without downloading a file. |
+| Live workflow video, English captions | [MP4](https://github.com/user-attachments/assets/bed14a76-eda6-4061-8d74-53b4126cd359) | Attach it to a technical post: fresh indexing, reading, three retrieval modes/rankings, tokens, summaries, cancellation, export, history and cleanup. |
 | Instructional subtitle files | [VTT](media/ragglass-demo.vtt) / [SRT](media/ragglass-demo.srt) | Reuse the current step titles, actions, and notes. They are already burned into the tutorial video. |
-| Tutorial text and current controls | [Walkthrough](DEMO.md) | Follow nine recorded scenes, then try the additional upload, reading, context, summary and evaluation controls. |
+| Tutorial text and current controls | [Walkthrough](DEMO.md) | Follow 20 recorded steps, then run the separate evaluation CLI. |
 | Short animated excerpt | [Actual citation interaction](images/demo.gif) | Embed in a post that accepts GIFs; this is a ten-second excerpt at normal speed. |
 | Share cover | [1280 × 640 PNG](images/social-preview.png) | Use as a post cover or the GitHub Social preview image. |
 | Post drafts | [Announcements](ANNOUNCEMENT.md) | Choose the short post, longer post, or Show HN draft; personalize the author's experience before posting. |
@@ -21,9 +21,9 @@ Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved ev
 
 ![English sharing cover with the actual workbench](images/social-preview.png)
 
-The video is a **recorded demonstration of live inference**, not a hosted interactive service. It uses the original fictional CC0 fixture and reuses the index already present in the recorded workspace. Captions are added below the UI, initial navigation is trimmed, and the interaction plays at normal speed. Public answers in the receipt document that recording; the application still performs real queries when you run it.
+The video is a **recorded demonstration of live inference**. It starts with empty disposable storage and freshly indexes both original fictional CC0 PDFs. Captions sit below the UI, initial navigation is trimmed, and interaction plays at normal speed. Public answers in the receipt document that recording; the application performs new real queries when you run it.
 
-The published footage uses application commit `7e16f9b` and does not show the later reading, upload-progress, model-workflow or hybrid-retrieval controls. When sharing it with current main, include the [coverage and current-controls guide](DEMO.md#what-the-video-covers). Re-rendering old footage changes captions, not the controls captured on screen; a claim that the video demonstrates new features requires new footage and verified embeds.
+The fresh footage uses application commit `7855a83`, with reading, upload progress, model workflows and hybrid retrieval. Include the [coverage and current-controls guide](DEMO.md#what-the-video-covers) when sharing: it lists filmed controls and the separate CLI evaluation, conditional recovery/reduce and upload stop/reindex operations. Both language videos have matching subtitles and public receipts; the v0.1.0 release remains historical.
 
 ## Configure GitHub sharing
 
@@ -67,7 +67,7 @@ Traffic totals are moving 14-day windows: **do not add overlapping snapshot tota
 
 ## Reproduce the media
 
-Use the [deployment guide](DEPLOYMENT.md) to start the real stack. A public recording workspace must contain only the public fixture, its original filename, and sample questions. The capture helper refuses private documents/questions, a history at the API's 500-record cap, and non-loopback application/model endpoints. The guard does not hide or remove data to make a capture pass. The tutorial subsequently demonstrates real deletion of its public fixture and history, so run it only in a disposable workspace. Keep private work in its own workspace; use a separate configured instance for public captures when necessary.
+Use an empty disposable workspace for fresh footage. The recording profile permits only the field guide and retrieval lab with their original filenames/hashes, their published questions and the application's summary labels. The screenshot profile still requires one indexed field guide. Both reject private documents/questions, history at the API's 500-record cap and non-loopback application/model endpoints. The guard does not hide or remove data to pass. The tutorial deletes its public lab and history; the owned runner separates this work from normal storage.
 
 Chrome, FFmpeg with `libx264`/GIF support, and a local CJK font such as Noto Sans CJK TC are needed for rendering both subtitle languages. Chromium can be installed through the existing pinned Playwright package; downloads stay in the project:
 
@@ -78,22 +78,18 @@ PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/playwright" frontend/node_modules/.bin/pla
 export RAGGLASS_BROWSER=chromium
 ```
 
-If Chrome is installed, omit the two Chromium lines. With the fixture-only service ready:
+If Chrome is installed, omit the two Chromium lines. Record with owned temporary services:
 
 ```bash
-# First terminal: a disposable workspace, separate from your own documents.
-RAGGLASS_DATA_DIR=.data/demo-workspace .venv/bin/python -m uvicorn ragglass.main:app --app-dir backend --host 127.0.0.1 --port 8800
-# Upload only the public fixture at http://127.0.0.1:8800 and wait for Indexed.
-# Second terminal:
-RAGGLASS_BASE_URL=http://127.0.0.1:8800 node scripts/capture_ui_docs.mjs
-node scripts/render_social_preview.mjs
-RAGGLASS_DEMO_CLEANUP=1 RAGGLASS_BASE_URL=http://127.0.0.1:8800 node scripts/capture_demo.mjs
+.venv/bin/python scripts/record_current_demo.py
 node scripts/render_demo.mjs
 ```
 
-`RAGGLASS_BASE_URL` defaults to `http://127.0.0.1:8000`. The video helper makes **two new live queries**, saves them, then demonstrates PDF deletion and full history cleanup in the disposable workspace. `RAGGLASS_DEMO_CLEANUP=1` explicitly enables these destructive tutorial actions. It checks the 30 MB answer, retrieved citation membership, original page 2, available source boxes, parsed table, settings, insufficient-evidence refusal, history reopening, missing-source labeling, independent cleanup, and browser errors. A recording over 95 seconds fails with an actionable retry message; it never accelerates inference to fit a target length.
+The runner builds the frontend, verifies application source hashes against its recorded commit, creates its own loopback API/Qdrant `v1.15.5` container, reuses the configured model service, and always removes only its services. Owner SQLite/documents are hashed before/after; ignored `.data/launch/service-verification.json` records the result and closed ports.
 
-MP4s, raw browser footage, ASS rendering files, and the full local recording receipt are written to ignored `.data/launch/`. The English/Traditional Chinese GIFs, poster, bilingual covers, public receipts, and editable VTT/SRT tutorial text are repository assets. Inspect the assets before committing; keep video binaries, raw footage, and build caches out of Git. The v0.1.0 release preserves the original preview recording; the current README uses fresh footage from the cleanup-capable interface.
+The capture makes four live questions (dense, Chinese BM25, hybrid and refusal), one completed summary and one cancelled summary. It checks fresh indexing, generation options, current-context citation membership, both PDF languages/search, candidate ranks, actual token usage, clipboard/Markdown, map/final nodes, cancellation during generation, history/parameter/language restoration and independent cleanup. Full CLI evaluation and forced transport failures are not recorded. `RAGGLASS_DEMO_CLEANUP=1` enables the tutorial's deletion actions. Direct `capture_demo.mjs` use requires an empty dedicated API at `RAGGLASS_BASE_URL` (default `http://127.0.0.1:8000`). Recordings over six minutes fail for inspection; inference and footage are never sped up. Screenshot/cover helpers can be used separately with a ready field-guide-only service.
+
+MP4s, raw footage, scene frames, ASS files, full runs and the Markdown export are written to ignored `.data/launch/`. Bilingual GIFs, the poster, public receipts and editable VTT/SRT text are repository assets. Inspect them before publishing; video binaries, temporary uploads and caches stay out of Git. The v0.1.0 release preserves its historical preview; the README uses fresh footage of the current workbench.
 
 To edit subtitles over existing public footage, change [demo-tutorial.json](media/demo-tutorial.json) and run:
 
@@ -101,7 +97,7 @@ To edit subtitles over existing public footage, change [demo-tutorial.json](medi
 node scripts/render_demo.mjs
 ```
 
-This uses `.data/launch/live-recording.webm` with [demo-recording.json](media/demo-recording.json), exports both captioned videos and subtitle files, updates GIFs, and writes [demo-tutorial-render.json](media/demo-tutorial-render.json). It adds **zero model queries** and preserves the original recording receipt. A fresh clone needs `capture_demo.mjs` first to produce raw footage; run `render_demo.mjs` afterward to refresh the render receipt before publishing. Review all eleven scenes in both languages. Each scene has a step title, action, and note in a separate caption area; empty space below the text keeps the native player controls away from the tutorial at desktop README width. The [FFmpeg ASS filter](https://ffmpeg.org/ffmpeg-filters.html#ass) burns in the text, so playback needs no subtitle switch.
+This uses `.data/launch/live-recording.webm` and [demo-recording.json](media/demo-recording.json), exports both captioned videos/subtitles, updates GIFs and writes [the render receipt](media/demo-tutorial-render.json). It adds **zero model queries** and preserves the capture receipt. A fresh clone needs `record_current_demo.py` first to produce raw footage. Review all 22 scenes in both languages, including action timing and the closing frames. Titles/actions/notes sit below the UI, with space beneath them for player controls. The [FFmpeg ASS filter](https://ffmpeg.org/ffmpeg-filters.html#ass) burns in the text, so playback needs no subtitle switch.
 
 ## Keep the README demo playable
 

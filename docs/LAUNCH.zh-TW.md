@@ -8,10 +8,10 @@
 
 | 素材 | 位置 | 用法 |
 | --- | --- | --- |
-| README 基本流程示範 | [直接觀看](../README.zh-TW.md#觀看操作示範) | 在 GitHub 頁內播放、暫停或拖曳有錄製版本的 PDF／歷史清理實錄，無須下載檔案。 |
-| 真實流程短片，繁體中文字幕 | [MP4](https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017) | 附在技術貼文，展示可回答問題、來源跳頁、設定、拒答、歷史與獨立清理；介面為英文，字幕為繁體中文。 |
+| README 最新工作台示範 | [直接觀看](../README.zh-TW.md#觀看操作示範) | 在 GitHub 頁內播放、暫停或拖曳最新工作台的 20 步實錄，無須下載檔案。 |
+| 真實流程短片，繁體中文字幕 | [MP4](https://github.com/user-attachments/assets/0465611b-f92c-45a1-900f-eae7289428c3) | 附在技術貼文：新索引、閱讀、三種檢索／排名、Token、摘要、取消、匯出、歷史與清理。 |
 | 教學字幕檔 | [VTT](media/ragglass-demo.zh-TW.vtt)／[SRT](media/ragglass-demo.zh-TW.srt) | 重用目前的步驟標題、操作與提示，內容已嵌入教學影片。 |
-| 教學文字與目前功能 | [操作說明](DEMO.zh-TW.md) | 先跟著影片九個場景，再練習新增的上傳、閱讀、context、摘要與評測控制。 |
+| 教學文字與目前功能 | [操作說明](DEMO.zh-TW.md) | 跟著 20 個實錄步驟，再執行獨立評測 CLI。 |
 | 動畫片段 | [實際引用操作](images/demo.zh-TW.gif) | 用於支援 GIF 的貼文；為繁體中文字幕、正常速度的十秒節錄，介面為英文。 |
 | 分享封面 | [1280 × 640 PNG](images/social-preview.zh-TW.png) | 可用於貼文封面或 GitHub Social preview。 |
 | 貼文草稿 | [發布文案](ANNOUNCEMENT.zh-TW.md) | 選擇短文、長文或 Show HN 版本；發布前補上作者自己的開發經驗。 |
@@ -21,9 +21,9 @@
 
 ![繁體中文分享封面與實際工作台](images/social-preview.zh-TW.png)
 
-影片是**錄製當下使用真實推論的操作示範**，並非託管的互動服務。使用原創虛構 CC0 範例，重用該工作區已存在的索引。字幕加在介面下方，裁掉開始前的導覽，操作維持正常速度。來源紀錄中的公開答案只描述該次錄製；實際啟動應用後仍會執行新的真實查詢。
+影片是**錄製當下使用真實推論的操作示範**，從空白暫存工作區重新索引兩份原創虛構 CC0 PDF。字幕加在介面下方，裁掉開始前的導覽，操作維持正常速度。來源紀錄中的公開答案描述該次錄製；實際啟動應用後會執行新的真實查詢。
 
-已發布錄影使用應用提交 `7e16f9b`，沒有展示後來的閱讀、上傳進度、模型流程與混合檢索控制。搭配目前 main 分享時，附上[涵蓋範圍與目前操作指南](DEMO.zh-TW.md#影片涵蓋範圍)。在舊影片上重製只會改字幕，不會改變已錄下的介面；宣稱影片展示新功能之前，需有新的實錄與已驗證嵌入。
+新實錄使用應用提交 `7855a83`，包含閱讀、上傳進度、模型流程與混合檢索。分享時附上[涵蓋範圍與目前操作指南](DEMO.zh-TW.md#影片涵蓋範圍)，明列已錄控制，以及另外執行的 CLI 評測、條件式恢復／reduce 與文件停止／重建。兩種影片同步字幕及公開來源紀錄；v0.1.0 Release 保留歷史版本。
 
 ## 設定 GitHub 分享呈現
 
@@ -67,7 +67,7 @@ GitHub CLI 必須登入並有該儲存庫的存取權；流量 API 需要 push �
 
 ## 重現影片與封面
 
-依[部署指南](DEPLOYMENT.zh-TW.md)啟動真實服務。公開錄製工作區只能包含公開範例、原檔名與測試問題。工具會拒絕私人文件／問題、已達 API 500 筆上限的歷史，以及非 loopback 的應用／模型端點。檢查器不會移除或隱藏資料以通過錄製檢查。影片接著會示範刪除範例和全部歷史，只能在專用暫存工作區執行；私人工作保留在自己的工作區，需要時另外設定公開錄製服務。
+新實錄使用空白暫存工作區。影片設定只允許 field guide 與 retrieval lab 的原始檔名／hash、公開問題及應用的摘要標題；截圖設定仍要求只有一份已索引的 field guide。兩者都拒絕私人文件／問題、已達 API 500 筆上限的歷史，以及非 loopback 應用／模型端點，不會隱藏或移除資料以通過檢查。影片刪除公開 lab 與歷史；專用程式將錄製與正常資料分開。
 
 兩種字幕輸出需要 Chrome、支援 `libx264`／GIF 的 FFmpeg，以及 Noto Sans CJK TC 等本機中文字型。可用已鎖定的 Playwright 套件安裝 Chromium，下載保存在專案：
 
@@ -78,22 +78,18 @@ PLAYWRIGHT_BROWSERS_PATH="$PWD/.cache/playwright" frontend/node_modules/.bin/pla
 export RAGGLASS_BROWSER=chromium
 ```
 
-已安裝 Chrome 時略過 Chromium 的兩行。確認工作區只有公開範例後執行：
+已安裝 Chrome 時略過 Chromium 的兩行。使用自有暫存服務錄製：
 
 ```bash
-# 第一個終端：暫存工作空間，與自己的文件分開。
-RAGGLASS_DATA_DIR=.data/demo-workspace .venv/bin/python -m uvicorn ragglass.main:app --app-dir backend --host 127.0.0.1 --port 8800
-# 在 http://127.0.0.1:8800 只上傳公開範例並等待已索引。
-# 第二個終端：
-RAGGLASS_BASE_URL=http://127.0.0.1:8800 node scripts/capture_ui_docs.mjs
-node scripts/render_social_preview.mjs
-RAGGLASS_DEMO_CLEANUP=1 RAGGLASS_BASE_URL=http://127.0.0.1:8800 node scripts/capture_demo.mjs
+.venv/bin/python scripts/record_current_demo.py
 node scripts/render_demo.mjs
 ```
 
-`RAGGLASS_BASE_URL` 預設 `http://127.0.0.1:8000`。錄影工具會新增**兩次真實查詢**並保存，接著在暫存工作空間示範刪除 PDF 及全部歷史。`RAGGLASS_DEMO_CLEANUP=1` 用來明確啟用這些具刪除效果的教學動作。檢查 30 MB 答案、本次檢索引用、第 2 頁、來源座標框、解析表格、設定、無證據拒答、歷史重開、來源缺失標示、獨立清理及瀏覽器錯誤。超過 95 秒會失敗並提示重試，不會加速推論以符合目標片長。
+專用程式建置前端，核對應用來源與錄製提交的 hash，建立自有 loopback API／Qdrant `v1.15.5` 容器，沿用已設定的模型服務，結束時只移除自己的服務。前後核對原有 SQLite／文件；Git 忽略的 `.data/launch/service-verification.json` 保存結果與連接埠已關閉的確認。
 
-MP4、原始瀏覽器影片、ASS 渲染檔與完整本機錄製紀錄寫入已忽略的 `.data/launch/`。中英文 GIF、影片海報、雙語封面、公開紀錄與可編輯的 VTT／SRT 教學文字作為專案素材。提交前檢查素材；影片二進位檔、原始錄影與建置快取不進 Git。v0.1.0 Release 保留原始預覽錄影，目前 README 使用具清理功能介面的新錄影。
+錄製包含四次真實問答（向量、中文 BM25、混合與拒答）、一次完成摘要及一次取消摘要。檢查新索引、生成參數、目前 context 引用 ID、中英文 PDF／搜尋、候選排名、實際 token、剪貼簿／Markdown、map／final、生成期間取消、歷史／參數／語言還原及獨立清理。沒有錄製完整 CLI 評測或刻意觸發傳輸失敗。`RAGGLASS_DEMO_CLEANUP=1` 啟用教學刪除。直接執行 `capture_demo.mjs` 時，`RAGGLASS_BASE_URL` 必須指向空白專用 API（預設 `http://127.0.0.1:8000`）。超過六分鐘會停止供檢查，不加速推論或錄影。截圖／封面工具可另外在只有已索引 field guide 的服務執行。
+
+MP4、原始錄影、場景畫面、ASS、完整執行紀錄與 Markdown 匯出寫入 Git 忽略的 `.data/launch/`。中英文 GIF、海報、公開來源紀錄與 VTT／SRT 文字作為專案素材；發布前檢查，影片二進位、暫存上傳與快取不進 Git。v0.1.0 Release 保留當時的預覽，README 使用最新工作台的新實錄。
 
 修改既有公開影片的字幕，先編輯[demo-tutorial.json](media/demo-tutorial.json)，再執行：
 
@@ -101,7 +97,7 @@ MP4、原始瀏覽器影片、ASS 渲染檔與完整本機錄製紀錄寫入已�
 node scripts/render_demo.mjs
 ```
 
-使用 `.data/launch/live-recording.webm` 搭配[demo-recording.json](media/demo-recording.json)，輸出兩支字幕影片與字幕檔、更新 GIF，並寫入[demo-tutorial-render.json](media/demo-tutorial-render.json)。**不新增模型查詢**，原始錄製紀錄保留。全新 clone 須先執行 `capture_demo.mjs` 產生原始影片，再執行 `render_demo.mjs` 更新重製紀錄後發布。檢查兩種語言的十一個場景。每個畫面有步驟標題、操作指令與提示，置於獨立字幕區；字幕下方預留空間，避免在桌面 README 寬度下被原生播放器控制列遮住。[FFmpeg ASS filter](https://ffmpeg.org/ffmpeg-filters.html#ass)將文字嵌入影片，播放時不需要開啟字幕選項。
+使用 `.data/launch/live-recording.webm` 與[demo-recording.json](media/demo-recording.json)，輸出兩種字幕影片、字幕檔、GIF 與[重製紀錄](media/demo-tutorial-render.json)。**不新增模型查詢**，保留實錄來源紀錄。全新 clone 先執行 `record_current_demo.py` 產生原始影片。逐一檢查兩種語言的 22 個場景，包含操作時間與結尾。標題、操作與提示置於介面下方，預留空間避開播放器控制列。[FFmpeg ASS filter](https://ffmpeg.org/ffmpeg-filters.html#ass)將字幕嵌入影片，不需開啟字幕選項。
 
 ## 保持 README 影片可直接播放
 

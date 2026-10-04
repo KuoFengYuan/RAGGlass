@@ -2,29 +2,29 @@
   "source_recording": "demo-recording.json",
   "tutorial_source": "demo-tutorial.json",
   "render_receipt": "demo-tutorial-render.json",
-  "attachment_pr": 5,
+  "attachment_pr": 11,
   "videos": {
     "en": {
       "filename": "ragglass-demo.mp4",
-      "duration_seconds": 84.708333,
+      "duration_seconds": 168.416667,
       "codec_name": "h264",
       "width": 1440,
       "height": 1200,
       "pix_fmt": "yuv420p",
-      "bytes": 2182070,
-      "sha256": "5ec6f28968ff014c2775c042b63687774e008050b3823675676628b13132d9b9",
-      "url": "https://github.com/user-attachments/assets/5ebfca43-fd95-4244-a178-7e5f174f51a6"
+      "bytes": 5366099,
+      "sha256": "780eb7cede52cfe6446301f2905fca9479170a6f15d2e9110fb297b5ce87cde5",
+      "url": "https://github.com/user-attachments/assets/bed14a76-eda6-4061-8d74-53b4126cd359"
     },
     "zh-TW": {
       "filename": "ragglass-demo.zh-TW.mp4",
-      "duration_seconds": 84.708333,
+      "duration_seconds": 168.416667,
       "codec_name": "h264",
       "width": 1440,
       "height": 1200,
       "pix_fmt": "yuv420p",
-      "bytes": 2184486,
-      "sha256": "e4b0767f9e65ac28834381e9292bf7616a2e3a75e1fa8b071251a1d28bff505d",
-      "url": "https://github.com/user-attachments/assets/6ddebd4f-a997-43dc-b854-7c0da1cf5017"
+      "bytes": 5188979,
+      "sha256": "c733f8b52a096b8f277d107354a9f0a5b5d1b8058939309c7b785790f497a0ee",
+      "url": "https://github.com/user-attachments/assets/0465611b-f92c-45a1-900f-eae7289428c3"
     }
   }
 }
