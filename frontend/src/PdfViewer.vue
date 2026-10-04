@@ -233,7 +233,13 @@ watch(
     count.value = 0
     busy.value = true
     try {
-      const loading = getDocument({ url: `/api/documents/${id}/pdf`, isEvalSupported: false })
+      const loading = getDocument({
+        url: `/api/documents/${id}/pdf`,
+        isEvalSupported: false,
+        cMapUrl: '/pdfjs/cmaps/',
+        cMapPacked: true,
+        standardFontDataUrl: '/pdfjs/standard_fonts/',
+      })
       loadingTask = loading
       const loaded = await loading.promise
       if (version !== loadVersion) return

@@ -5,6 +5,75 @@ import threading
 from qdrant_client import QdrantClient, models
 
 from .errors import PipelineError
+from .keyword import KeywordRetriever
+
+RRF_K = 60
+DEFAULT_CANDIDATE_K = 20
+MODES = {"dense": "dense-cosine", "keyword": "bm25-local", "hybrid": "hybrid-rrf"}
+
+
+def snapshot(mode, top_k, threshold, candidate_k, collection):
+    return {
+        "mode": mode,
+        "strategy": MODES[mode],
+        "top_k": top_k,
+        "score_threshold": threshold,
+        "threshold_scope": "dense-cosine-only",
+        "candidate_k": candidate_k,
+        "candidate_scope": "hybrid-branches-only",
+        "collection": collection,
+        "keyword": KeywordRetriever.snapshot(),
+        "fusion": {
+            "algorithm": "reciprocal-rank-fusion",
+            "k": RRF_K,
+            "weights": [1, 1],
+            "tie_break": "keyword-score-desc,dense-rank-asc,chunk-id-asc",
+        },
+    }
+
+
+def rank_evidence(dense, keyword, mode, top_k):
+    """Fuse ranks; tie-break within the BM25 scale, then dense rank and stable ID.
+
+    Cosine and BM25 scores are never averaged or compared against each other.
+    """
+    items = {}
+    for name, results in (("dense", dense), ("keyword", keyword)):
+        for result in results:
+            item = items.setdefault(result["id"], {**result, "retrieval_scores": {}})
+            item["retrieval_scores"][name] = {"rank": result["rank"], "score": result["score"]}
+            if name == "keyword":
+                item["matched_terms"] = result["matched_terms"]
+    if mode == "hybrid":
+        for item in items.values():
+            item["score"] = sum(1 / (RRF_K + s["rank"]) for s in item["retrieval_scores"].values())
+        ordered = sorted(
+            items.values(),
+            key=lambda item: (
+                -item["score"],
+                -item["retrieval_scores"].get("keyword", {}).get("score", 0),
+                item["retrieval_scores"].get("dense", {}).get("rank", float("inf")),
+                item["id"],
+            ),
+        )
+    else:
+        ordered = [items[result["id"]] for result in (dense if mode == "dense" else keyword)]
+    return [
+        {
+            **item,
+            "rank": rank,
+            "score_kind": {"dense": "cosine", "keyword": "bm25", "hybrid": "rrf"}[mode],
+        }
+        for rank, item in enumerate(ordered[:top_k], 1)
+    ]
+
+
+def candidate_trace(items):
+    return [
+        {key: item[key] for key in ("id", "document_id", "filename", "pages", "rank", "score")}
+        | ({"matched_terms": item["matched_terms"]} if "matched_terms" in item else {})
+        for item in items
+    ]
 
 
 class VectorIndex:

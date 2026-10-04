@@ -6,7 +6,7 @@
 
 ## What the video covers
 
-The published **84.7-second** recording uses application commit `7e16f9b`. Reading/query controls, upload progress and model workflows were added afterward. The timed steps below describe that footage; the [current-controls walkthrough](#try-the-current-controls) describes the application after those updates. It has no video timestamps because these controls have not been recorded in the published video.
+The published **84.7-second** recording uses application commit `7e16f9b`. Reading/query controls, upload progress, model workflows and hybrid retrieval were added afterward. The timed steps below describe that footage; the [current-controls walkthrough](#try-the-current-controls) describes the application after those updates. It has no video timestamps because these controls have not been recorded in the published video.
 
 | Capability | In the published video? | Current instructions |
 | --- | --- | --- |
@@ -15,7 +15,8 @@ The published **84.7-second** recording uses application commit `7e16f9b`. Readi
 | Query progress/stop, PDF search/zoom/text selection, copy/Markdown | No. | [Reading and query controls](USABILITY.md). |
 | Temperature / Top-P / output limits, Context/Token usage, bounded recovery | No. | [Context and model workflows](WORKFLOWS.md). |
 | Whole-document three-point summary and per-node sources | No. | [Long-document summary](WORKFLOWS.md#long-document-summary). |
-| Fixed 12-case bilingual evaluation and generation comparisons | No; use the CLI. | [Repeatable evaluation](WORKFLOWS.md#repeatable-evaluation). |
+| Vector/BM25/hybrid modes and candidate rankings | No. | [Retrieval modes](RETRIEVAL.md). |
+| 12-case baseline, 16-case retrieval lab and controlled comparisons | No; use the CLI. | [Retrieval evaluation](RETRIEVAL.md#evaluate-one-treatment). |
 
 ## Nine recorded steps
 
@@ -45,7 +46,8 @@ Start the current application using the [quick start](../README.md#quick-start).
 4. **Control generation per run.** Open **Generation options**. Try **Precise phrasing** (`T=0, P=1`), or adjust Temperature / Top-P / output-token limit within the shown ranges. Ask again and reopen the run from history to check its saved values. Low temperature does not guarantee valid JSON or correct facts.
 5. **Explain context and recovery.** Compare **Estimated input**, **Input budget**, **Output reserved**, and included/omitted chunks in **Context & model calls**. Compare them with reported input/output tokens. Original omitted chunks remain inspectable but cannot be cited by the model. Expand attempts to inspect prompts, outcomes and timings; retries/repairs appear when needed, not on every query. Usage without a complete model report is unknown, and token counters are not a currency bill. See [bounded recovery](WORKFLOWS.md#bounded-recovery) for caps and [Context and tokens](WORKFLOWS.md#context-and-tokens) for the estimator.
 6. **Summarize the whole document.** Choose **Summarize document in 3 points**. Inspect **Document summary steps**: map batches cover every stored chunk, reduce nodes appear if notes exceed the budget, and the final node produces three points or refuses. Follow source buttons and check names, dates, amounts and requested actions. Save/reopen the trace; use **Stop query** if needed. Top-K does not restrict summary sources, and input coverage does not prove all facts survived compression.
-7. **Compare a controlled change.** With an indexed field-guide PDF, run the [evaluation commands](WORKFLOWS.md#repeatable-evaluation) against the same 12 English/Chinese cases. Keep document/parser/chunk/embedding/retrieval/prompt conditions fixed and change one generation setting. Inspect page recall, citation coverage, expected-text matches, refusals, latency and reported/unknown tokens. The evaluator is a CLI; these smoke checks are not a semantic accuracy score.
+7. **Inspect retrieval choices.** Open **Retrieval options → Retrieval mode** and try Vector, Keyword · BM25 and Hybrid · RRF. Compare labeled scores and **Retrieval rankings**; final Top K differs from hybrid candidates per method. The cosine threshold never filters BM25/RRF. Try the [eight-page lab and bilingual cases](RETRIEVAL.md), follow a source citation and reopen history to restore the mode.
+8. **Compare a controlled change.** With an indexed field-guide PDF, run the [evaluation commands](WORKFLOWS.md#repeatable-evaluation) against the same 12 English/Chinese cases. Keep document/parser/chunk/embedding/retrieval/prompt conditions fixed and change one generation setting. Inspect page recall/MRR, citation coverage, expected-text matches, refusals, latency and reported/unknown tokens. For retrieval changes, use the separate [16-case mode comparisons](RETRIEVAL.md#evaluate-one-treatment), fixing generation and all other retrieval settings. The evaluator is a CLI; these smoke checks are not a semantic accuracy score.
 
 For a project-based interview explanation, use the [question-to-implementation table](WORKFLOWS.md#interview-questions-tied-to-the-project) and demonstrate a saved run beside its PDF. The separate [workflow milestone](MILESTONE.md) records real validation; those results are not additional scenes in this video.
 

@@ -67,7 +67,7 @@ flowchart TD
 .venv/bin/python scripts/evaluate.py --document-id YOUR_DOCUMENT_ID --temperature 0.8 --compare .data/baseline.json --output .data/varied.json
 ```
 
-腳本計算指定 K 下的標註來源頁 recall、標註頁引用覆蓋、預期文字比對、拒答數、查詢 median／p95 耗時，以及已回報／未知 token 用量，保存資料集與文件 hash、設定。比較時要求標註、文件、parser／chunk／embedding／retrieval 設定和 prompt 版本相同；生成參數可不同，並顯示比較條件。精確 token 用量由服務回報；耗時包含重試，也受共用工作負載影響。十二題是小型 smoke 資料集，不是正式環境準確率；子字串比對也不是語意裁判。
+腳本計算指定 K 下的標註來源頁 recall／第一個正確頁的 MRR、標註頁引用覆蓋、預期文字比對、拒答數、查詢 median／p95 耗時，以及已回報／未知 token 用量，保存資料集與文件 hash、設定。預設生成比較要求標註、文件／保存的片段 hash、parser／chunk／embedding／retrieval 設定、context／重試設定和 prompt 版本相同；生成參數可不同，並顯示比較條件。精確 token 用量由服務回報；耗時包含重試，也受共用工作負載影響。十二題是小型 smoke 資料集，不是正式環境準確率；子字串比對也不是語意裁判。另有 [16 題檢索實驗](RETRIEVAL.zh-TW.md#一次比較一個條件)，以 `--compare-axis retrieval` 比較向量／BM25／混合模式，固定生成與非模式的檢索設定，回報候選追蹤、題型分類及檢索耗時。
 
 `bash scripts/check.sh` 執行合成契約測試與前端建置；`.venv/bin/python scripts/verify_workflows.py` 驗證隔離的真實 Docling／E5／Qdrant／Ollama、虛構長客訴、中英文評測、實際取消／重啟與建置版 Chrome 流程。後者建立暫時的 loopback 服務與儲存空間，檢查擁有者文件／SQLite 沒有改變，只移除自己的服務。報告與完整紀錄保存在忽略版控的 `.data/workflows-verification.json`、`.data/workflows-evaluation.json`。實測結果見 [里程碑](MILESTONE.zh-TW.md)。
 
@@ -81,7 +81,8 @@ flowchart TD
 | 法律細節與律師語氣選 FT 還是 RAG？ | RAG 提供選定 PDF 的知識與來源，prompt／參數控制表達，可替換的模型端點容許未來接入另行微調的模型。 | 尚未實作 Fine-tuning，也沒有法律效力／時效驗證。 |
 | 長篇客訴轉成三點重點。 | 全文 map／reduce／final、三條結構化重點、每個節點的來源與 PDF 頁碼跳轉。 | 壓縮可能遺失語意；日期、金額、要求的處置仍要對照原文。 |
 | 中英文多少字是幾個 token，會花多少？ | 事前 UTF-8 估算與模型實際輸入／輸出，以及全部嘗試用量並列。 | E5 與回答模型分詞不同，未知用量與本機維運成本不等於零。 |
-| 為什麼做這個專案，架構與儲存怎麼選？ | 原始 PDF → Docling → E5／Qdrant → 選取證據 → 模型 → 引用驗證，SQLite 保存追溯／歷史。 | 原生文字、dense retrieval 基線；OCR、hybrid 與 reranking 待擴充。 |
+| 為什麼做這個專案，架構與儲存怎麼選？ | 原始 PDF → Docling → E5／Qdrant → 選取證據 → 模型 → 引用驗證，SQLite 保存追溯／歷史。 | 原生文字的向量／BM25／RRF adapter；OCR 與 reranking 待擴充。 |
+| 為什麼做混合檢索、分數如何合併？ | 展示分開的 cosine／BM25 候選與 RRF 排名，執行固定條件的[模式比較](RETRIEVAL.zh-TW.md)。 | BM25 每次掃描所選片段，RRF 不是信心分數，不宣稱品質普遍提升。 |
 | 為什麼用這個 chunk、overlap、K 與門檻？ | 保存的切塊設定、檢索控制與標註來源頁評測。 | E5 overlap 不是 LLM 預算，cosine score 不是答案信心。 |
 | 回答錯誤怎麼查、改動怎麼評估？ | 逐層比較 parsing、檢索、選取 context、嘗試與引用，使用帶 hash／設定的中英文評測。 | 來源 ID 和關鍵字分數不能證明語意蘊含或一般準確率。 |
 | 記憶體、延遲與資源怎麼控制？ | 有界向量批次、模型輸入預算、每階段／呼叫耗時、時間與呼叫上限。 | 沒有隔離 VRAM／耗電 benchmark、多使用者 queue／ACL、SSD KV cache offload 或 aiDAPTIV 整合。 |

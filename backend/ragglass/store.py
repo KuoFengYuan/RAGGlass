@@ -3,7 +3,7 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
-DETAIL_FIELDS = {"prompt", "raw_response", "attempts", "workflow"}
+DETAIL_FIELDS = {"prompt", "raw_response", "attempts", "workflow", "retrieval_trace"}
 
 
 def now():

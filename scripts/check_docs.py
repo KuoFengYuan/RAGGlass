@@ -23,6 +23,7 @@ for name in [
     "docs/USABILITY",
     "docs/INGESTION",
     "docs/WORKFLOWS",
+    "docs/RETRIEVAL",
     "docs/RELEASE-v0.1.0",
     "examples/README",
 ]:
@@ -38,6 +39,8 @@ for file in [
     "frontend/package-lock.json",
     "compose.yaml",
     "examples/ragglass-field-guide.pdf",
+    "examples/ragglass-retrieval-lab.pdf",
+    "examples/retrieval-cases.json",
     ".github/pull_request_template.md",
     "docs/media/demo-recording.json",
     "docs/media/demo-embeds.json",
@@ -45,6 +48,15 @@ for file in [
     "docs/media/demo-tutorial-render.json",
 ]:
     assert (ROOT / file).is_file(), f"Missing delivery file: {file}"
+for pdf, cases in [
+    ("ragglass-field-guide.pdf", "evaluation-cases.json"),
+    ("ragglass-retrieval-lab.pdf", "retrieval-cases.json"),
+]:
+    annotations = json.loads((ROOT / "examples" / cases).read_text())
+    assert (
+        annotations["document_sha256"]
+        == hashlib.sha256((ROOT / "examples" / pdf).read_bytes()).hexdigest()
+    ), f"Fixture hash does not match its annotations: {pdf}"
 for filename in ["workbench", "document-library", "parsed-content", "run-history", "run-settings"]:
     for suffix in ["", ".zh-TW"]:
         assert (ROOT / "docs" / "images" / f"{filename}{suffix}.png").is_file()
@@ -112,7 +124,7 @@ for language, filename, heading, watch_link in [
             for target in re.findall(r"\[[^\]]*\]\(([^)]+)\)", document.read_text())
             if not urlsplit(target).scheme and urlsplit(target).path
         }
-        for feature in ["INGESTION", "USABILITY", "WORKFLOWS"]:
+        for feature in ["INGESTION", "USABILITY", "WORKFLOWS", "RETRIEVAL"]:
             suffix = "" if language == "en" else ".zh-TW"
             expected = ROOT / "docs" / f"{feature}{suffix}.md"
             assert expected in linked_files, (

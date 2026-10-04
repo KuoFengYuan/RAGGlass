@@ -50,10 +50,12 @@ Open **Retrieval options** to adjust:
 
 | Setting | Default | Meaning |
 | --- | ---: | --- |
+| Retrieval mode | Vector | Choose vector, keyword BM25 or hybrid RRF. |
+| Candidates per method | 20 | Hybrid candidate depth per branch, up to 100 and at least Top K. |
 | Top K | 5 | Maximum retrieved chunks supplied to the model; accepted range 1–12. |
-| Minimum score | 0.70 | Minimum cosine similarity for evidence; accepted range 0–1. It is not a probability or answer-confidence score. |
+| Minimum score | 0.70 | Minimum cosine similarity for the vector branch only; accepted range 0–1. It is not a probability or answer-confidence score. |
 
-Empty or out-of-range inputs prevent submission. If no passages pass the threshold, try a more specific question or inspect a lower threshold, then examine the evidence quality. A lower threshold can include irrelevant text. Settings that work for E5 do not automatically transfer to another embedding model.
+Empty or out-of-range inputs prevent submission. If no passages pass the threshold, try a more specific question or inspect a lower threshold, then examine the evidence quality. A lower threshold can include irrelevant text. Settings that work for E5 do not automatically transfer to another embedding model. Keyword mode disables the cosine threshold. Hybrid merges ranks rather than averaging scores; [retrieval controls and evaluation](RETRIEVAL.md) explains the candidate trace and score meanings.
 
 The interface language does not translate an existing run. The prompt asks the model to answer in the **question's language**. For a Chinese answer, ask `Cedar 試用方案的上傳容量上限是多少？` rather than changing only the language selector.
 
@@ -61,7 +63,7 @@ The interface language does not translate an existing run. The prompt asks the m
 
 Below the answer, click the source link ending in **p. 2**. The left pane switches to **Original PDF**, selects page 2, and highlights available source item boxes. You can also use the page rail, Previous/Next buttons, or page-number input. The PDF link opens the original file in a separate browser tab.
 
-Retrieved passages show rank, filename, cosine score, and source pages. Select a passage to expand its full text and chunk ID while locating its source. Multi-page sources retain all page numbers. Missing coordinates are labeled **Coordinates unavailable**.
+Retrieved passages show rank, filename, a labeled cosine/BM25/RRF score, branch ranks/scores and source pages. Expand **Retrieval rankings** for candidates outside final evidence; only final context IDs can be cited. Select a passage to expand its full text and chunk ID while locating its source. Multi-page sources retain all page numbers. Missing coordinates are labeled **Coordinates unavailable**.
 
 The backend accepts citation IDs only from that query's retrieved evidence and maps them to the document/page. **Citations validated** confirms membership and mapping; it does not prove that every claim is entailed. Compare the answer with the actual passage/table. Highlighted boxes are Docling source-item bounds, which can be broader than one quoted phrase or chunk.
 

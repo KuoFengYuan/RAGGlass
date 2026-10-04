@@ -16,12 +16,26 @@ from ragglass.evaluation import aggregate, comparison, score_case  # noqa: E402
 from ragglass.store import now  # noqa: E402
 
 
-def evaluate(client, document_id, dataset, generation=None, top_k=5, threshold=0.7):
+def evaluate(
+    client,
+    document_id,
+    dataset,
+    generation=None,
+    top_k=5,
+    threshold=0.7,
+    retrieval_mode="dense",
+    candidate_k=20,
+):
     response = client.get(f"documents/{document_id}")
     response.raise_for_status()
     doc = response.json()
     if doc["status"] != "ready" or doc["hash"] != dataset["document_sha256"]:
         raise ValueError("Evaluation requires the indexed PDF named by the dataset hash")
+    response = client.get(f"documents/{document_id}/chunks")
+    response.raise_for_status()
+    source_hash = hashlib.sha256(
+        json.dumps(response.json(), ensure_ascii=False, sort_keys=True).encode()
+    ).hexdigest()
     runs, scores = [], []
     for case in dataset["cases"]:
         response = client.post(
@@ -32,6 +46,8 @@ def evaluate(client, document_id, dataset, generation=None, top_k=5, threshold=0
                 "top_k": top_k,
                 "score_threshold": threshold,
                 "generation": generation,
+                "retrieval_mode": retrieval_mode,
+                "candidate_k": candidate_k,
             },
         )
         response.raise_for_status()
@@ -47,14 +63,27 @@ def evaluate(client, document_id, dataset, generation=None, top_k=5, threshold=0
                 json.dumps(dataset, ensure_ascii=False, sort_keys=True).encode()
             ).hexdigest(),
             "document_sha256": doc["hash"],
+            "stored_chunks_sha256": source_hash,
             "parser": doc["parser"],
             "chunking": doc["chunking"],
             "embedding": doc["embedding"],
             "retrieval": runs[0]["settings"]["retrieval"],
             "prompt_version": runs[0]["settings"]["prompt_version"],
+            "context": runs[0]["settings"]["context"],
+            "resilience": runs[0]["settings"]["resilience"],
         },
         "generation": runs[0]["settings"]["llm"],
         "metrics": aggregate(scores),
+        "slices": {
+            category: aggregate(
+                [
+                    s
+                    for c, s in zip(dataset["cases"], scores, strict=True)
+                    if c.get("category", "general") == category
+                ]
+            )
+            for category in sorted({c.get("category", "general") for c in dataset["cases"]})
+        },
         "scores": scores,
         "runs": runs,
         "limitations": [
@@ -73,6 +102,9 @@ def main():
     parser.add_argument("--dataset", type=Path, default=ROOT / "examples/evaluation-cases.json")
     parser.add_argument("--output", type=Path, default=ROOT / ".data/evaluation.json")
     parser.add_argument("--compare", type=Path)
+    parser.add_argument("--compare-axis", choices=("generation", "retrieval"), default="generation")
+    parser.add_argument("--retrieval-mode", choices=("dense", "keyword", "hybrid"), default="dense")
+    parser.add_argument("--candidate-k", type=int, default=20)
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--top-p", type=float)
     parser.add_argument("--max-tokens", type=int)
@@ -93,9 +125,20 @@ def main():
             key: getattr(args, key) if getattr(args, key) is not None else defaults[key]
             for key in ("temperature", "top_p", "max_tokens")
         }
-        report = evaluate(client, args.document_id, dataset, generation, args.top_k, args.threshold)
+        report = evaluate(
+            client,
+            args.document_id,
+            dataset,
+            generation,
+            args.top_k,
+            args.threshold,
+            args.retrieval_mode,
+            args.candidate_k,
+        )
     if args.compare:
-        report["comparison"] = comparison(json.loads(args.compare.read_text()), report)
+        report["comparison"] = comparison(
+            json.loads(args.compare.read_text()), report, args.compare_axis
+        )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps(report["metrics"], indent=2), flush=True)

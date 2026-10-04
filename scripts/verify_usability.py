@@ -65,7 +65,7 @@ def wait_run(client, rid):
     raise TimeoutError("Real query did not finish")
 
 
-def main(browser, workflows=False):
+def main(browser, workflows=False, retrieval=False):
     settings = Settings()
     before = owner_snapshot(settings.ragglass_data_dir)
     (ROOT / ".data").mkdir(exist_ok=True)
@@ -79,6 +79,12 @@ def main(browser, workflows=False):
         for path in folder.iterdir()
         if path.suffix in {".py", ".vue", ".ts", ".css"}
     }
+    report["source_sha256"].update(
+        {
+            str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in [ROOT / "frontend/vite.config.ts", ROOT / "frontend/pdfAssets.ts"]
+        }
+    )
     name = "ragglass-usability-" + uuid.uuid4().hex[:12]
     qdrant_port, api_port = port(), port()
     assert qdrant_port != api_port
@@ -186,6 +192,7 @@ def main(browser, workflows=False):
                     response = client.post("query", json={**request, "question": case["question"]})
                     response.raise_for_status()
                     run = response.json()
+                    report["runs"].append({"case": case, "run": run})
                     assert run["status"] == "completed", run.get("error")
                     assert run["answerable"] == case["answerable"], run.get("answer")
                     if case["answerable"]:
@@ -197,7 +204,6 @@ def main(browser, workflows=False):
                         c["id"] in {e["id"] for e in run["evidence"]} for c in run["citations"]
                     )
                     assert run["raw_response"] and run["model_metrics"]
-                    report["runs"].append({"case": case, "run": run})
                     checked(
                         f"live legacy API: {case['question']} ({run['timings_ms']['total']} ms)"
                     )
@@ -205,6 +211,17 @@ def main(browser, workflows=False):
                     from verify_workflows import check_workflows
 
                     check_workflows(client, doc, report, checked, ROOT, directory, wait_run)
+                if retrieval:
+                    subprocess.run(
+                        [str(ROOT / ".venv/bin/python"), "scripts/verify_e2e.py"],
+                        cwd=ROOT,
+                        env={**os.environ, "RAGGLASS_BASE_URL": base},
+                        check=True,
+                    )
+                    checked("scripts/verify_e2e.py passed against the disposable real stack")
+                    from verify_retrieval import check_retrieval
+
+                    check_retrieval(client, doc, report, checked, ROOT)
                 response = client.post(
                     "query/start",
                     json={
@@ -284,6 +301,13 @@ def main(browser, workflows=False):
                     checked(
                         "actual API restart preserves cancelled summary nodes and model-call trace"
                     )
+                if retrieval:
+                    saved = report["retrieval"]["threshold_scope"]
+                    assert client.get(f"runs/{saved['id']}").json() == saved
+                    checked(
+                        "actual API restart preserves hybrid candidates, scores, evidence "
+                        "and prompt"
+                    )
                 if browser:
                     started = time.perf_counter()
                     completed = subprocess.run(
@@ -297,11 +321,21 @@ def main(browser, workflows=False):
                             "workbench.spec.ts",
                             "usability.spec.ts",
                             *(["workflows.spec.ts"] if workflows else []),
+                            *(["retrieval.spec.ts"] if retrieval else []),
                         ],
                         cwd=ROOT,
                         env={
                             **os.environ,
                             "RAGGLASS_BASE_URL": base,
+                            **(
+                                {
+                                    "RAGGLASS_RETRIEVAL_DOCUMENT_ID": report["retrieval"][
+                                        "document"
+                                    ]["id"]
+                                }
+                                if retrieval
+                                else {}
+                            ),
                             **(
                                 {
                                     "RAGGLASS_SUMMARY_DOCUMENT_ID": report["workflows"][
@@ -355,7 +389,9 @@ def main(browser, workflows=False):
             )
             if not report.get("completed"):
                 failure_path = ROOT / (
-                    ".data/workflows-verification.failed.json"
+                    ".data/retrieval-verification.failed.json"
+                    if retrieval
+                    else ".data/workflows-verification.failed.json"
                     if workflows
                     else ".data/usability-verification.failed.json"
                 )
@@ -364,7 +400,11 @@ def main(browser, workflows=False):
     assert report["owner_workspace_unchanged"]
     checked("owner documents and SQLite unchanged; owned API/Qdrant stopped and removed")
     report_path = ROOT / (
-        ".data/workflows-verification.json" if workflows else ".data/usability-verification.json"
+        ".data/retrieval-verification.json"
+        if retrieval
+        else ".data/workflows-verification.json"
+        if workflows
+        else ".data/usability-verification.json"
     )
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     print(f"Measured report: {report_path.relative_to(ROOT)}", flush=True)

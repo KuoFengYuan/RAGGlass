@@ -10,9 +10,10 @@ from .embedding import Embedder
 from .errors import PipelineError
 from .generation import GenerationRunner
 from .ingestion import IngestCancelled, IngestControl
+from .keyword import KeywordRetriever
 from .llm import Completion, LLMClient, make_prompt, validate_completion
 from .parser import Parser, make_chunks
-from .retrieval import VectorIndex
+from .retrieval import DEFAULT_CANDIDATE_K, VectorIndex, candidate_trace, rank_evidence, snapshot
 from .store import now
 from .summary import summarize
 from .workspace import Workspace
@@ -46,6 +47,7 @@ class Pipeline:
         self.embedder = Embedder(settings)
         self.parser = Parser(settings)
         self.index = VectorIndex(settings, self.embedder)
+        self.keyword = KeywordRetriever()
         self.llm = LLMClient(settings)
         self.ingest_lock = threading.Lock()
         self.workspace = Workspace(store, self.index)
@@ -159,9 +161,9 @@ class Pipeline:
                 timings["total"] = round((time.perf_counter() - started) * 1000, 2)
                 control.update(timings_ms=timings, finished_at=now())
 
-    def query(self, question, documents, top_k, threshold, generation=None):
+    def query(self, question, documents, top_k, threshold, generation=None, **retrieval):
         with self.workspace.activity([d["id"] for d in documents], query=True):
-            run = self.new_query(question, documents, top_k, threshold, generation)
+            run = self.new_query(question, documents, top_k, threshold, generation, **retrieval)
             return asyncio.run(self.execute_query(run, QueryControl()))
 
     def new_query(
@@ -174,6 +176,8 @@ class Pipeline:
         *,
         kind="query",
         language="zh-TW",
+        retrieval_mode="dense",
+        candidate_k=DEFAULT_CANDIDATE_K,
     ):
         options = generation or GenerationOptions.defaults(self.settings)
         if (
@@ -218,8 +222,12 @@ class Pipeline:
             "settings": {
                 "llm": self.llm.snapshot(options),
                 "embedding": self.embedder.snapshot(),
-                "retrieval": {
-                    "strategy": "dense-cosine" if kind == "query" else "all-parsed-chunks",
+                "retrieval": snapshot(
+                    retrieval_mode, top_k, threshold, candidate_k, self.index.collection
+                )
+                if kind == "query"
+                else {
+                    "strategy": "all-parsed-chunks",
                     "top_k": top_k,
                     "score_threshold": threshold,
                     "collection": self.index.collection,
@@ -301,18 +309,59 @@ class Pipeline:
                     threaded=False,
                 )
             else:
-                vector = await stage(
-                    "embedding", lambda: self.embedder.encode([run["question"]], query=True)[0]
-                )
-                evidence = await stage(
-                    "retrieval",
-                    lambda: self.index.search(
-                        vector,
-                        run["document_ids"],
-                        retrieval["top_k"],
-                        retrieval["score_threshold"],
+                mode = retrieval.get("mode", "dense")
+                limit = retrieval["candidate_k"] if mode == "hybrid" else retrieval["top_k"]
+                dense, keyword = [], []
+                trace = {"mode": mode, "dense": [], "keyword": [], "selected_ids": []}
+                run["retrieval_trace"] = trace
+
+                def preserve_retrieval():
+                    # A stop during a branch retains the completed results before the next
+                    # cooperative boundary. Partial hybrid rankings are marked explicitly.
+                    t = time.perf_counter()
+                    run["evidence"] = rank_evidence(dense, keyword, mode, retrieval["top_k"])
+                    run["timings_ms"]["rank_fusion"] = round(
+                        run["timings_ms"].get("rank_fusion", 0) + (time.perf_counter() - t) * 1000,
+                        2,
+                    )
+                    trace["selected_ids"] = [item["id"] for item in run["evidence"]]
+                    run["prompt"] = make_prompt(run["question"], run["evidence"])
+                    self.store.save_run(run)
+
+                trace["complete"] = False
+                if mode != "keyword":
+                    vector = await stage(
+                        "embedding", lambda: self.embedder.encode([run["question"]], query=True)[0]
+                    )
+                    dense = await stage(
+                        "dense_retrieval",
+                        lambda: self.index.search(
+                            vector, run["document_ids"], limit, retrieval["score_threshold"]
+                        ),
+                    )
+                    trace["dense"] = candidate_trace(dense)
+                    preserve_retrieval()
+                if mode != "dense":
+                    keyword, report = await stage(
+                        "keyword_retrieval",
+                        lambda: self.keyword.search(
+                            run["question"],
+                            [c for did in run["document_ids"] for c in self.store.chunks(did)],
+                            limit,
+                        ),
+                    )
+                    trace.update(keyword=candidate_trace(keyword), keyword_corpus=report)
+                    preserve_retrieval()
+                evidence = run["evidence"]
+                trace["complete"] = True
+                run["timings_ms"]["retrieval"] = round(
+                    sum(
+                        run["timings_ms"].get(k, 0)
+                        for k in ("dense_retrieval", "keyword_retrieval", "rank_fusion")
                     ),
+                    2,
                 )
+                trace["selected_ids"] = [item["id"] for item in evidence]
                 run["evidence"] = evidence
                 run["prompt"] = make_prompt(run["question"], evidence)
                 self.store.save_run(run)
@@ -341,7 +390,7 @@ class Pipeline:
                         )
                     )
                 else:
-                    run.update(answer="檢索未找到符合門檻的證據，無法從文件確認答案。")
+                    run.update(answer="檢索未找到可用證據，無法從文件確認答案。")
             control.check()
             run["status"] = "completed"
         except QueryCancelled:

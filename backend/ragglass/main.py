@@ -16,6 +16,7 @@ from .errors import PipelineError
 from .ingestion import IngestJobs
 from .pipeline import Pipeline
 from .query_jobs import QueryJobs
+from .retrieval import DEFAULT_CANDIDATE_K
 from .store import Store, now
 from .uploads import inspect_pdf
 
@@ -27,6 +28,14 @@ class Query(BaseModel):
     top_k: int = Field(default=5, ge=1, le=12)
     score_threshold: float = Field(default=0.70, ge=0, le=1)
     generation: GenerationOptions | None = None
+    retrieval_mode: Literal["dense", "keyword", "hybrid"] = "dense"
+    candidate_k: int = Field(default=DEFAULT_CANDIDATE_K, ge=1, le=100)
+
+    @model_validator(mode="after")
+    def candidate_limit(self):
+        if self.retrieval_mode == "hybrid" and self.candidate_k < self.top_k:
+            raise ValueError("Hybrid candidate_k must be at least top_k")
+        return self
 
 
 class SummaryRequest(BaseModel):
@@ -153,6 +162,8 @@ def create_app(settings=None):
             "retrieval": {
                 "top_k": s.retrieval_top_k,
                 "score_threshold": s.retrieval_score_threshold,
+                "mode": "dense",
+                "candidate_k": DEFAULT_CANDIDATE_K,
             },
             "max_upload_mb": s.max_upload_mb,
             "max_pdf_pages": s.max_pdf_pages,
@@ -279,7 +290,15 @@ def create_app(settings=None):
     async def start_query(request: Query):
         question, docs = query_documents(request)
         return source_status(
-            jobs.start(question, docs, request.top_k, request.score_threshold, request.generation),
+            jobs.start(
+                question,
+                docs,
+                request.top_k,
+                request.score_threshold,
+                request.generation,
+                retrieval_mode=request.retrieval_mode,
+                candidate_k=request.candidate_k,
+            ),
             source_ids(),
         )
 
@@ -310,7 +329,13 @@ def create_app(settings=None):
         # A failed generation still returns the saved run, including retrieval and actionable error.
         return source_status(
             pipeline.query(
-                question, docs, request.top_k, request.score_threshold, request.generation
+                question,
+                docs,
+                request.top_k,
+                request.score_threshold,
+                request.generation,
+                retrieval_mode=request.retrieval_mode,
+                candidate_k=request.candidate_k,
             ),
             source_ids(),
         )
