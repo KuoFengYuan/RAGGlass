@@ -18,6 +18,7 @@ RAGGlass is a local document RAG diagnostic workbench. Its motto is **See inside
 ## Project rules
 
 - English primary documentation: `README.md` and `docs/NAME.md`; complete Traditional Chinese counterparts: `README.zh-TW.md` and `docs/NAME.zh-TW.md`. Link both directions and keep links within the same language.
+- Functional changes update both READMEs' capabilities, walkthrough, architecture and limits together with both `docs/DEMO` guides and the relevant feature guides. Keep video descriptions/coverage current. Captions must describe the recorded frames; new video demonstrations require fresh footage and matching bilingual captions, receipts and published embed metadata. Until re-recording, label the actual recorded application commit and link instructions for uncovered controls. Keep historical release notes scoped to their released version.
 - Progress and delivery reports to the owner use Traditional Chinese. The UI defaults to Traditional Chinese and offers a persistent English language switch. Machine identifiers remain independent of display language.
 - Vue 3, TypeScript, Vite, PDF.js frontend; FastAPI backend; Docling PDF parsing; Qdrant vectors; SQLite and local files for metadata/history. Keep model HTTP services separate from the application.
 - Pin direct dependencies and commit `uv.lock` and `frontend/package-lock.json`. Docker images require explicit versions. Install dependencies/caches within project environments; never upgrade system GPU drivers as part of application work.

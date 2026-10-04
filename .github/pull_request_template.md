@@ -7,6 +7,7 @@ Describe the concrete problem and final behavior in English. Include a before/af
 - [ ] `bash scripts/check.sh`
 - [ ] Relevant real-stack / browser checks, with exact commands and measured results
 - [ ] Both documentation languages updated
+- [ ] Both READMEs and video/current-controls guides synchronized; recorded version/coverage explicit and subtitles match footage
 - [ ] Diff checked for secrets, uploaded data, caches, and build artifacts
 
 State which checks actually ran. Identify mocks, fictional fixtures, and outstanding verification.

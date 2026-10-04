@@ -2,16 +2,16 @@
 
 **English** | [繁體中文](LAUNCH.zh-TW.md)
 
-Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved evidence and original source page.** Lead with the question an engineer is trying to debug, then show the actual workflow. The current release supports inspection; automated diagnosis and before/after evaluations are future work.
+Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved evidence and original source page.** Lead with the question an engineer is trying to debug, then show the actual workflow. Current main also supports context/recovery traces, document summaries and a controlled [bilingual evaluation CLI](WORKFLOWS.md#repeatable-evaluation). Autonomous diagnosis, hybrid retrieval and reranking remain future work; [v0.1.0 notes](RELEASE-v0.1.0.md) describe the historical first preview.
 
 ## Ready-to-use materials
 
 | Material | Where to find it | How to use it |
 | --- | --- | --- |
-| Full demo in the README | [Watch here](../README.md#watch-the-demo) | Play, pause, or seek the current recording with PDF/history cleanup on GitHub without downloading a file. |
+| Core-workflow demo in the README | [Watch here](../README.md#watch-the-demo) | Play, pause, or seek the versioned recording with PDF/history cleanup on GitHub without downloading a file. |
 | Live workflow video, English captions | [MP4](https://github.com/user-attachments/assets/5ebfca43-fd95-4244-a178-7e5f174f51a6) | Attach the video to your technical post. It includes a supported question, source navigation, settings, refusal, history, and independent cleanup. |
 | Instructional subtitle files | [VTT](media/ragglass-demo.vtt) / [SRT](media/ragglass-demo.srt) | Reuse the current step titles, actions, and notes. They are already burned into the tutorial video. |
-| Tutorial text | [Nine-step walkthrough](DEMO.md) | Follow the approximate scene times and named controls while watching the video. |
+| Tutorial text and current controls | [Walkthrough](DEMO.md) | Follow nine recorded scenes, then try the additional upload, reading, context, summary and evaluation controls. |
 | Short animated excerpt | [Actual citation interaction](images/demo.gif) | Embed in a post that accepts GIFs; this is a ten-second excerpt at normal speed. |
 | Share cover | [1280 × 640 PNG](images/social-preview.png) | Use as a post cover or the GitHub Social preview image. |
 | Post drafts | [Announcements](ANNOUNCEMENT.md) | Choose the short post, longer post, or Show HN draft; personalize the author's experience before posting. |
@@ -22,6 +22,8 @@ Explain one concrete benefit: **inspect a PDF RAG answer beside its retrieved ev
 ![English sharing cover with the actual workbench](images/social-preview.png)
 
 The video is a **recorded demonstration of live inference**, not a hosted interactive service. It uses the original fictional CC0 fixture and reuses the index already present in the recorded workspace. Captions are added below the UI, initial navigation is trimmed, and the interaction plays at normal speed. Public answers in the receipt document that recording; the application still performs real queries when you run it.
+
+The published footage uses application commit `7e16f9b` and does not show the later reading, upload-progress or model-workflow controls. When sharing it with current main, include the [coverage and current-controls guide](DEMO.md#what-the-video-covers). Re-rendering old footage changes captions, not the controls captured on screen; a claim that the video demonstrates new features requires new footage and verified embeds.
 
 ## Configure GitHub sharing
 

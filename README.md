@@ -17,7 +17,8 @@ RAGGlass is a local, open-source workbench for engineers building PDF RAG. Inspe
 - **Reproduce a run:** retain prompts, settings, evidence, answers, and measured timings after restarts.
 - **Manage your workspace:** search documents/history and remove selected items or clear all with explicit confirmation.
 - **Process PDFs with feedback:** check upload limits before transfer, follow confirmed chunk progress, and stop queued or running processing.
-- **Inspect model workflows:** control generation per run, budget context, inspect bounded retries and summarize a whole document into three cited points.
+- **Inspect model workflows:** set Temperature / Top-P / output limits per run, compare estimated context with reported token usage, inspect bounded retries, and summarize a whole document into three cited points.
+- **Compare changes:** run the 12-case English/Chinese evaluation with recorded settings, page-retrieval/citation checks, refusals, latency, and token usage.
 - **Use your model service:** real embeddings and live Ollama or compatible HTTP inference.
 
 [Quick start](#quick-start) · [Watch the demo](#watch-the-demo) · [Illustrated usage](docs/USAGE.md) · [Deployment](docs/DEPLOYMENT.md) · [Model choices](#recommended-ollama-models)
@@ -28,7 +29,9 @@ If RAGGlass is useful for your RAG work, **[⭐ give it a star](https://github.c
 
 https://github.com/user-attachments/assets/5ebfca43-fd95-4244-a178-7e5f174f51a6
 
-**Press Play above for the complete 84.7-second tutorial with English instructions inside the video.** Each step names what to click and what to check; pause or seek to follow along. Learn to upload a PDF, ask a question, follow a citation, inspect parsing/settings, check a refusal, reopen history, and clean up PDFs/records independently. [Follow the nine-step guide](docs/DEMO.md).
+**Press Play above for the 84.7-second core-workflow tutorial with English instructions inside the video.** Each step names what to click and what to check; pause or seek to follow along. Learn to upload a PDF, ask a question, follow a citation, inspect parsing/settings, check a refusal, reopen history, and clean up PDFs/records independently. [Follow the nine recorded steps and current controls](docs/DEMO.md).
+
+**Video version:** application commit `7e16f9b`, before the reading, upload-progress and model-workflow updates. Follow the [current-controls walkthrough](docs/DEMO.md#try-the-current-controls) for PDF search/zoom, stop controls, exports, generation options, Context/Token traces, three-point summaries and evaluation. These controls are implemented in the current application; they are not shown in this footage.
 
 *Actual recorded inference at normal speed, using the fictional CC0 sample and its existing index. [Trace the table answer](docs/CASE_STUDY.md) · [Recording receipt](docs/media/demo-recording.json)*
 
@@ -47,7 +50,7 @@ See the [v0.1.0 preview](https://github.com/KuoFengYuan/RAGGlass/releases/tag/v0
 | [Reading and query controls](docs/USABILITY.md) | Query progress/cancellation, PDF search/zoom/selection, answer copying, Markdown reports, and isolated verification. |
 | [Upload and processing](docs/INGESTION.md) | Local PDF checks, document progress/stop, bounded vector batches, retry behavior, and isolated validation. |
 | [Context and model workflows](docs/WORKFLOWS.md) | Token estimates/native usage, per-run generation, bounded recovery, three-point summaries, evaluation and interview examples. |
-| [Video tutorial](docs/DEMO.md) | Nine numbered steps, scene times, and instructional subtitles already visible in the video. |
+| [Video tutorial and current controls](docs/DEMO.md) | Recorded version/coverage, nine timed video steps, and current upload, reading, context, summary and evaluation instructions. |
 | [Installation and deployment](docs/DEPLOYMENT.md) | Environment, model service, Qdrant, development/built modes, optional user service, SSH, backup, updates, and troubleshooting. |
 | [Measured milestone](docs/MILESTONE.md) | Real model/browser/restart results, hardware observations, timings, and limits. |
 | [Table/source case study](docs/CASE_STUDY.md) | Follow a real answer to page 2 and inspect a question the document cannot answer. |
@@ -177,14 +180,14 @@ Ollama tags can change after a pull. Save the installed metadata/digests with `c
 ## Try the complete flow
 
 1. Download the sample from the document toolbar or use `examples/ragglass-field-guide.pdf`, then upload it. The browser checks native text, encryption, and configured size/page limits before transfer. Watch queued → parsing → chunking, then embedding/indexing batches → indexed, with elapsed time and confirmed chunk counts. Stop processing if needed; the original PDF can be viewed during processing. The first ingestion includes model downloads.
-2. Ask **What is the maximum upload size for the Cedar pilot?** The expected fact is **30 MB**, from the table on **page 2**. The answer is generated live.
-3. Click a source button under the answer. PDF.js jumps to the corresponding original page; available source item boxes are highlighted. Select a retrieved passage to expand its full text, chunk ID, cosine score, page numbers, and coordinate availability. The page rail also lets you browse original pages directly.
+2. Open **Generation options** to set Temperature, Top-P and output-token limit for this run. Ask **What is the maximum upload size for the Cedar pilot?** The expected fact is **30 MB**, from the table on **page 2**. Follow the current stage and elapsed time; **Stop query** cancels the run while retaining its trace.
+3. Click a source button under the answer. PDF.js jumps to the corresponding original page; available source item boxes are highlighted. Search native PDF text, change zoom or select text to read it closely. Select a retrieved passage to expand its full text, chunk ID, cosine score, page numbers, and coordinate availability.
 4. Open **Parsed content** to inspect chunks or raw Markdown/Docling JSON. Open document details for SHA-256, parser/chunk/embedding settings, and ingestion timings.
-5. Inspect the execution trace, expand the run settings/prompt, or download run JSON. The run records the exact evidence, prompt, model endpoint/name/options, tokenizer revision, chunk settings, and retrieval settings, excluding API keys.
+5. Inspect **Context & model calls** for estimated input, reserved output, included/excluded chunks, reported input/output tokens and attempts. Expand **Run settings & prompt**, copy the answer with sources, or download Markdown/run JSON. The run retains prompts, evidence, effective generation/retrieval settings and measured times, excluding API keys. Unknown model usage is labelled rather than counted as zero.
 6. Ask **What is the pilot's annual electricity cost in dollars?** It must state that the document cannot confirm the answer and show no citations.
-7. Restart the API and Qdrant without deleting their storage. Uploaded files, documents, and query history remain available. Open **Run history** in the top navigation and select a saved run to reopen its answer, evidence, and configuration.
-
-8. To remove data, open **Document library** or **Run history**: search/filter, delete a row, select items, or **Clear all**, then review and confirm the scope. PDF deletion removes originals/parses/chunks/vectors; history cleanup removes saved queries/results independently. [Read the cleanup guide](docs/CLEANUP.md).
+7. Choose **Summarize document in 3 points** to process all stored chunks in the selected document. Inspect the map/final nodes and any required reduce nodes, then verify dates, amounts and requested actions using the source-page buttons. The summary uses whole-document sources, independent of Top-K; compression can omit facts.
+8. Open **Run history** and select a saved query or summary to restore its answer, evidence, trace and generation options. Restarting the API/Qdrant with storage preserved keeps completed records. Use the [bilingual evaluation CLI](docs/WORKFLOWS.md#repeatable-evaluation) for fixed-case comparisons; this is a command-line tool, not a UI benchmark panel.
+9. To remove data, open **Document library** or **Run history**: search/filter, delete a row, select items, or **Clear all**, then review and confirm the scope. PDF deletion removes originals/parses/chunks/vectors; history cleanup removes saved queries/results independently. [Read the cleanup guide](docs/CLEANUP.md).
 
 The workspace places the original PDF on the left and a query/answer/evidence inspector on the right, with measured execution timings along the bottom. **Document library** and **Run history** open list dialogs from the top navigation; the active document can also be changed in the document selector. On narrow screens, the PDF and inspector stack vertically.
 
@@ -221,20 +224,21 @@ Contract tests cover valid/invalid citations, malformed model output, actual TCP
 
 ```text
 Vue + PDF.js → FastAPI → Docling → page-aware token chunks → local E5 → Qdrant
-                   └─ query → E5 → retrieved evidence → model HTTP API
-                                                    → citation validation → saved run
+                   ├─ query → E5 → retrieved evidence → whole-chunk context budget
+                   └─ summary → all stored chunks → budgeted map / reduce / final
+                         → bounded model HTTP calls → schema/citation validation → saved run
 SQLite: document metadata, chunks, runs        Local files: PDFs, Markdown, Docling JSON
 ```
 
-The adapters are `parser.py`, `embedding.py`, `retrieval.py`, and `llm.py`; `pipeline.py` orchestrates them. A single document worker manages queued jobs and cooperative stops. Each bounded vector batch is written and released before the next one; parsing and text metadata still use memory for the whole document. Query workers remain separate from the UI request loop. SQLite is the metadata source of truth; Qdrant can be rebuilt from documents by reindexing. Each chunk retains all source pages, including multi-page items. Coordinates refer to original Docling source items, which can be larger than an individual token window; they are not fabricated exact phrase bounds. Missing coordinates are explicitly marked.
+The adapters are `parser.py`, `embedding.py`, `retrieval.py`, and `llm.py`; `pipeline.py` orchestrates them. `context.py` budgets complete inputs, `generation.py` records bounded calls/recovery, and `summary.py` runs the fixed summary workflow. A single document worker manages queued jobs and cooperative stops. Each bounded vector batch is written and released before the next one; parsing and text metadata still use memory for the whole document. Query/summary jobs remain separate from the UI request loop. SQLite is the metadata source of truth; Qdrant can be rebuilt from documents by reindexing. Each chunk retains all source pages, including multi-page items. Coordinates refer to original Docling source items, which can be larger than an individual token window; they are not fabricated exact phrase bounds. Missing coordinates are explicitly marked.
 
 `.data/documents/<document-id>/` contains `original.pdf`, `parsed.md`, and `docling.json`; `.data/ragglass.sqlite3` stores metadata/chunks/runs. Back up `.data` together with the Qdrant Docker volume. `docker compose down` keeps the volume; **`docker compose down -v` deletes the vector storage**. `.env`, data, caches, dependencies, build output, and local reports are ignored by Git. The sample fixture is the only PDF intended for publication.
 
 ## Limits and next milestone
 
-Native-text PDFs only; OCR/VLM, hybrid retrieval, reranking, formal quality metrics, a diagnostic agent, and embedding tuning are not implemented. Citation validation guarantees source membership and document/page mapping; it does not establish semantic entailment of every answer. Model refusal is prompt-based, so broad adversarial reliability still requires evaluation. This is a single-user, loopback workbench, with no authentication, distributed job queue, multi-user isolation, or production hardening. Restarted in-flight work is marked failed and can be retried rather than silently resumed. Remote vLLM, SSH client networking, scanned documents, and large corpora have not been validated on this installation.
+Native-text PDFs only; OCR/VLM, hybrid retrieval, reranking, a general diagnostic agent, fine-tuning and embedding tuning are not implemented. Citation validation checks permitted source IDs and document/page mapping; it does not establish semantic entailment of every answer. Context is estimated before inference; native token counts are available only when the model reports them. Summary input coverage does not guarantee retention of every fact. The 12-case evaluation measures annotated page/keyword/refusal outcomes, not production accuracy or semantic correctness. This is a single-user, loopback workbench, with no authentication, distributed job queue, multi-user isolation, or production hardening. Restarted in-flight work is marked failed and can be retried rather than silently resumed. Remote vLLM, SSH client networking, scanned documents, and large corpora have not been validated on this installation.
 
-The suggested next milestone is a repeatable before/after evaluation workflow: fixed question sets, retrieval/answer metrics, run comparisons, and a replaceable hybrid retriever/reranker. See [milestone details](docs/MILESTONE.md), [contributing](CONTRIBUTING.md), and [agent rules](AGENTS.md). English-first PRs include a Traditional Chinese summary; never commit private uploads or credentials.
+The repeatable evaluation CLI is implemented. The next milestone can expand annotated real-document and summary datasets, add semantic review, and compare a replaceable hybrid retriever/reranker against the dense baseline. See [milestone details](docs/MILESTONE.md), [contributing](CONTRIBUTING.md), and [agent rules](AGENTS.md). Feature changes update both READMEs and the video/current-controls guide together; published footage retains an explicit recorded version until re-recorded.
 
 ## License and contributions
 
