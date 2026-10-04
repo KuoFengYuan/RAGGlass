@@ -6,6 +6,8 @@
 
 先閱讀 [AGENTS.md](AGENTS.zh-TW.md)，依 [README](README.zh-TW.md) 設定環境。從更新的 `main` 建立 `Feature/lowercase-description`、`Bugfix/lowercase-description` 或 `Enhance/lowercase-description` 分支，保留現有變更與服務。
 
+每次功能修改都同步更新中英文 README 與[影片／目前功能指南](docs/DEMO.zh-TW.md)，包含功能狀態、步驟、架構、限制及相關雙語功能指南。檢查影片描述是否符合已發布實錄的涵蓋範圍，保留錄製提交，並提供尚未拍入控制項的操作說明。字幕必須對應畫面；要展示新控制項，需重新錄製並同步雙語字幕、來源紀錄與已驗證嵌入。歷史版本說明仍描述各自版本。PR 驗證需包含這項文件／影片檢查。
+
 提交前執行 `bash scripts/check.sh`。涉及 pipeline 或介面時，啟動真實服務後執行 `.venv/bin/python scripts/verify_e2e.py`，再執行 `npm --prefix frontend run test:e2e`。瀏覽器測試使用真實模型與 CC0 範例，需要本機 Google Chrome，或依 README 安裝的 Playwright 瀏覽器。只記錄實測結果，測試報告及執行資料不得進 Git。
 
 提交標題用具體英文，不加 AI 工具歸屬。依雙語模板對 `main` 開 PR，等待必要檢查與審查，不繞過保護。合併／squash 提交標題須以 PR 編號結尾，例如 `enhance: show inline demos (#12)`，讓 GitHub 提交歷史能連回 PR。自訂 merge subject 時加入後綴，合併後查證已發布的提交。確認合併（通常採 squash）後，只移除此任務已合併分支，以 fast-forward 更新本機 `main`，並回報 PR 與 merge commit。GitHub 發布必須符合使用者授權範圍；無 remote 的本機 repository 仍可完成實作、測試與提交。

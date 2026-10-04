@@ -18,6 +18,7 @@ RAGGlass 是地端文件 RAG 診斷工作台，標語為 **See inside your RAG.*
 ## 專案規則
 
 - 文件以英文優先：`README.md` 與 `docs/NAME.md`；提供完整繁體中文版本 `README.zh-TW.md` 與 `docs/NAME.zh-TW.md`。雙向連結，並在同語言文件內連結。
+- 功能變更需同步更新中英文 README 的功能、操作流程、架構與限制，以及兩份 `docs/DEMO` 和相關功能指南。影片描述／涵蓋範圍需跟上更新。字幕必須對應錄影畫面；要在影片展示新功能，需重新錄製並同步雙語字幕、來源紀錄與已發布嵌入 metadata。重新錄製前，標示實際錄製的應用提交，連結尚未拍入功能的操作說明。歷史版本說明維持該次發布範圍。
 - 向擁有者的進度及交付報告用繁體中文。介面預設繁體中文，提供可持久保存的英文切換。機器識別碼獨立於顯示語言。
 - 前端 Vue 3、TypeScript、Vite、PDF.js；後端 FastAPI；Docling 解析；Qdrant 向量；SQLite 與本機檔案保存紀錄。模型 HTTP 服務與應用分開。
 - 固定直接依賴並提交 `uv.lock`、`frontend/package-lock.json`。容器映像使用明確版本。依賴與快取在專案環境內；不可為應用開發升級系統 GPU 驅動。

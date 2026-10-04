@@ -59,6 +59,7 @@ render = json.loads((ROOT / "docs/media/demo-tutorial-render.json").read_text())
 tutorial = json.loads((ROOT / "docs/media/demo-tutorial.json").read_text())
 recording_bytes = (ROOT / "docs/media/demo-recording.json").read_bytes()
 recording = json.loads(recording_bytes)
+assert re.fullmatch(r"[0-9a-f]{40}", recording["source_commit"])
 assert render["source_recording_sha256"] == hashlib.sha256(recording_bytes).hexdigest()
 assert (
     render["renderer_sha256"]
@@ -101,6 +102,22 @@ for language, filename, heading, watch_link in [
     assert not re.search(r"https://[^\s)]+/releases/download/[^\s)]+\.mp4", text), (
         f"Demo must play inline instead of opening a download: {filename}"
     )
+    guide = ROOT / "docs" / ("DEMO.md" if language == "en" else "DEMO.zh-TW.md")
+    for document in [ROOT / filename, guide]:
+        assert f"`{recording['source_commit'][:7]}`" in document.read_text(), (
+            f"Recorded video version does not match its receipt: {document.name}"
+        )
+        linked_files = {
+            (document.parent / unquote(urlsplit(target).path)).resolve()
+            for target in re.findall(r"\[[^\]]*\]\(([^)]+)\)", document.read_text())
+            if not urlsplit(target).scheme and urlsplit(target).path
+        }
+        for feature in ["INGESTION", "USABILITY", "WORKFLOWS"]:
+            suffix = "" if language == "en" else ".zh-TW"
+            expected = ROOT / "docs" / f"{feature}{suffix}.md"
+            assert expected in linked_files, (
+                f"Missing current {feature} instructions: {document.name}"
+            )
 
 markdown = [*ROOT.glob("*.md"), *ROOT.glob("docs/*.md"), *ROOT.glob("examples/*.md")]
 for document in markdown:
