@@ -18,9 +18,16 @@ class Settings(BaseSettings):
     llm_model: str = "gemma4:e4b"
     llm_api_key: str = ""
     llm_timeout_seconds: float = Field(default=180, gt=0)
-    llm_temperature: float = 0
-    llm_max_tokens: int = Field(default=768, ge=64)
+    llm_temperature: float = Field(default=0, ge=0, le=2)
+    llm_top_p: float = Field(default=1, gt=0, le=1)
+    llm_max_tokens: int = Field(default=768, ge=64, le=4096)
     llm_context_tokens: int = Field(default=8192, ge=1024)
+    llm_context_margin: int = Field(default=256, ge=64)
+    llm_max_attempts: int = Field(default=3, ge=1, le=5)
+    llm_max_repairs: int = Field(default=1, ge=0, le=2)
+    llm_retry_delay_seconds: float = Field(default=0.25, ge=0, le=10)
+    workflow_timeout_seconds: float = Field(default=600, gt=0)
+    workflow_max_calls: int = Field(default=32, ge=1, le=128)
     llm_keep_alive: str = "5m"
     llm_think: bool = False
     llm_json_mode: bool = True
@@ -53,3 +60,5 @@ class Settings(BaseSettings):
             raise ValueError("CHUNK_OVERLAP_TOKENS must be smaller than CHUNK_TOKENS")
         if self.llm_provider not in {"ollama", "openai"}:
             raise ValueError("LLM_PROVIDER must be ollama or openai")
+        if self.llm_max_tokens + self.llm_context_margin >= self.llm_context_tokens:
+            raise ValueError("Output reservation and context margin must leave room for input")

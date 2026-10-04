@@ -12,13 +12,15 @@ class QueryJobs:
         self.pipeline = pipeline
         self.active = {}
 
-    def start(self, question, documents, top_k, threshold):
+    def start(self, question, documents, top_k, threshold, generation=None, **workflow):
         activity = self.pipeline.workspace.activity(
             [d["id"] for d in documents], query=True, wait=False
         )
         activity.__enter__()
         try:
-            run = self.pipeline.new_query(question, documents, top_k, threshold)
+            run = self.pipeline.new_query(
+                question, documents, top_k, threshold, generation, **workflow
+            )
             control = QueryControl()
             task = asyncio.create_task(self._execute(run, control, activity))
             self.active[run["id"]] = (run, control, task)

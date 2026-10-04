@@ -3,6 +3,8 @@ import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
+DETAIL_FIELDS = {"prompt", "raw_response", "attempts", "workflow"}
+
 
 def now():
     return datetime.now(UTC).isoformat()
@@ -100,8 +102,7 @@ class Store:
             ).fetchall()
         # Prompts/raw completions belong to the detail endpoint, not every list refresh.
         return [
-            {k: v for k, v in json.loads(row[0]).items() if k not in {"prompt", "raw_response"}}
-            for row in rows
+            {k: v for k, v in json.loads(row[0]).items() if k not in DETAIL_FIELDS} for row in rows
         ]
 
     def run_catalog(self, search="", status="", offset=0, limit=50):
@@ -119,8 +120,7 @@ class Store:
                 [*args, limit, offset],
             ).fetchall()
         items = [
-            {k: v for k, v in json.loads(row[0]).items() if k not in {"prompt", "raw_response"}}
-            for row in rows
+            {k: v for k, v in json.loads(row[0]).items() if k not in DETAIL_FIELDS} for row in rows
         ]
         return {
             "items": items,
@@ -156,5 +156,25 @@ class Store:
         for run_id, status in self.run_states().items():
             if status == "running":
                 full = self.run(run_id)
-                full.update(status="failed", error="查詢被服務重啟中斷，請重新送出問題。")
+                full.update(
+                    status="failed",
+                    stage="failed",
+                    error_code="interrupted",
+                    finished_at=now(),
+                    error="工作流程被服務重啟中斷，請重新送出。",
+                )
+                for attempt in full.get("attempts", []):
+                    if (
+                        attempt["status"] == "running"
+                        and "usage" in full
+                        and not {"actual_input_tokens", "actual_output_tokens"}
+                        <= attempt.get("context", {}).keys()
+                    ):
+                        full["usage"]["unreported_calls"] += 1
+                for record in [
+                    *full.get("attempts", []),
+                    *full.get("workflow", {}).get("nodes", []),
+                ]:
+                    if record["status"] == "running":
+                        record.update(status="failed", error_code="interrupted", finished_at=now())
                 self.save_run(full)

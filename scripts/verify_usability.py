@@ -65,7 +65,7 @@ def wait_run(client, rid):
     raise TimeoutError("Real query did not finish")
 
 
-def main(browser):
+def main(browser, workflows=False):
     settings = Settings()
     before = owner_snapshot(settings.ragglass_data_dir)
     (ROOT / ".data").mkdir(exist_ok=True)
@@ -201,6 +201,10 @@ def main(browser):
                     checked(
                         f"live legacy API: {case['question']} ({run['timings_ms']['total']} ms)"
                     )
+                if workflows:
+                    from verify_workflows import check_workflows
+
+                    check_workflows(client, doc, report, checked, ROOT, directory, wait_run)
                 response = client.post(
                     "query/start",
                     json={
@@ -247,7 +251,9 @@ def main(browser):
                 )
                 assert stopped["answer"] is None and not stopped["citations"]
                 assert client.post(f"runs/{rid}/cancel").json() == stopped
-                assert client.get("runs/catalog?status=cancelled").json()["matched"] == 1
+                assert client.get("runs/catalog?status=cancelled").json()["matched"] == (
+                    2 if workflows else 1
+                )
                 report["cancelled_run"] = stopped
                 checked(
                     "real generation cancellation retains evidence: "
@@ -272,6 +278,12 @@ def main(browser):
                 start()
                 assert client.get(f"runs/{rid}").json() == stopped
                 checked("actual API restart preserves cancelled query, prompt and evidence")
+                if workflows:
+                    stopped_summary = report["workflows"]["cancelled_summary"]
+                    assert client.get(f"runs/{stopped_summary['id']}").json() == stopped_summary
+                    checked(
+                        "actual API restart preserves cancelled summary nodes and model-call trace"
+                    )
                 if browser:
                     started = time.perf_counter()
                     completed = subprocess.run(
@@ -284,9 +296,22 @@ def main(browser):
                             "--",
                             "workbench.spec.ts",
                             "usability.spec.ts",
+                            *(["workflows.spec.ts"] if workflows else []),
                         ],
                         cwd=ROOT,
-                        env={**os.environ, "RAGGLASS_BASE_URL": base},
+                        env={
+                            **os.environ,
+                            "RAGGLASS_BASE_URL": base,
+                            **(
+                                {
+                                    "RAGGLASS_SUMMARY_DOCUMENT_ID": report["workflows"][
+                                        "complaint_document"
+                                    ]["id"]
+                                }
+                                if workflows
+                                else {}
+                            ),
+                        },
                         text=True,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.STDOUT,
@@ -319,18 +344,30 @@ def main(browser):
                     completed.check_returncode()
                     checked("built Chrome cleanup regression in the disposable workspace")
                 report["gpu_after"] = gpu()
+                report["completed"] = True
         finally:
             stop()
             log.close()
             if created:
                 subprocess.run(["docker", "rm", "--force", name], check=True, capture_output=True)
+            report["owner_workspace_unchanged"] = (
+                owner_snapshot(settings.ragglass_data_dir) == before
+            )
+            if not report.get("completed"):
+                failure_path = ROOT / (
+                    ".data/workflows-verification.failed.json"
+                    if workflows
+                    else ".data/usability-verification.failed.json"
+                )
+                failure_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     report["owner_workspace_unchanged"] = owner_snapshot(settings.ragglass_data_dir) == before
     assert report["owner_workspace_unchanged"]
     checked("owner documents and SQLite unchanged; owned API/Qdrant stopped and removed")
-    (ROOT / ".data/usability-verification.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2) + "\n"
+    report_path = ROOT / (
+        ".data/workflows-verification.json" if workflows else ".data/usability-verification.json"
     )
-    print("Measured report: .data/usability-verification.json", flush=True)
+    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+    print(f"Measured report: {report_path.relative_to(ROOT)}", flush=True)
 
 
 if __name__ == "__main__":
