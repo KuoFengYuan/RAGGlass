@@ -234,7 +234,7 @@ try {
   await page.getByTestId("confirm-cleanup").click();
   await expect(library.locator(".document-item")).toHaveCount(0);
   await library.getByRole("button", { name: "Close", exact: true }).click();
-  await expect(page.locator("canvas")).not.toBeVisible();
+  await expect(page.locator(".pdf-paper > canvas")).not.toBeVisible();
   await expect(page.getByTestId("answer")).toContainText("30 MB");
   await expect(page.locator(".citation-button").first()).toBeDisabled();
   await page.getByTestId("answer").scrollIntoViewIfNeeded();

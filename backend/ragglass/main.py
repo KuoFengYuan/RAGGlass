@@ -13,6 +13,7 @@ from pypdf import PdfReader
 from .config import ROOT, Settings
 from .errors import PipelineError
 from .pipeline import Pipeline
+from .query_jobs import QueryJobs
 from .store import Store, now
 
 
@@ -42,16 +43,21 @@ def create_app(settings=None):
     s.configure_paths()
     store = Store(s.ragglass_data_dir)
     pipeline = Pipeline(s, store)
+    jobs = QueryJobs(pipeline)
 
     @asynccontextmanager
     async def lifespan(app):
         store.recover_interrupted()
-        yield
-        pipeline.index.client.close()
+        try:
+            yield
+        finally:
+            await jobs.close()
+            pipeline.index.client.close()
 
     app = FastAPI(title="RAGGlass", version="0.1.0", lifespan=lifespan)
     app.state.store = store
     app.state.pipeline = pipeline
+    app.state.query_jobs = jobs
 
     @app.exception_handler(PipelineError)
     async def pipeline_error(request, exc):
@@ -238,15 +244,17 @@ def create_app(settings=None):
     def reindex(doc_id: str, background_tasks: BackgroundTasks):
         with pipeline.workspace.mutation():
             doc = get_doc(doc_id)
-            if doc["status"] not in {"ready", "failed", "delete_failed"}:
+            if (
+                doc["status"] not in {"ready", "failed", "delete_failed"}
+                or pipeline.workspace.active_documents[doc_id]
+            ):
                 raise HTTPException(409, "文件正在處理，請等待完成。")
             doc.update(status="queued", error=None, updated_at=now())
             store.save_document(doc)
             background_tasks.add_task(pipeline.ingest, doc_id)
             return doc
 
-    @app.post("/api/query")
-    def query(request: Query):
+    def query_documents(request):
         question = request.question.strip()
         if not question:
             raise HTTPException(422, "請輸入問題。")
@@ -255,6 +263,22 @@ def create_app(settings=None):
             raise HTTPException(409, "文件尚未完成索引，請等待或重新索引。")
         if any(d.get("collection") != pipeline.index.collection for d in docs):
             raise HTTPException(409, "Embedding 設定已更改，請重新索引文件後查詢。")
+        return question, docs
+
+    @app.post("/api/query/start", status_code=202)
+    async def start_query(request: Query):
+        question, docs = query_documents(request)
+        return source_status(
+            jobs.start(question, docs, request.top_k, request.score_threshold), source_ids()
+        )
+
+    @app.post("/api/runs/{run_id}/cancel")
+    async def cancel_query(run_id: str):
+        return source_status(jobs.cancel(run_id), source_ids())
+
+    @app.post("/api/query")
+    def query(request: Query):
+        question, docs = query_documents(request)
         # A failed generation still returns the saved run, including retrieval and actionable error.
         return source_status(
             pipeline.query(question, docs, request.top_k, request.score_threshold), source_ids()
@@ -269,7 +293,7 @@ def create_app(settings=None):
 
     @app.get("/api/runs/catalog")
     def run_catalog(search: str = "", status: str = "", offset: int = 0, limit: int = 50):
-        if len(search) > 200 or status not in {"", "completed", "failed", "running"}:
+        if len(search) > 200 or status not in {"", "completed", "failed", "running", "cancelled"}:
             raise HTTPException(422, "Invalid history search or status.")
         result = store.run_catalog(search, status, max(offset, 0), min(max(limit, 1), 100))
         available = source_ids()

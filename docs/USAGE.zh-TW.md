@@ -6,6 +6,8 @@ RAGGlass 讓文件 RAG 工程師看見 PDF 如何變成檢索證據與模型回�
 
 安裝請看[部署指南](DEPLOYMENT.zh-TW.md)，模型建議請看 [README](../README.zh-TW.md#建議的-ollama-模型)。
 
+目前的查詢進度／停止、PDF 搜尋／縮放／選字，以及答案複製／Markdown 匯出，詳見[閱讀與查詢控制](USABILITY.zh-TW.md)。
+
 ## 1. 認識工作台
 
 ![繁中工作台顯示真實模型回答與第 2 頁證據](images/workbench.zh-TW.png)

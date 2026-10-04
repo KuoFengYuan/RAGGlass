@@ -28,11 +28,15 @@ class Workspace:
             self.lock.release()
 
     @contextmanager
-    def activity(self, document_ids, query=False):
+    def activity(self, document_ids, query=False, wait=True):
         # Queued ingestion must wait for an unrelated cleanup rather than fail to start.
-        with self.lock:
+        if not self.lock.acquire(blocking=wait):
+            raise PipelineError("workspace_busy", "工作空間正在更新，請稍後重試。", 409)
+        try:
             self.active_documents.update(document_ids)
             self.active_queries += int(query)
+        finally:
+            self.lock.release()
         try:
             yield
         finally:

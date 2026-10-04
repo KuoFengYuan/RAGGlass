@@ -6,6 +6,8 @@ RAGGlass helps document RAG engineers inspect how a PDF becomes retrieved eviden
 
 For installation, read the [deployment guide](DEPLOYMENT.md). For model choices, see the [README](../README.md#recommended-ollama-models).
 
+For current query progress/stop controls, PDF search/zoom/text selection, and answer copying/Markdown export, see [reading and query controls](USABILITY.md).
+
 ## 1. Know the workspace
 
 ![Actual English workbench with a live answer and page-2 evidence](images/workbench.png)

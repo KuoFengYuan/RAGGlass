@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import threading
@@ -13,6 +14,25 @@ from .store import now
 from .workspace import Workspace
 
 log = logging.getLogger(__name__)
+
+
+class QueryCancelled(Exception):
+    """A cooperative stop, recorded separately from a failure."""
+
+
+class QueryControl:
+    def __init__(self):
+        self.cancelled = False
+        self.generation = None
+
+    def cancel(self):
+        self.cancelled = True
+        if self.generation is not None:
+            self.generation.cancel()
+
+    def check(self):
+        if self.cancelled:
+            raise QueryCancelled
 
 
 class Pipeline:
@@ -108,19 +128,24 @@ class Pipeline:
 
     def query(self, question, documents, top_k, threshold):
         with self.workspace.activity([d["id"] for d in documents], query=True):
-            current = [self.store.document(d["id"]) for d in documents]
-            if any(d is None for d in current):
-                raise PipelineError("cleanup_missing", "文件已刪除，請重新選取文件。", 404)
-            if any(d["status"] != "ready" for d in current):
-                raise PipelineError("cleanup_busy", "文件尚未完成索引，請等待或重新索引。", 409)
-            return self._query(question, current, top_k, threshold)
+            run = self.new_query(question, documents, top_k, threshold)
+            return asyncio.run(self.execute_query(run, QueryControl()))
 
-    def _query(self, question, documents, top_k, threshold):
-        started = time.perf_counter()
+    def new_query(self, question, documents, top_k, threshold):
+        documents = [self.store.document(d["id"]) for d in documents]
+        if any(d is None for d in documents):
+            raise PipelineError("cleanup_missing", "文件已刪除，請重新選取文件。", 404)
+        if any(d["status"] != "ready" for d in documents):
+            raise PipelineError("cleanup_busy", "文件尚未完成索引，請等待或重新索引。", 409)
+        if any(d.get("collection") != self.index.collection for d in documents):
+            raise PipelineError("embedding_changed", "Embedding 設定已更改，請重新索引。", 409)
         run = {
             "id": str(uuid.uuid4()),
             "created_at": now(),
             "status": "running",
+            "stage": "queued",
+            "stage_started_at": now(),
+            "cancel_requested": False,
             "question": question,
             "document_ids": [d["id"] for d in documents],
             "documents": [
@@ -158,30 +183,75 @@ class Pipeline:
             "error_code": None,
         }
         self.store.save_run(run)
+        return run
 
-        def stage(name, operation):
+    async def execute_query(self, run, control):
+        started = time.perf_counter()
+        retrieval = run["settings"]["retrieval"]
+
+        async def stage(name, operation, threaded=True):
+            control.check()
+            run.update(stage=name, stage_started_at=now())
+            self.store.save_run(run)
             t = time.perf_counter()
             try:
-                return operation()
+                if threaded:
+                    # A running CPU/vector operation cannot be killed safely. Keep its activity
+                    # reservation until it returns, then honour cancellation before another stage.
+                    work = asyncio.create_task(asyncio.to_thread(operation))
+                    try:
+                        result = await asyncio.shield(work)
+                    except asyncio.CancelledError:
+                        await work
+                        raise
+                else:
+                    control.generation = asyncio.create_task(operation())
+                    try:
+                        result = await control.generation
+                    except asyncio.CancelledError:
+                        control.check()
+                        raise
+                    finally:
+                        control.generation = None
+                return result
             finally:
                 run["timings_ms"][name] = round((time.perf_counter() - t) * 1000, 2)
+                self.store.save_run(run)
 
         try:
-            vector = stage("embedding", lambda: self.embedder.encode([question], query=True)[0])
-            evidence = stage(
+            vector = await stage(
+                "embedding", lambda: self.embedder.encode([run["question"]], query=True)[0]
+            )
+            evidence = await stage(
                 "retrieval",
-                lambda: self.index.search(vector, run["document_ids"], top_k, threshold),
+                lambda: self.index.search(
+                    vector, run["document_ids"], retrieval["top_k"], retrieval["score_threshold"]
+                ),
             )
             run["evidence"] = evidence
-            run["prompt"] = make_prompt(question, evidence)
+            run["prompt"] = make_prompt(run["question"], evidence)
             self.store.save_run(run)
             if evidence:
-                raw, metrics = stage("generation", lambda: self.llm.generate(run["prompt"]))
+                raw, metrics = await stage(
+                    "generation", lambda: self.llm.generate_async(run["prompt"]), threaded=False
+                )
                 run.update(raw_response=raw, model_metrics=metrics)
-                run.update(stage("citation_validation", lambda: validate_completion(raw, evidence)))
+                run.update(
+                    await stage("citation_validation", lambda: validate_completion(raw, evidence))
+                )
             else:
                 run.update(answer="檢索未找到符合門檻的證據，無法從文件確認答案。")
+            control.check()
             run["status"] = "completed"
+        except QueryCancelled:
+            run.update(status="cancelled", answer=None, answerable=False, citations=[])
+        except asyncio.CancelledError:
+            run.update(
+                status="failed",
+                error="查詢被服務關閉中斷，請重新送出問題。",
+                error_code="interrupted",
+            )
+            raise
         except Exception as exc:
             log.exception("Query failed for run %s", run["id"])
             error = (
@@ -193,6 +263,7 @@ class Pipeline:
             )
             run.update(status="failed", error=error.message, error_code=error.code)
         finally:
+            run["stage"] = run["status"]
             run["timings_ms"]["total"] = round((time.perf_counter() - started) * 1000, 2)
             run["finished_at"] = now()
             self.store.save_run(run)

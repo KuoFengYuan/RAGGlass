@@ -16,7 +16,7 @@ test('real PDF upload, live model answer, page citation, history, and language p
     )
   await expect(page.locator('.document-bar .badge')).toHaveText('Indexed', { timeout: 180_000 })
   await expect(page.getByTestId('pdf-viewer')).toHaveAttribute('data-page', '1')
-  await expect(page.locator('canvas')).toBeVisible()
+  await expect(page.locator('.pdf-paper > canvas')).toBeVisible()
   await page
     .getByLabel('Question', { exact: true })
     .fill('What is the maximum upload size for the Cedar pilot?')
@@ -71,7 +71,7 @@ test('document catalog, page rail, keyboard dismissal, retrieval inputs, and mob
     'aria-current',
     'page',
   )
-  await expect(page.locator('canvas')).toBeVisible()
+  await expect(page.locator('.pdf-paper > canvas')).toBeVisible()
   await page.getByTestId('open-history').click()
   await page
     .locator('.history-item')
@@ -94,7 +94,7 @@ test('document catalog, page rail, keyboard dismissal, retrieval inputs, and mob
     .poll(() =>
       page.evaluate(() => {
         const viewer = document.querySelector('.pdf-scroll')!
-        const canvas = document.querySelector('canvas')!
+        const canvas = document.querySelector('.pdf-paper > canvas')!
         return canvas.getBoundingClientRect().width <= viewer.clientWidth - 40
       }),
     )
